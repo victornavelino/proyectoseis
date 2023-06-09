@@ -1,0 +1,209 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block extrahead %}{{ block.super }}
+    <script src="{% url 'admin:jsi18n' %}"></script>
+    {{ media }}
+{% endblock %}
+
+{% block extrastyle %}{{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+    <style>.form-row {
+        float: left;
+        width: 400px;
+    }
+
+    .form-row1 {
+        overflow: hidden;
+        padding: 10px;
+        padding: 0.71429rem;
+    }
+
+    .related-popup2 {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 4;
+        padding-left: 250px;
+        padding-left: 17.85714rem;
+        box-sizing: border-box;
+        display: none;
+        background: #f8fafc;
+        background-clip: content-box;
+        -webkit-overflow-scrolling: touch;
+        overflow-y: scroll;
+    }
+    </style>
+{% endblock %}
+
+{% block coltype %}colM{% endblock %}
+
+{% block content %}
+    <form action="" method="post">
+
+
+        {% csrf_token %}
+        {% load jet_tags %}
+        <!-- AGREGAR CONTENIDO AQUI -->
+
+        <fieldset class="module aligned">
+            <div class="form-row1 field-fechainicial">
+                <div>
+                    <label>FECHA APERTURA:</label>
+                    <input type="text" name="fecha-inicial" value="{{ caja.fecha_inicio }}" disabled>
+                </div>
+            </div>
+            <div class="form-row1 field-numero_lote">
+                <div>
+                    <label>SUCURSAL:</label>
+                    <input type="text" name="sucursal" value="{{ caja.sucursal }}" disabled>
+                </div>
+            </div>
+            <div class="form-row1 field-usuario">
+                <div>
+                    <label>USUARIO:</label>
+                    <input type="text" name="usuario" value="{{ caja.usuario }}" disabled>
+                </div>
+            </div>
+            <div class="form-row1 field-cajainicial">
+                <div>
+                    <label>CAJA INICIAL:</label>
+                    <input type="text" name="caja-inicial" value="{{ caja.caja_inicial }}" disabled>
+                </div>
+            </div>
+            <div class="form-row1 field-cajafinal">
+                <div>
+                    <label>SALDO DE CAJA:</label>
+                    <input type="text" id="idsaldocaja" name="caja-final" value="{{ caja.caja_final }}" disabled>
+                </div>
+            </div>
+            <div class="form-row1 field-saldoreal">
+                <div>
+                    <label>SALDO REAL:</label>
+                    <input type="text" id="idsaldoreal" name="saldo-real" value="">
+                </div>
+            </div>
+            <div class="form-row1 field-diferencia">
+                <div>
+                    <label>DIFERENCIA:</label>
+                    <input type="number" id="iddiferencia" name="diferencia-caja" disabled>
+                </div>
+            </div>
+            <div class="results">
+                <table class="table-striped" id="movimientos-caja" width="80%">
+                    <thead>
+                    <tr>
+                        <th>Movimiento</th>
+                        <th>Importe</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for dato in data %}
+                        <tr>
+                            <td>{{ dato.tipo }}</td>
+                            <td>{{ dato.importe }}</td>
+
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </fieldset>
+        <div class="submit-row">
+            <input type="button" onclick="cerrarCaja(event)" value="CERRAR CAJA" class="default"
+                   name="add">
+            <input type="button" onclick="window.location.href='/admin/caja/caja/'" value="VOLVER" class="btn-close"
+                   name="back">
+            <input type="hidden" id="id_caja" name="id_caja" disabled>
+        </div>
+    </form>
+    <script>
+
+        jQuery("#idsaldoreal")
+            .blur(function (e) {
+                e.preventDefault();
+                calcularDiferenciaCaja();
+            })
+
+        function calcularDiferenciaCaja() {
+            let saldocaja = parseFloat(jQuery("#idsaldocaja").val()).toFixed(2);
+            let saldoreal = parseFloat(jQuery("#idsaldoreal").val()).toFixed(2);
+            let diferencia = saldoreal - saldocaja;
+            jQuery("#iddiferencia").val(parseFloat(diferencia).toFixed(2));
+
+        }
+
+        function cerrarCaja(e) {
+            e.preventDefault();
+            let saldoreal = jQuery("#idsaldoreal").val();
+            console.log('saldo real')
+            console.log(saldoreal)
+            if (saldoreal > 0) {
+                let miCaja = {
+                    "id_caja": {{ caja.pk }},
+                    "caja_final": saldoreal
+                }
+                let url_mask = "{% url 'cerrar_caja' %}";
+                jQuery.ajax({
+                        type: 'POST',
+                        url: url_mask,
+                        contentType: 'application/json; charset=utf-8',
+                        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                        data: JSON.stringify(miCaja),
+                        dataType:
+                            'json',
+                        success:
+                            function (result) {
+
+                                if (result.data = "CERRADA") {
+
+                                    swal({
+                                        icon: 'success',
+                                        title: 'Caja Cerrada Correctamente',
+                                        button: 'Ok',
+                                    }).then((value) => {
+                                        window.location.href = "/admin/caja/caja/";
+                                    });
+
+                                }
+                                if (result.error) {
+                                    swal({
+                                        icon: 'error',
+                                        title: result.error,
+                                        button: 'Ok',
+                                    }).then((value) => {
+                                        window.location.href = "/admin/caja/caja/"
+                                    });
+                                }
+                            },
+                        error: function (response) {
+                            console.log(response);
+                        }
+
+                    }
+                );
+            } else {
+                jQuery("#idsaldoreal").focus();
+                swal({
+                    icon: 'error',
+                    title: 'Ups!',
+                    text: 'Debe colocar un saldo Real de Caja',
+                    button: 'Aceptar'
+                });
+
+            }
+        }
+
+    </script>
+
+
+    <!-- SWEETALERT -->
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
+    <script src="{% static 'js/jquery.bootstrap.modal.forms.js' %}"></script>
+    <script>    django.gettext = window.gettext    </script>
+
+{% endblock %}

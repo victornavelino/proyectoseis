@@ -1,0 +1,61 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block extrahead %}{{ block.super }}
+    <script src="{% url 'admin:jsi18n' %}"></script>
+    {{ media }}
+{% endblock %}
+
+{% block extrastyle %}{{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+    <style>.form-row {
+        float: left;
+        width: 400px;
+    }
+
+    .form-row1 {
+        overflow: hidden;
+        padding: 10px;
+        padding: 0.71429rem;
+    }
+
+    .related-popup2 {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 4;
+        padding-left: 250px;
+        padding-left: 17.85714rem;
+        box-sizing: border-box;
+        display: none;
+        background: #f8fafc;
+        background-clip: content-box;
+        -webkit-overflow-scrolling: touch;
+        overflow-y: scroll;
+    }
+    </style>
+{% endblock %}
+
+{% block coltype %}colM{% endblock %}
+
+{% block content %}
+    <form action="" method="post">
+
+
+        {% csrf_token %}
+         {% load jet_tags %}
+    <!-- AGREGAR CONTENIDO AQUI -->
+
+
+
+
+       <!-- SWEETALERT -->
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
+    <script src="{% static 'js/jquery.bootstrap.modal.forms.js' %}"></script>
+    <script>    django.gettext = window.gettext    </script>
+    </form>
+{% endblock %}

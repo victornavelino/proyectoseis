@@ -1,0 +1,39 @@
+
+    <!-- AGREGAR CONTENIDO AQUI -->
+<ul style="list-style-type:none">
+    <li>LA TRADICION CARNICERIAS</li>&nbsp
+    <li>Sucursal: GUEMES</li>
+    <li>Usuario: hugo</li>
+    <li>Fecha Apertura: {{caja.fecha_inicio|date:"M d, Y, H:i"}}</li>
+    <li>Fecha Cierre: {{caja.fecha_fin|date:"M d, Y, H:i"}}</li>
+    <li>CAJA INICIAL: {{caja.caja_inicial}}</li>
+    <li>____________________________</li>
+    <li>&nbsp</li>
+    <li>------- INGRESOS DE CAJA -------</li>&nbsp
+    {% for ingreso in ingresos %}
+    <li>{{ingreso.concepto}} : {{ingreso.importe}}</li>
+    {% endfor %}&nbsp
+    <li>{{total_ingresos.concepto}}:    {{total_ingresos.importe}}</li>
+    <li>____________________________</li>
+    <li>&nbsp</li>
+    <li>------- EGRESOS DE CAJA --------</li>&nbsp
+    {% for egreso in egresos %}
+    <li>{{egreso.concepto}} : {{egreso.importe}}</li>
+    {% endfor %}&nbsp
+    <li>{{total_egresos.concepto}}:    {{total_egresos.importe}}</li>
+    <li>____________________________</li>
+    <li>&nbsp</li>
+    <li>------ CREDITO C. CORRIENTE -----</li>&nbsp
+    <li>{{total_ccorrientes.concepto}}:    {{total_ccorrientes.importe}}</li>
+<li>____________________________</li>
+    <li>SALDO DE CAJA: {{caja.caja_final}}</li>
+
+
+</ul>
+
+    <!-- RESUMEN DE MOVIMIENTOS-->
+<ul>
+    {% for dato in data %}
+    <li>{dato.tipo}} {dato.importe}</li>
+    {% endfor %}
+</ul>

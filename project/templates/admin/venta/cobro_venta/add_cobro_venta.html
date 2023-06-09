@@ -1,0 +1,518 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block extrahead %}{{ block.super }}
+    <script src="{% url 'admin:jsi18n' %}"></script>
+    {{ media }}
+{% endblock %}
+
+{% block extrastyle %}{{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+    <style>.form-row {
+        float: left;
+        width: 400px;
+    }
+
+    .form-row1 {
+        overflow: hidden;
+        padding: 10px;
+        padding: 0.71429rem;
+    }
+
+    .related-popup2 {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 4;
+        padding-left: 250px;
+        padding-left: 17.85714rem;
+        box-sizing: border-box;
+        display: none;
+        background: #f8fafc;
+        background-clip: content-box;
+        -webkit-overflow-scrolling: touch;
+        overflow-y: scroll;
+    }
+    </style>
+{% endblock %}
+
+{% block coltype %}colM{% endblock %}
+
+{% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} change-form{% endblock %}
+
+{% if not is_popup %}
+    {% block breadcrumbs %}
+        <div class="breadcrumbs">
+            <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+            &rsaquo; <a
+                href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+            &rsaquo; {% if has_view_permission %}
+            <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>{% else %}
+            {{ opts.verbose_name_plural|capfirst }}{% endif %}
+            &rsaquo;
+            {% if add %}{% blocktranslate with name=opts.verbose_name %}Add {{ name }}{% endblocktranslate %}{% else %}
+                {{ original|truncatewords:"18" }}{% endif %}
+        </div>
+    {% endblock %}
+{% endif %}
+
+{% block content %}
+    <div id="content-main">
+        {% block object-tools %}
+            {% if change %}{% if not is_popup %}
+                <ul class="object-tools">
+                    {% block object-tools-items %}
+                        {% change_form_object_tools %}
+                    {% endblock %}
+                </ul>
+            {% endif %}{% endif %}
+        {% endblock %}
+        <form {% if has_file_field %}enctype="multipart/form-data" {% endif %}{% if form_url %}action="{{ form_url }}" {% endif %}method="post"
+              id="{{ opts.model_name }}_form" novalidate>{% csrf_token %}{% block form_top %}{% endblock %}
+            <div>
+                {% if is_popup %}<input type="hidden" name="{{ is_popup_var }}" value="1">{% endif %}
+                {% if to_field %}<input type="hidden" name="{{ to_field_var }}" value="{{ to_field }}">{% endif %}
+                {% if save_on_top %}{% block submit_buttons_top %}{% submit_row %}{% endblock %}{% endif %}
+                {% if errors %}
+                    <p class="errornote">
+                        {% if errors|length == 1 %}{% translate "Please correct the error below." %}{% else %}
+                            {% translate "Please correct the errors below." %}{% endif %}
+                    </p>
+                    {{ adminform.form.non_field_errors }}
+                {% endif %}
+
+                {% block field_sets %}
+                    {% load jet_tags %}
+                    <fieldset class="module aligned {{ fieldset.classes }}">
+
+
+                        <div class="form-row1 field-fecha">
+
+
+                            <div>
+
+
+                                <label class="required" for="id_fecha">Fecha:</label>
+
+                                <input type="text" name="fecha" readonly
+                                       class="vTextField" value="{% now "d/m/Y" %}"
+                                       maxlength="30" id="id_fecha">
+
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-row1 field-articulo">
+
+                            <label class="required" for="id_cliente">Cliente:</label>
+
+
+                            <select name="cliente" required="" id="id_cliente" tabindex="-1"
+                                    class="vTextField"
+                                    aria-hidden="true">
+                                <option value="" selected="">---------</option>
+
+                            </select>
+
+
+                        </div>
+
+                    </fieldset>
+                    <div style="clear:both"></div>
+                    <div id="ventaarticulo_set-0">
+                        <h3><b>Articulos:</b><a class="related-widget-wrapper-link add-related initialized"
+                                                id="add_id_articulo" href="#" title="Añadir otro articulo">
+                            <span class="related-widget-wrapper-icon"></span></a></h3>
+
+
+                        <div id="related-popup-container-articulo" class="related-popup-container scrollable"
+                             style="display: none;">
+                            <a href="#" id="related-popup-back-articulo" class="related-popup-back"
+                               style="display: inline;">
+                                <span class="related-popup-back-icon icon-arrow-left"></span>
+                                <span class="related-popup-back-label">volver</span>
+                            </a>
+                            <span class="icon-refresh loading-indicator" style="display: none;"></span>
+                            <div class="related-popup2" style="display: block;">
+
+                                <fieldset class="module aligned ">
+                                    <div class="form-row1 field-codigo_articulo">
+
+
+                                        <div>
+
+
+                                            <label class="required" for="id_ventaarticulo_set-0-codigo_articulo">Codigo
+                                                de
+                                                Articulo:</label>
+
+                                            <input type="text" name="ventaarticulo_set-0-codigo_articulo"
+                                                   class="vTextField"
+                                                   maxlength="10" id="id_ventaarticulo_set-0-codigo_articulo">
+
+
+                                        </div>
+
+                                    </div>
+                                    <div class="form-row1 field-articulo">
+
+                                        <label class="required" for="id_ventaarticulo_set-0-articulo">Articulo:</label>
+
+
+                                        <select name="articulo" required="" id="id_articulo" tabindex="-1"
+                                                class="vTextField"
+                                                aria-hidden="true">
+                                            <option value="" selected="">---------</option>
+
+                                        </select>
+
+
+                                    </div>
+
+                                    <div class="form-row1 field-nombre_articulo">
+
+
+                                        <div>
+
+
+                                            <label class="required" for="id_ventaarticulo_set-0-nombre_articulo">Nombre
+                                                de
+                                                Articulo:</label>
+
+                                            <input type="text" name="ventaarticulo_set-0-nombre_articulo" readonly
+                                                   class="vTextField"
+                                                   maxlength="30" id="id_ventaarticulo_set-0-nombre_articulo">
+
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <div class="form-row1 field-precio">
+
+
+                                        <div>
+
+
+                                            <label class="required" for="id_ventaarticulo_set-0-precio">Precio:</label>
+
+                                            <input type="number" name="ventaarticulo_set-0-precio" step="0.01" readonly
+                                                   id="id_ventaarticulo_set-0-precio">
+
+
+                                        </div>
+
+                                    </div>
+
+                                    <div class="form-row1 field-cantidad_peso">
+
+
+                                        <div>
+
+
+                                            <label class="required" for="id_ventaarticulo_set-0-cantidad_peso">Cantidad
+                                                peso:</label>
+
+                                            <input type="number" name="ventaarticulo_set-0-cantidad_peso" step="0.01"
+                                                   id="id_ventaarticulo_set-0-cantidad_peso">
+
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <input type="hidden" name="ventaarticulo_set-0-precio_promocion"
+                                           id="id_ventaarticulo_set-0-precio_promocion">
+
+
+                                    <input type="hidden" name="ventaarticulo_set-0-preciototal"
+                                           id="id_ventaarticulo_set-0-precio_total">
+
+
+                                    <div class="submit-row">
+
+                                        <input type="button" onclick="agregar_tabla()" value="Agregar" class="default"
+                                               name="add">
+
+
+                                    </div>
+
+                                </fieldset>
+
+                                <input type="hidden" name="ventaarticulo_set-0-id" id="id_ventaarticulo_set-0-id">
+                                <input type="hidden" name="ventaarticulo_set-0-venta" id="id_ventaarticulo_set-0-venta">
+
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <script>
+                        var articulos = [];
+                        var cliente;
+
+                        function agregar_tabla() {
+                            if (!jQuery("#id_ventaarticulo_set-0-cantidad_peso").val() || !jQuery("id_ventaarticulo_set-0-codigo_articulo").val()) {
+
+                                let id_articulo;
+                                jQuery("#id_articulo option:selected").each(function () {
+                                    id_articulo = jQuery(this).val();
+                                });
+                                let nombre_articulo = jQuery('#id_ventaarticulo_set-0-nombre_articulo').val();
+                                let cantidad_peso = jQuery('#id_ventaarticulo_set-0-cantidad_peso').val();
+                                let precio_unitario = jQuery('#id_ventaarticulo_set-0-precio').val();
+                                let precio_total = (jQuery('#id_ventaarticulo_set-0-precio').val() * jQuery('#id_ventaarticulo_set-0-cantidad_peso').val()).toFixed(2);
+                                articulos.push({
+                                    "id_articulo": id_articulo,
+                                    "cantidad_peso": cantidad_peso,
+                                    "precio_unitario": precio_unitario
+                                });
+
+                                jQuery('#id_table tr:last').after('<tr><td>' + id_articulo + '</td><td>' +
+                                    nombre_articulo + '</td><td>' +
+                                    cantidad_peso + '</td> <td>' +
+                                    precio_unitario + '</td><td>' +
+                                    precio_total +
+                                    '</td></tr>');
+                                django.jQuery('#related-popup-container-articulo').hide();
+                            } else {
+                                jQuery("#id_ventaarticulo_set-0-cantidad_peso").focus();
+
+                            }
+                            calcularTotal();
+                        }
+
+                        function clear() {
+                            jQuery("#id_ventaarticulo_set-0-codigo_articulo").val(null);
+                            jQuery("#id_ventaarticulo_set-0-nombre_articulo").val(null);
+                            jQuery("#id_ventaarticulo_set-0-precio").val(null);
+                            jQuery("#id_ventaarticulo_set-0-cantidad_peso").val(null);
+                            jQuery("#id_articulo").val(null).trigger("change");
+
+                        }
+
+                        function cargar_articulos() {
+                            let url_mask = "{% url 'articulo_todos' %}";
+
+                            jQuery.ajax({
+                                type: 'GET',
+                                url: url_mask,
+                                success: function (data) {
+                                    jQuery.each(data, function (key, registro) {
+                                        jQuery("#id_articulo").append('<option value=' + registro.codigo + '>' + registro.articulo + '</option>');
+                                    });
+                                },
+                                error: function (response) {
+                                    console.log(response);
+                                }
+
+                            });
+                        }
+
+                        function cargar_clientes() {
+                            let url_mask = "{% url 'clientes' %}";
+
+                            jQuery.ajax({
+                                type: 'GET',
+                                url: url_mask,
+                                success: function (data) {
+                                    jQuery.each(data, function (key, registro) {
+                                        jQuery("#id_cliente").append('<option value=' + registro.id + '>' + registro.nombre + ' (' + registro.dni + ')' + '</option>');
+                                    });
+                                },
+                                error: function (response) {
+                                    console.log(response);
+                                }
+
+                            });
+                        }
+
+                        function guardar_venta(e) {
+                            e.preventDefault();
+
+                            let miVenta = {
+                                "venta":
+                                    {"cliente": cliente, "articulos": articulos}
+                            }
+
+                            if (articulos.length > 0) {
+                                let url_mask = "{% url 'guardar_venta' %}";
+
+                                jQuery.ajax({
+                                        type: 'POST',
+                                        url: url_mask,
+                                        contentType: 'application/json; charset=utf-8',
+                                        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                                        data: JSON.stringify(miVenta),
+                                        dataType:
+                                            'json',
+                                        success:
+                                            function (result) {
+                                                if (result.numero_ticket > 0) {
+                                                    alert("La venta N° " + result.numero_ticket + " se realizó correctamente");
+                                                    limpiarTodo();
+                                                }
+                                            },
+                                        error: function (response) {
+                                            console.log(response);
+                                        }
+
+                                    }
+                                );
+                            } else alert('No se puede guardar una venta sin artículos')
+                            return false;
+                        }
+
+                        function limpiarTodo() {
+                            articulos = [];
+                            cliente = null;
+                            jQuery('#id_table').find("tr:gt(0)").remove();
+                            jQuery('#id_cliente').select2("enable", true)
+                            jQuery("#id_cliente").val(null).trigger("change");
+                            clear();
+                            calcularTotal();
+                        }
+
+                        function cargar() {
+                            let codigo = 0;
+                            codigo = jQuery("#id_ventaarticulo_set-0-codigo_articulo").val();
+
+                            if (codigo > 0) {
+                                let url_mask = "{% url 'venta' articulo_codigo=1234567 cliente_pk=78523698 %}".replace(/1234567/, codigo).replace(/78523698/, cliente);
+
+                                jQuery.ajax({
+                                    type: 'GET',
+                                    url: url_mask,
+                                    success: function (data) {
+                                        jQuery("#id_ventaarticulo_set-0-nombre_articulo").val(data.articulo);
+                                        //  jQuery("#id_mes").val(data.mes).change();
+                                        jQuery("#id_ventaarticulo_set-0-precio").val(data.precio);
+                                        //id_ventaarticulo_set-0-cantidad_peso if data.es_por_peso
+                                        jQuery("#id_ventaarticulo_set-0-cantidad_peso").focus();
+
+                                    },
+                                    error: function (response) {
+                                        console.log(response);
+                                    }
+
+                                });
+                            }
+                        }
+
+                        function calcularTotal() {
+                            let total = 0;
+                            articulos.forEach(function (articulo) {
+                                total = total + (articulo.cantidad_peso * articulo.precio_unitario);
+                            })
+                            jQuery('#total').html(total.toFixed(2));
+                        }
+
+                        django.jQuery(document).ready(function () {
+                            jQuery('#id_articulo').select2();
+                            jQuery('#id_cliente').select2();
+                            cargar_articulos();
+                            cargar_clientes();
+                            django.jQuery('#add_id_articulo').click(function (e) {
+                                e.preventDefault();
+                                jQuery("#id_cliente option:selected").each(function () {
+                                    cliente = jQuery(this).val();
+                                });
+                                if (cliente) {
+                                    clear();
+                                    django.jQuery('#related-popup-container-articulo').show();
+                                    jQuery('#id_cliente').select2("enable", false)
+                                } else {
+                                    alert('Debe seleccionar primero un cliente')
+                                }
+                            });
+                            django.jQuery('#related-popup-back-articulo').click(function (e) {
+                                e.preventDefault();
+                                django.jQuery('#related-popup-container-articulo').hide();
+                            });
+                            jQuery('#id_articulo').on('change', function () {
+                                let id_articulo;
+                                jQuery("#id_articulo option:selected").each(function () {
+                                    id_articulo = jQuery(this).val();
+                                });
+
+                                jQuery("#id_ventaarticulo_set-0-codigo_articulo").val(id_articulo);
+                                cargar();
+
+                            });
+
+                            //al perder el foco codigo articulo
+                            jQuery("#id_ventaarticulo_set-0-codigo_articulo")
+                                .blur(function (e) {
+                                    e.preventDefault();
+                                    cargar();
+                                })
+                            jQuery("#id_ventaarticulo_set-0-codigo_articulo").on('keypress', function (e) {
+                                if (e.which === 13) {
+                                    cargar();
+                                }
+                            });
+
+                        });
+
+                    </script>
+
+
+
+                    <table class="table-striped" id="id_table">
+                        <thead>
+                        <tr>
+                            <th>Cod</th>
+                            <th style="width: 400px">Articulo</th>
+                            <th>Cantidad</th>
+                            <th>Precio Unitario</th>
+                            <th>Precio Total</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+
+                        </tr>
+                        </tbody>
+                    </table>
+                    <p>&nbsp;</p>
+
+                    <h1>Total: $ <span id="total">0.00</span></h1>
+
+
+                {% endblock %}
+
+                {% block after_field_sets %}{% endblock %}
+
+
+                {% block after_related_objects %}{% endblock %}
+
+                {% block submit_buttons_bottom %}
+                    <p>&nbsp;</p>
+                    <button class="button default" onclick="return guardar_venta(event);">Guardar
+                    </button>
+                    <!-- {% submit_row %} -->
+                {% endblock %}
+
+                {% block admin_change_form_document_ready %}
+                    <script id="django-admin-form-add-constants"
+                            src="{% static 'admin/js/change_form.js' %}"
+                            {% if adminform and add %}
+                            data-model-name="{{ opts.model_name }}"
+                            {% endif %}
+                            async>
+                    </script>
+                {% endblock %}
+
+                {# JavaScript for prepopulated fields #}
+                {% prepopulated_fields_js %}
+
+            </div>
+        </form>
+    </div>
+{% endblock %}

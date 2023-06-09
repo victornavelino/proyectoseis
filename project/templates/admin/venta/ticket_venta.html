@@ -1,0 +1,22 @@
+
+    <!-- AGREGAR CONTENIDO AQUI -->
+<ul style="list-style-type:none">
+    <li>LA TRADICION CARNICERIAS</li>&nbsp
+    <li>Sucursal: {{vendedor.sucursal}}</li>
+    <li>Fecha: {{venta.fecha|date:"M d, Y, H:i"}}</li>
+
+    <li>Nro Ticket: {{venta.numero_ticket}}</li>
+    <li>Vendedor: {{vendedor}}</li>
+    <li>Cliente: {{venta.cliente}}</li>
+    <li>____________________________</li>
+    {% for articulo in articulos %}
+    <li>{{articulo.nombre_articulo}} x {{articulo.cantidad_peso}} = {{articulo.precio}} </li>
+    <li>Precio: ${{articulo.precio_unitario}} </li>
+    <li>Precio Promo: ${{articulo.total_articulo}} </li>
+    &nbsp
+    {% endfor %}
+    <li>____________________________</li>
+    <li>Descuentos: {{monto_descuento}}</li>
+    <li>MONTO TOTAL: {{venta.monto}}</li>
+
+</ul>

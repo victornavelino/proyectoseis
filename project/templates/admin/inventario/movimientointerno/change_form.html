@@ -1,0 +1,52 @@
+{% extends 'admin/change_form.html' %}
+{% load static %}
+
+{% block admin_change_form_document_ready %}
+{{ block.super }}
+    <script>
+        django.jQuery(document).ready(function () {
+
+               console.log("entro al documento")
+        });
+
+        const cargarPrecioArticulo = (idArticulo, idHtml) => {
+            let idset = idHtml.match(/\d+/)[0];
+            let idPrecioArticulo = '#id_movimientointernoarticulo_set-'+idset+'-precio_articulo'
+            let idCantidad = '#id_movimientointernoarticulo_set-'+idset+'-cantidad_peso'
+            let url_mask = "{% url 'precio_articulo' id_articulo=1234567 %}".replace(/1234567/, idArticulo);
+
+                jQuery.ajax({
+                   type: 'GET',
+                   url: url_mask,
+                  success: function (data) {
+                       jQuery(idPrecioArticulo).val(data.precio);
+                       jQuery(idCantidad).focus();
+                       if (jQuery(idCantidad).val() > 0){
+                           calcularMonto(jQuery(idCantidad).val(),idHtml);
+                           console.log("el campo cantidad tiene datos. se debe calcular el monto")
+                       }
+
+                                    },
+                                    error: function (response) {
+                                        console.log(response);
+                                    }
+
+                                });
+
+
+
+        }
+        const calcularMonto = (cantidad_precio, idHtml) => {
+            let idset = idHtml.match(/\d+/)[0];
+            let idmonto = '#id_movimientointernoarticulo_set-'+idset+'-monto'
+            let idPrecioArticulo = '#id_movimientointernoarticulo_set-'+idset+'-precio_articulo'
+            let monto = cantidad_precio * jQuery(idPrecioArticulo).val()
+            jQuery(idmonto).val(monto.toFixed(2));
+            console.log("entroo")
+            console.log(idHtml)
+            console.log(cantidad_precio)
+            console.log("imprimimos monto")
+            console.log(monto.toFixed(2))
+        }
+    </script>
+{% endblock %}

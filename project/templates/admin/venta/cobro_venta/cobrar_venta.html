@@ -1,0 +1,953 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block extrahead %}{{ block.super }}
+    <script src="{% url 'admin:jsi18n' %}"></script>
+    {{ media }}
+{% endblock %}
+
+{% block extrastyle %}{{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+    <style>.form-row {
+        float: left;
+        width: 400px;
+    }
+
+    .form-row1 {
+        overflow: hidden;
+        padding: 10px;
+        padding: 0.71429rem;
+    }
+
+    .related-popup2 {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 4;
+        padding-left: 250px;
+        padding-left: 17.85714rem;
+        box-sizing: border-box;
+        display: none;
+        background: #f8fafc;
+        background-clip: content-box;
+        -webkit-overflow-scrolling: touch;
+        overflow-y: scroll;
+    }
+    </style>
+{% endblock %}
+
+{% block coltype %}colM{% endblock %}
+
+{% block content %}
+    <form action="" method="post">
+
+
+        {% csrf_token %}
+         {% load jet_tags %}
+
+        <div align="center" >
+            <p>
+            <h2>{{ venta.fecha }}</h2>
+            </p>
+            <p>
+                <label> Numero de Ticket: </label>  <h2> {{ venta.numero_ticket }}</h2>
+            </p>
+            <p>
+                <label> Cliente: </label>  {{ venta.cliente }}
+            </p>
+            <p>
+                <label> Sucursal: </label>  {{ venta.sucursal }}
+            </p>
+            <p>
+                <label> Monto: </label> <h3> {{ venta.monto }} </h3>
+            </p>
+
+
+        </div>
+
+        <div style="text-align: center">
+
+            <h2>
+                <b>F1 PAGO EFECTIVO:</b><a class="related-widget-wrapper-link add-related initialized" id="add_id_pagoefectivo" href="#" title="Añadir Pago Efectivo">
+                <span class="related-widget-wrapper-icon"></span></a>
+                <b>F2 PAGO TARJETA:</b><a class="related-widget-wrapper-link add-related initialized" id="add_id_pagotarjeta" href="#" title="Añadir Pago Tarjeta">
+                <span class="related-widget-wrapper-icon"></span></a>
+                <b>F3 PAGO C.CORRIENTE:</b><a class="related-widget-wrapper-link add-related initialized" id="add_id_pagoccorriente" href="#" title="Añadir Pago C.Corriente">
+                <span class="related-widget-wrapper-icon"></span></a>
+            </h2>
+        </div>
+        <!-- PAGO EFECTIVO -->
+        <div id="pagoefectivo_set-0">
+                        <div id="related-popup-container-pagoefectivo" class="related-popup-container scrollable"
+                             style="display: none;">
+                            <a href="#" id="related-popup-back-pagoefectivo" class="related-popup-back"
+                               style="display: inline;">
+                                <span class="related-popup-back-icon icon-arrow-left"></span>
+                                <span class="related-popup-back-label">Volver</span>
+                            </a>
+                            <span class="icon-refresh loading-indicator" style="display: none;"></span>
+                            <div class="related-popup2" style="display: block;">
+
+                                <fieldset class="module aligned">
+
+                                        <div class="form-row1 field-saldo">
+                                            <div>
+                                        <label class="required" for="id_pagoefectivo_set-0-saldo">Saldo:</label>
+                                        <input type="number" name="pagoefectivo_set-0-saldo" step="0.01" id="id_pagoefectivo_set-0-saldo" readonly>
+                                            </div>
+                                        </div>
+
+                                       <div class="form-row1 field-apagar">
+                                            <div>
+                                        <label class="required" for="id_pagoefectivo_set-0-apagar">A Pagar:</label>
+                                        <input type="number" name="pagoefectivo_set-0-apagar" step="0.01" id="id_pagoefectivo_set-0-apagar">
+                                            </div>
+                                        </div>
+
+                                       <div class="form-row1 field-pagacon">
+                                            <div>
+                                        <label class="required" for="id_pagoefectivo_set-0-pagacon">Paga Con:</label>
+                                        <input type="number" name="pagoefectivo_set-0-pagacon" step="0.01" id="id_pagoefectivo_set-0-pagacon">
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row1 field-vuelto">
+                                            <div>
+                                        <label class="required" for="id_pagoefectivo_set-0-vuelto">Vuelto:</label>
+                                        <input type="number" name="pagoefectivo_set-0-vuelto" step="0.01" id="id_pagoefectivo_set-0-vuelto" readonly>
+                                            </div>
+                                        </div>
+
+
+
+                                    <input type="hidden" name="ventaarticulo_set-0-precio_promocion"
+                                           id="id_ventaarticulo_set-0-precio_promocion">
+
+
+                                    <input type="hidden" name="ventaarticulo_set-0-preciototal"
+                                           id="id_ventaarticulo_set-0-precio_total">
+
+
+                                    <div class="submit-row">
+                                        <input type="button" onclick="agregarRegistroTablaEfectivo()" value="Agregar" class="default"
+                                               name="add">
+                                    </div>
+
+                                </fieldset>
+
+                                <input type="hidden" name="pagoefectivo_set-0-tipodepago" id="id_pagoefectivo_set-0-tipodepago" value="EFECTIVO">
+                                <input type="hidden" name="ventaarticulo_set-0-id" id="id_ventaarticulo_set-0-id">
+                                <input type="hidden" name="ventaarticulo_set-0-venta" id="id_ventaarticulo_set-0-venta">
+
+                            </div>
+                        </div>
+
+                    </div>
+        <!--PAGO TARJETA -->
+        <div id="pagotarjeta_set-0">
+            <div id="related-popup-container-pagotarjeta" class="related-popup-container scrollable"
+                             style="display: none;">
+                            <a href="#" id="related-popup-back-pagotarjeta" class="related-popup-back"
+                               style="display: inline;">
+                                <span class="related-popup-back-icon icon-arrow-left"></span>
+                                <span class="related-popup-back-label">Volver</span>
+                            </a>
+                            <span class="icon-refresh loading-indicator" style="display: none;"></span>
+                            <div class="related-popup2" style="display: block;">
+
+                                <fieldset class="module aligned">
+                                    <!--CAMPOS DEL FORMULARIO PAGO TARJETA -->
+                                        <div class="form-row1 field-saldo">
+                                            <div>
+                                                <label class="required" for="id_pagotarjeta_set-0-saldo">Saldo:</label>
+                                                <input type="number" name="pagotarjeta_set-0-saldo" step="0.01" id="id_pagotarjeta_set-0-saldo" readonly>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row1 field-apagar">
+                                            <div>
+                                                <label class="required" for="id_pagotarjeta_set-0-apagar">A pagar:</label>
+                                                <input type="number" name="pagotarjeta_set-0-apagar" step="0.01" id="id_pagotarjeta_set-0-apagar">
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row1 field-tarjeta">
+                                            <div>
+                                                <label class="required" for="id_tarjeta">Tarjeta:</label>
+                                                <select name="tarjeta" required="" id="id_tarjeta" tabindex="-1" class="vTextField" aria-hidden="true">
+                                                    <option value="" selected="">---------</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-row1 field-plantarjeta">
+                                            <div>
+                                                <label class="required" for="id_plantarjeta">Planes Tarjeta:</label>
+                                                <select name="plantarjeta" required="" id="id_plantarjeta" tabindex="-1" class="vTextField" aria-hidden="true">
+                                                    <option value="" selected="">---------</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                       <div class="form-row1 field-interes">
+                                            <div>
+                                        <label class="required" for="id_pagoefectivo_set-0-interes">Recargo $:</label>
+                                        <input type="number" name="pagotarjeta_set-0-interes" step="0.01" id="id_pagotarjeta_set-0-interes" readonly    >
+                                            </div>
+                                        </div>
+                                        <!-- TOTAL A PAGAR TARJETA -->
+                                        <div class="form-row1 field-total">
+                                                <div>
+                                                    <label class="required" for="id_pagoefectivo_set-0-total">Total $:</label>
+                                                    <input type="number" name="pagotarjeta_set-0-total" step="0.01" id="id_pagotarjeta_set-0-total" readonly>
+                                                </div>
+                                        </div>
+                                       <!-- NUMERO CUPON -->
+                                        <div class="form-row1 field-cupon">
+                                                <div>
+                                                    <label class="required" for="id_pagoefectivo_set-0-cupon">Nro Cupon:</label>
+                                                    <input type="text" name="pagotarjeta_set-0-cupon" id="id_pagotarjeta_set-0-cupon">
+                                                </div>
+                                        </div>
+                                       <!-- LOTE -->
+                                        <div class="form-row1 field-lote">
+                                                <div>
+                                                    <label class="required" for="id_pagoefectivo_set-0-lote">Nro Lote:</label>
+                                                    <input type="text" name="pagotarjeta_set-0-lote" id="id_pagotarjeta_set-0-lote">
+                                                </div>
+                                        </div>
+                                    <!--4 DIgitos NUMERO TARJETA-->
+                                       <div class="form-row1 field-nrotarjeta">
+                                                <div>
+                                                    <label class="required" for="id_pagoefectivo_set-0-nrotarjeta">Nro Tarjeta(4 ultimos digitos):</label>
+                                                    <input type="number" name="pagotarjeta_set-0-nrotarjeta" size="4" maxlength="4" id="id_pagotarjeta_set-0-nrotarjeta" required>
+                                                </div>
+                                        </div>
+                                    <!--OBSERVACIONES-->
+                                       <div class="form-row1 field-observaciones">
+                                                <div>
+                                                    <label class="required" for="id_pagoefectivo_set-0-observaciones">Observaciones:</label>
+                                                    <input type="text" name="pagotarjeta_set-0-observaciones" size="50" id="id_pagotarjeta_set-0-observaciones">
+                                                </div>
+                                        </div>
+                                    <!-- BOTON GUARDAR PAGO TARJETA-->
+                                    <div class="submit-row">
+                                        <input type="button" onclick="agregarRegistroTablaTarjeta()" value="Agregar" class="default"
+                                               name="add">
+                                    </div>
+
+                                </fieldset>
+                            </div>
+            </div>
+
+        </div>
+
+                <!--PAGO CUENTA CORRIENTE -->
+        <div id="pagoccorriente_set-0">
+            <div id="related-popup-container-pagoccorriente" class="related-popup-container scrollable"
+                             style="display: none;">
+                            <a href="#" id="related-popup-back-pagoccorriente" class="related-popup-back"
+                               style="display: inline;">
+                                <span class="related-popup-back-icon icon-arrow-left"></span>
+                                <span class="related-popup-back-label">Volver</span>
+                            </a>
+                            <span class="icon-refresh loading-indicator" style="display: none;"></span>
+                            <div class="related-popup2" style="display: block;">
+
+                                <fieldset class="module aligned">
+                                    <!--CAMPOS DEL FORMULARIO PAGO CCORRIENTE -->
+                                        <div class="form-row1 field-saldo">
+                                            <div>
+                                                <label class="required" for="id_pagoccorriente_set-0-saldo">Saldo:</label>
+                                                <input type="number" name="pagoccorriente_set-0-saldo" step="0.01" id="id_pagoccorriente_set-0-saldo" readonly>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row1 field-apagar">
+                                            <div>
+                                                <label class="required" for="id_pagoccorriente_set-0-apagar">A pagar:</label>
+                                                <input type="number" name="pagoccorriente_set-0-apagar" step="0.01" id="id_pagoccorriente_set-0-apagar">
+                                            </div>
+                                        </div>
+
+
+
+                                    <!--OBSERVACIONES-->
+                                       <div class="form-row1 field-observaciones">
+                                                <div>
+                                                    <label class="required" for="id_pagoccorriente_set-0-observaciones">Observaciones:</label>
+                                                    <input type="text" name="pagoccorriente_set-0-observaciones" size="50" id="id_pagoccorriente_set-0-observaciones">
+                                                </div>
+                                        </div>
+                                    <!-- BOTON GUARDAR PAGO CCORRIENTE-->
+                                    <div class="submit-row">
+                                        <input type="button" onclick="agregarRegistroTablaCCorriente()" value="Agregar" class="default"
+                                               name="add">
+                                    </div>
+
+                                </fieldset>
+                            </div>
+            </div>
+
+        </div>
+
+        <div align="center">
+        <table class="table-striped" id="id_table_pagos" width="50%">
+            <thead>
+                <tr>
+                    <th>Tipo de Pago</th>
+                    <th>Monto</th>
+                    <th>Monto Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                </tr>
+            </tbody>
+        </table>
+            <H2>
+            <label class="required" for="id_saldo">SALDO:</label>
+            <input type="number" name="formulario-cobro" size="6" maxlength="6" id="id_saldo" readonly>
+            </H2>
+        </div>
+        <div>
+
+        </div>
+        {% block submit_buttons_bottom %}
+                    <p>&nbsp;</p>
+                    <h2>F4:Cobrar Ticket</h2>
+                    <button class="button default" onclick="return cobrar_ticket(event);">Cobrar
+                    </button>
+
+        {% endblock %}
+
+         </div>
+
+
+                     <script>
+                        let planes =[];
+                        var articulos = [];
+                        var cliente;
+                        var cuentaCorriente = null;
+
+                        let pagos = [];
+                        let pagosEfectivo = [];
+                        let pagosTarjeta = [];
+                        let pagosCCorriente = [];
+                        django.jQuery = jQuery;
+
+                        let saldo = 0;
+                        saldo = {{ venta.monto }}
+                            jQuery("#id_saldo").val(saldo);
+                        let nroticket = 0;
+                        nroticket = {{ venta.numero_ticket }}
+
+                        //BOTON FORMULARIO EFECTIVO
+                        const agregarRegistroTablaEfectivo = () => {
+                                  let a_pagar = jQuery("#id_pagoefectivo_set-0-apagar").val();
+                            if (a_pagar > 0){
+                                if(a_pagar <= saldo){
+
+                                    pagosEfectivo.push({
+                                    "importe": a_pagar
+                                    })
+                                    //calculamos nuevo saldo
+                                    saldo = saldo - a_pagar;
+
+                                    let tipo_de_pago = "EFECTIVO";
+                                    pagos.push({
+                                        "tipo_de_pago": tipo_de_pago,
+                                        "monto": a_pagar,
+                                        "monto_total": a_pagar,
+                                    });
+                                    //cargammos la tabla
+                                    jQuery('#id_table_pagos tr:last').after('<tr><td>' +
+                                        tipo_de_pago + '</td><td>' +
+                                        a_pagar + '</td> <td>' +
+                                        a_pagar + '</td></tr>');
+                                        django.jQuery('#related-popup-container-pagoefectivo').hide();
+                                        limpiarCamposEfectivo();
+                                        actualizarSaldo();
+                                }else{
+                                    swal({
+                                            icon: 'error',
+                                            title: 'Ups!',
+                                            text: 'El monto a pagar debe ser menor o igual al saldo',
+                                            button: 'Ok'
+                                    });
+                                }
+                            }else {
+                                swal('Debe colocar un Monto a Pagar');
+                                jQuery("#id_pagoefectivo_set-0-apagar").focus();
+                           }
+
+                        }
+                        const validarCamposCCorriente = () => {
+                            if(jQuery("#id_pagoccorriente_set-0-apagar").val() <=0){
+                                swal('El valor a pagar debe ser mayor a 0');
+                                return false;
+                            }
+                            return true;
+                        }
+                        //BOTON FORMULARIO CCORRIENTE
+                        const agregarRegistroTablaCCorriente = () => {
+                            if(validarCamposCCorriente()){
+                                let tipoDePago = "CCORRIENTE";
+                                let aPagar = jQuery("#id_pagoccorriente_set-0-apagar").val();
+                                let observaciones = jQuery("#id_pagoccorriente_set-0-observaciones").val();
+                                // cargamos json pagos ccorriente
+                                pagosCCorriente.push({
+                                    "importe": aPagar,
+                                    "observaciones": observaciones
+                                })
+                                saldo = saldo - aPagar;
+                                //cargamos lista tabla
+                                pagos.push({
+                                        "tipo_de_pago":tipoDePago,
+                                        "monto": aPagar,
+                                        "monto_total": aPagar
+                                    });
+                                //cargammos la tabla
+                                jQuery('#id_table_pagos tr:last').after('<tr><td>' +
+                                        tipoDePago + '</td><td>' +
+                                        aPagar + '</td> <td>' +
+                                        aPagar + '</td></tr>');
+                                django.jQuery('#related-popup-container-pagoccorriente').hide();
+                                actualizarSaldo();
+                                limpiarCamposCCorriente();
+                            }
+
+                        }
+                        //BOTON FORMULARIO TARJETA
+                        const agregarRegistroTablaTarjeta = () => {
+                            if(validarCamposTarjeta()){
+                                let tipoDePago = "TARJETA";
+                                let planTarjeta = jQuery("#id_plantarjeta").val()
+                                let nroTarjeta = jQuery("#id_pagotarjeta_set-0-nrotarjeta").val();
+                                let aPagar = jQuery("#id_pagotarjeta_set-0-apagar").val();
+                                let recargo = jQuery("#id_pagotarjeta_set-0-interes").val();
+                                let totalConRecargo = jQuery("#id_pagotarjeta_set-0-total").val();
+                                let nroCupon = jQuery("#id_pagotarjeta_set-0-cupon").val();
+                                let nroLote = jQuery("#id_pagotarjeta_set-0-lote").val();
+                                let observaciones = jQuery("#id_pagotarjeta_set-0-observaciones").val();
+                                //cargamos json para generar el cupontarjeta
+
+                                pagosTarjeta.push({
+                                    "plan_tarjeta":planTarjeta,
+                                    "nro_tarjeta":nroTarjeta,
+                                    "importe":aPagar,
+                                    "recargo":recargo,
+                                    "importe_con_recargo":totalConRecargo,
+                                    "nro_cupon":nroCupon,
+                                    "nro_lote":nroLote,
+                                    "observaciones":observaciones,
+
+                                })
+                                //console.log(pagosTarjeta);
+                                saldo = saldo - aPagar;
+                                pagos.push({
+                                        "tipo_de_pago":tipoDePago,
+                                        "monto": aPagar,
+                                        "monto_total": totalConRecargo,
+                                    });
+                                //cargammos la tabla
+                                jQuery('#id_table_pagos tr:last').after('<tr><td>' +
+                                        tipoDePago + '</td><td>' +
+                                        aPagar + '</td> <td>' +
+                                        totalConRecargo + '</td></tr>');
+                                django.jQuery('#related-popup-container-pagotarjeta').hide();
+                                actualizarSaldo();
+
+                                limpiarCamposTarjeta();
+                            }
+
+                        }
+                        const actualizarSaldo = () => {
+                          jQuery("#id_saldo").val(saldo);
+                        }
+                        //LIMPIAR CAMPOS FORMULARIO TARJETA
+                        const limpiarCamposTarjeta = () => {
+                            jQuery("#id_pagotarjeta_set-0-saldo").val(null);
+                            jQuery("#id_pagotarjeta_set-0-apagar").val(null);
+                            jQuery('#id_tarjeta').select2("enable", true)
+                            jQuery("#id_tarjeta").val(null).trigger("change");
+                            jQuery('#id_plantarjeta').select2("enable", true)
+                            jQuery("#id_plantarjeta").val(null).trigger("change");
+
+                            jQuery("#id_pagotarjeta_set-0-interes").val(null);
+                            jQuery("#id_pagotarjeta_set-0-total").val(null);
+                            jQuery("#id_pagotarjeta_set-0-cupon").val(null);
+                            jQuery("#id_pagotarjeta_set-0-lote").val(null);
+                            jQuery("#id_pagotarjeta_set-0-nrotarjeta").val(null);
+                            jQuery("#id_pagotarjeta_set-0-observaciones").val(null);
+
+                        }
+                        const limpiarCamposCCorriente = () => {
+                            jQuery("#id_pagoccorriente_set-0-saldo").val(null);
+                            jQuery("#id_pagoccorriente_set-0-apagar").val(null);
+                            jQuery("#id_pagoccorriente_set-0-observaciones").val(null);
+                        }
+                        const limpiarCamposEfectivo =() => {
+                            jQuery("#id_pagoefectivo_set-0-saldo").val(null);
+                            jQuery("#id_pagoefectivo_set-0-apagar").val(null);
+                            jQuery("#id_pagoefectivo_set-0-pagacon").val(null);
+                            jQuery("#id_pagoefectivo_set-0-vuelto").val(null);
+                        }
+
+                        const validarCamposTarjeta = () => {
+                            if(jQuery("#id_pagotarjeta_set-0-apagar").val() <=0){
+                                swal('El valor a pagar debe ser mayor a 0');
+                                return false;
+                            }
+                            if(jQuery("#id_plantarjeta").val()<=0){
+                                swal('Debe seleccionar un Plan de cuotas de Tarjeta');
+                                return false;
+                            }
+                            if(jQuery("#id_pagotarjeta_set-0-total").val()<=0){
+                                swal('El total a pagar debe ser mayor a 0');
+                                return false;
+                            }
+                            return true;
+
+                        }
+
+                        //COBRAR TICKET BOTON
+                        const cobrar_ticket = (e) => {
+                            e.preventDefault();
+                            let miPago = {
+                                "pagos":
+                                {"nroticket": nroticket,
+                                    "pagos": pagos,
+                                    "pagosEfectivo": pagosEfectivo,
+                                    "pagosTarjeta": pagosTarjeta,
+                                    "pagosCCorriente": pagosCCorriente
+                                }
+                            }
+                            console.log(miPago);
+                            if (validarSaldoYPago()){
+
+                                let url_mask_pago = "{% url 'cobrar_ticket' %}";
+
+                                jQuery.ajax({
+                                        type: 'POST',
+                                        url: url_mask_pago,
+                                        contentType: 'application/json; charset=utf-8',
+                                        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                                        data: JSON.stringify(miPago),
+                                        dataType:
+                                            'json',
+                                        success:
+                                            function (result) {
+                                                if (result.numero_cobro > 0) {
+
+                                                    swal({
+                                                        icon: 'success',
+                                                        title: 'Cobro Realizado',
+                                                        button: 'Ok',
+                                                        }).then((value) => {
+                                                            window.location.href = "{% url 'listar_ventas' %}"
+                                                            });
+                                                }
+                                                if (result.error){
+                                                    swal({
+                                                        icon: 'error',
+                                                        title: result.error,
+                                                        button: 'Ok',
+                                                        }).then((value) => {
+                                                            window.location.href = "{% url 'listar_ventas' %}"
+                                                            });
+                                                }
+                                            },
+                                        error: function (response) {
+                                            console.log(response);
+                                        }
+
+                                    }
+                                );
+                            }else {
+                                //swal("No se puede cobrar ticket si no cargo ningun pago");
+                                return false;
+                            }
+                        }
+                        const limpiarTodo = () => {
+                        planes =[];
+                        articulos = [];
+                        cliente;
+                        pagos = [];
+                        pagosTarjeta = [];
+                        pagosCCorriente = [];
+                        django.jQuery = jQuery;
+                        saldo = 0;
+                        jQuery("#id_saldo").val(saldo);
+                        nroticket = 0;
+                        jQuery('#id_table').find("tr:gt(0)").remove();
+                        limpiarCamposEfectivo()
+                        limpiarCamposCCorriente();
+                        limpiarCamposTarjeta();
+                        }
+                        const validarSaldoYPago = () => {
+                            if(saldo > 0){
+                                swal({
+                                            icon: 'error',
+                                            title: 'Ups!',
+                                            text: 'No se puede cobrar ticket el saldo es mayor que 0',
+                                            button: 'Ok'
+                                });
+                                return false;
+                            }
+                            if(pagos.length = 0){
+                                swal({
+                                            icon: 'error',
+                                            title: 'Ups!',
+                                            text: 'No se puede cobrar ticket si no cargo ningun pago',
+                                            button: 'Ok'
+                                });
+                                return false;
+                            }
+                          return true
+                        }
+
+                        function cargar_tarjetas() {
+                            let url_mask = "{% url 'tarjetas' %}";
+
+                            jQuery.ajax({
+                                type: 'GET',
+                                url: url_mask,
+                                success: function (data) {
+                                    jQuery.each(data, function (key, record) {
+                                        jQuery("#id_tarjeta").append('<option value=' + record.id + '>' + record.nombre + '</option>');
+                                    });
+                                },
+                                error: function (response) {
+                                    console.log(response);
+                                }
+
+                            });
+                        }
+
+                        function calcularTotal() {
+                            let total = 0;
+                            articulos.forEach(function (articulo) {
+                                total = total + (articulo.cantidad_peso * articulo.precio_unitario);
+                            })
+                            jQuery('#total').html(total.toFixed(2));
+                        }
+
+                        const calcularTotalPagos = (pagos) => {
+                            let total_pago = 0;
+                            pagos.forEach(function (pago) {
+                                console.log(pago);
+                                total_pago++;
+                            })
+                            return total_pago;
+                        }
+                        function calcularVuelto(){
+                            let pagacon = jQuery("#id_pagoefectivo_set-0-pagacon").val();
+                            let apagar = jQuery("#id_pagoefectivo_set-0-apagar").val();
+                            let vuelto = pagacon - apagar;
+                            jQuery("#id_pagoefectivo_set-0-vuelto").val(vuelto);
+                        }
+
+                        const inicializarYAbrirDialogTarjeta =()=> {
+                            django.jQuery("#id_pagotarjeta_set-0-saldo").val(saldo);
+                            django.jQuery("#id_pagotarjeta_set-0-apagar").val(saldo);
+                            django.jQuery('#related-popup-container-pagotarjeta').show();
+                        }
+                        const inicializarYAbrirDialogEfectivo = () => {
+                            django.jQuery("#id_pagoefectivo_set-0-saldo").val(saldo);
+                            django.jQuery("#id_pagoefectivo_set-0-apagar").val(saldo);
+                            django.jQuery('#related-popup-container-pagoefectivo').show();
+                        }
+                        const inicializarYAbrirDialogCCorriente =()=> {
+                            django.jQuery("#id_pagoccorriente_set-0-saldo").val(saldo);
+                            django.jQuery("#id_pagoccorriente_set-0-apagar").val(saldo);
+                            django.jQuery('#related-popup-container-pagoccorriente').show();
+                        }
+
+                        //EVENTOS F1  F2 F3
+                        django.jQuery( function() {
+                            django.jQuery(document).on('keydown', 'body', function(event) {
+                                //F1 EFECTIVO
+                                if(event.keyCode==112){
+                                    event.preventDefault();
+                                    if(saldo > 0){
+                                        inicializarYAbrirDialogEfectivo();
+                                    }else{
+                                        swal("No puede agregar mas pagos, el saldo es 0")
+                                    }
+                                 }
+
+                                //F2 TARJETA
+                                if(event.keyCode==113){
+                                    event.preventDefault();
+                                    if(saldo > 0){
+                                        inicializarYAbrirDialogTarjeta();
+                                    }else{
+                                        swal("No puede agregar mas pagos, el saldo es 0")
+                                    }
+
+                                 }
+
+                                // F3 CCORRIENTE
+                                if(event.keyCode==114){
+                                    event.preventDefault();
+                                    cliente_id = {{ venta.cliente.pk }}
+                                    let urlmask = "{% url 'get_cc_cliente' cliente_id=8246 %}".replace(/8246/, cliente_id);
+                                    jQuery.ajax({
+                                        type: 'GET',
+                                        url: urlmask,
+                                        success: function (data) {
+                                            if(data.id !=null){
+                                                console.log('cliente con cuenta')
+                                                if(saldo > 0){
+                                                    inicializarYAbrirDialogCCorriente();
+                                                }else{
+                                                    swal("No puede agregar mas pagos, el saldo es 0")
+                                                    }
+                                            }else{
+                                                swal({
+                                                    icon: 'error',
+                                                    title: 'Ups!',
+                                                    text: 'El cliente No tiene Cuenta Corriente',
+                                                    button: 'Aceptar'
+                                                    });
+                                            }
+                                        },
+                                        error: function (response) {
+                                        console.log(response);
+                                        }
+
+                                        });
+
+
+
+
+                                    }
+
+
+                                // F4 / ENTER Cobrar ticket
+                                if(event.keyCode==115){
+                                    event.preventDefault();
+                                    cobrar_ticket(event);
+                                }
+
+                             });
+                         });
+                        django.jQuery(document).ready(function () {
+                            jQuery('#id_tarjeta').select2();
+                            jQuery('#id_plantarjeta').select2();
+                            cargar_tarjetas();
+
+                            //Boton Efectivo
+                            django.jQuery('#add_id_pagoefectivo').click(function (e) {
+                                e.preventDefault();
+                                if(saldo > 0){
+                                    inicializarYAbrirDialogEfectivo();
+                                }else{
+                                        swal({
+                                            icon: 'error',
+                                            title: 'Ups!',
+                                            text: 'No puede agregar mas pagos, el saldo es 0 ',
+                                            button: 'Aceptar'
+                                            });
+                                }
+
+
+                            });
+                            //Boton volver Efectivo
+                            django.jQuery('#related-popup-back-pagoefectivo').click(function (e) {
+                                e.preventDefault();
+                                django.jQuery('#related-popup-container-pagoefectivo').hide();
+                                limpiarCamposEfectivo();
+                            });
+
+                            //Boton Tarjeta
+                            django.jQuery('#add_id_pagotarjeta').click(function (e) {
+                                e.preventDefault();
+                                if(saldo > 0){
+                                        inicializarYAbrirDialogTarjeta();
+                                    }else{
+                                        swal({
+                                            icon: 'error',
+                                            title: 'Ups!',
+                                            text: 'No puede agregar mas pagos, el saldo es 0',
+                                            button: 'Aceptar'
+                                            });
+                                    }
+                            });
+                            //Boton volver Tarjeta
+                            django.jQuery('#related-popup-back-pagotarjeta').click(function (e) {
+                                e.preventDefault();
+                                django.jQuery('#related-popup-container-pagotarjeta').hide();
+                                limpiarCamposTarjeta();
+                            });
+
+                            //Boton CCorriente
+                            django.jQuery('#add_id_pagoccorriente').click(function (e) {
+                                e.preventDefault();
+                                cliente_id = {{ venta.cliente.pk }}
+                                    let urlmask = "{% url 'get_cc_cliente' cliente_id=8246 %}".replace(/8246/, cliente_id);
+                                    jQuery.ajax({
+                                        type: 'GET',
+                                        url: urlmask,
+                                        success: function (data) {
+                                            if(data.id !=null){
+                                                console.log('cliente con cuenta')
+                                                if(saldo > 0){
+                                                    inicializarYAbrirDialogCCorriente();
+                                                }else{
+                                                    swal({
+                                                    icon: 'error',
+                                                    title: 'Ups!',
+                                                    text: 'No puede agregar mas pagos, el saldo es 0',
+                                                    button: 'Aceptar'
+                                                    });
+                                                    }
+                                            }else{
+                                                swal({
+                                                    icon: 'error',
+                                                    title: 'Ups!',
+                                                    text: 'El cliente No tiene Cuenta Corriente',
+                                                    button: 'Aceptar'
+                                                    });
+                                            }
+                                        },
+                                        error: function (response) {
+                                        console.log(response);
+                                        }
+
+                                        });
+
+                            });
+                            //Boton volver CCorriente
+                            django.jQuery('#related-popup-back-pagoccorriente').click(function (e) {
+                                e.preventDefault();
+                                django.jQuery('#related-popup-container-pagoccorriente').hide();
+                                limpiarCamposCCorriente();
+                            });
+
+
+                            //calcular saldo al escribir en pagacon
+                            jQuery("#id_pagoefectivo_set-0-pagacon")
+                                .blur(function (e) {
+                                    e.preventDefault();
+                                    calcularVuelto();
+                                })
+
+
+                            jQuery("#id_pagoefectivo_set-0-pagacon").on('keypress', function (e) {
+                                if (e.which === 13) {
+                                    calcularVuelto();
+                                }
+                            });
+
+                               //controlamos que lo que pague sea menor o igual que el saldo
+                            jQuery("#id_pagoefectivo_set-0-apagar")
+                                .blur(function (e) {
+                                    e.preventDefault();
+                                    var a_pagar = parseFloat(jQuery("#id_pagoefectivo_set-0-apagar").val()).toFixed(2);
+                                    var saldo = parseFloat(jQuery("#id_pagoefectivo_set-0-saldo").val()).toFixed(2);
+                                    if (a_pagar > saldo){
+                                        swal({
+                                                    icon: 'error',
+                                                    title: 'Ups!',
+                                                    text: 'No puede pagar mas que su saldo',
+                                        });
+                                        jQuery("#id_pagoefectivo_set-0-apagar").val(null);
+                                        jQuery("#id_pagoefectivo_set-0-apagar").focus();
+                                    }
+                                })
+
+
+                            //al seleccionar tarjeta se cargan los planes de tarjeta
+                            jQuery("#id_tarjeta")
+                                .change(function (e) {
+                                    e.preventDefault();
+                                    //limpiamos el select de planes
+                                    limpiarPlanesTarjeta();
+                                    //cargamos planes
+                                    cargarPlanesDePago();
+                                });
+                            // al elegir cantidad a pagar y perder el foco
+                            jQuery("#id_pagotarjeta_set-0-apagar")
+                                .blur(function (e) {
+                                    e.preventDefault();
+                                    calcularInteres()
+
+
+
+                                })
+
+                            function cargarPlanesDePago(){
+                               let pk_tarjeta = 0;
+
+                               pk_tarjeta = jQuery("#id_tarjeta option:selected").val();
+
+                               if (pk_tarjeta > 0){
+                                   //limpiarPlanesTarjeta();
+                                   let url_mask = "{% url 'planes_tarjeta' pk_tarjeta=8246 %}".replace(/8246/, pk_tarjeta);
+                                        jQuery.ajax({
+                                            type: 'GET',
+                                            url: url_mask,
+                                            success: function (data) {
+                                                jQuery.each(data, function (key, record) {
+                                                    planes.push(record);
+                                                    jQuery("#id_plantarjeta").append('<option value=' + record.id + '>' + record.nombre_plan + ', '+ record.interes + '%' +'</option>');
+                                        });
+                                    },
+                                        error: function (response) {
+                                        console.log(response);
+                                        }
+
+                                        });
+
+                               }
+
+                            }
+                            function limpiarPlanesTarjeta(){
+                                planes =[];
+                                jQuery('#id_plantarjeta').empty();
+                                jQuery('#id_plantarjeta').val(null).trigger('change');
+                                jQuery('#id_plantarjeta').append('<option value="">--------</option>')
+                                //limpiamos interes
+                                jQuery('#id_pagotarjeta_set-0-interes').val(null);
+                            }
+
+
+
+                            const calcularInteres = () =>{
+
+                                    let val = jQuery("#id_plantarjeta").val();
+                                    if(val > 0){
+                                        let plan = planes.find((p) => p.id === val);
+                                        let apagar = jQuery("#id_pagotarjeta_set-0-apagar").val();
+                                        if (apagar > 0 ){
+                                            let recargo = apagar * plan.interes /100;
+                                            let totalConInteres = parseFloat(apagar) + recargo;
+                                            jQuery("#id_pagotarjeta_set-0-interes").val(recargo);
+                                            jQuery("#id_pagotarjeta_set-0-total").val(totalConInteres);
+                                        }
+
+                                    }
+
+                            }
+
+                            //al seleccionar plan tarjeta carga intereses
+                            jQuery("#id_plantarjeta")
+                                .change(function (e) {
+                                    e.preventDefault();
+                                    calcularInteres();
+                                });
+
+                        });
+                    </script>
+
+    </form>
+       <!-- SWEETALERT -->
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
+    <script src="{% static 'js/jquery.bootstrap.modal.forms.js' %}"></script>
+    <script>    django.gettext = window.gettext    </script>
+{% endblock %}

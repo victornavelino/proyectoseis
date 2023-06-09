@@ -1,0 +1,327 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block extrahead %}{{ block.super }}
+    <script src="{% url 'admin:jsi18n' %}"></script>
+    {{ media }}
+{% endblock %}
+
+{% block extrastyle %}{{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+    <style>.form-row {
+        float: left;
+        width: 400px;
+    }
+
+    .form-row1 {
+        overflow: hidden;
+        padding: 10px;
+        padding: 0.71429rem;
+    }
+
+    .related-popup2 {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 4;
+        padding-left: 250px;
+        padding-left: 17.85714rem;
+        box-sizing: border-box;
+        display: none;
+        background: #f8fafc;
+        background-clip: content-box;
+        -webkit-overflow-scrolling: touch;
+        overflow-y: scroll;
+    }
+    </style>
+{% endblock %}
+
+{% block coltype %}colM{% endblock %}
+
+{% block content %}
+    <form action="" method="post">
+
+
+        {% csrf_token %}
+        {% load jet_tags %}
+        <!-- AGREGAR CONTENIDO AQUI -->
+
+        <fieldset class="module aligned">
+            <div class="form-row1">
+                <label style="font-size: large"> COPIAR PRECIOS</label>
+            </div>
+            <div class="form-row1 field-sucursal-origen">
+                <div>
+                    <label class="required" for="id_sucursal_origen">Sucursal Origen:</label>
+                    <select name="sucursal_origen" required id="id_sucursal_origen" tabindex="-1" class="vTextField"
+                            aria-hidden="true">
+                        <option value="" selected="">---------</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row1 field-copiar-todas">
+                <div>
+                    <label class="required">Copiar a todas:</label>
+                    <input type="checkbox" onclick="deshabilitarSelectListaPrecios(event)" id="id_check_todas_listas"
+                           name="Copiar Todas" checked>
+
+                </div>
+
+            </div>
+
+            <div class="form-row1 field-promocion-origen">
+                <div>
+                    <label class="required" for="id_lista_preciso">Lista de Precios:</label>
+                    <select name="lista_precios" required id="id_lista_precios" tabindex="-1" class="vTextField"
+                            aria-hidden="true">
+                        <option value="" selected="">---------</option>
+                    </select>
+                </div>
+            </div>
+        </fieldset>
+        <fieldset class="module aligned">
+
+            <div class="form-row1 field-sucursal-destino">
+                <div>
+                    <label class="required" for="id_sucursal_destino">Sucursal Destino:</label>
+                    <select name="sucursal_destino" required id="id_sucursal_destino" tabindex="-1" class="vTextField"
+                            aria-hidden="true">
+                        <option value="" selected="">---------</option>
+                    </select>
+                </div>
+            </div>
+        </fieldset>
+        <div class="submit-row">
+            <input type="button" onclick="copiarPromociones(event)" value="Copiar Promociones" class="default"
+                   name="add">
+            <input type="button" onclick="window.location.href='/admin/articulo/precio/'" value="VOLVER"
+                   class="btn-close"
+                   name="back">
+            <input type="hidden" id="id_lista_precio" name="id_lista_precio" disabled>
+        </div>
+    </form>
+    <script>
+        //al seleccionar sucursal
+        jQuery("#id_sucursal_origen")
+            .change(function (e) {
+                e.preventDefault();
+                limpiarPrecios();
+                //cargamos las promociones de la sucursal seleccionada
+                cargarPrecios();
+
+            });
+        const limpiarPrecios = () => {
+            jQuery('#id_lista_precios').empty();
+            jQuery('#id_lista_precios').val(null).trigger('change');
+            jQuery('#id_lista_precios').append('<option value="">--------</option>')
+        }
+
+        const habilitarSelectListaPrecios = () => {
+            jQuery("#id_lista_precios").prop('disabled', false);
+            jQuery("#id_check_todas_listas").prop("checked", false);
+        }
+        const deshabilitarSelectListaPrecios = () => {
+            jQuery("#id_lista_precios").prop('disabled', true);
+            jQuery("#id_check_todas_listas").prop("checked", true);
+            jQuery('#id_lista_precios').empty();
+            jQuery('#id_lista_precios').val(null).trigger('change');
+            jQuery('#id_lista_precios').append('<option value="">--------</option>')
+        }
+        const cargarPromociones = () => {
+            let pk_lista_precio = 0;
+            pk_lista_precio = jQuery("#id_sucursal_origen option:selected").val();
+            console.log(pk_lista_precio)
+            if (pk_lista_precio > 0) {
+                habilitarSelectListaPrecios();
+                let url_mask = "{% url 'get_listas_precio_sucursal' pk_lista_precio=8246 %}".replace(/8246/, pk_lista_precio);
+                jQuery.ajax({
+                    type: 'GET',
+                    url: url_mask,
+                    success: function (data) {
+                        jQuery.each(data, function (key, record) {
+                            jQuery("#id_lista_precios").append('<option value=' + record.id + '>' + record.nombre + '</option>');
+                        });
+                    },
+                    error: function (response) {
+                        console.log(response);
+                    }
+
+                });
+
+            } else {
+                deshabilitarSelectListaPrecios();
+            }
+        }
+        const copiarPromociones = (e) => {
+            e.preventDefault();
+            suc_origen = jQuery("#id_sucursal_origen").val();
+            suc_destino = jQuery("#id_sucursal_destino").val();
+            elemento_lista_precios = jQuery("#id_lista_precios").val();
+            if (validar()) {
+                let datos = {
+                    "sucursal_origen": suc_origen,
+                    "sucursal_destino": suc_destino,
+                    "lista_precios": elemento_lista_precios
+                }
+                console.log(datos)
+                if (jQuery("#id_check_todas_listas").is(':checked')) {
+                    swal({
+                        title: "Esta usted Seguro?",
+                        text: "Todas las Lista de Precios en la Sucursal de Destino se sobreescribirán",
+                        icon: "warning",
+                        buttons: true,
+                        dangerMode: true,
+                    })
+                        .then((willDelete) => {
+                            if (willDelete) {
+                                enviarDatos(datos);
+                                swal("Las Listas de Precio fueron Copiadas Correctamente", {
+                                    icon: "success",
+                                });
+                            } else {
+                                swal("Copia Cancelada");
+                            }
+                        });
+                } else {
+                    enviarDatos(datos);
+                }
+
+
+            }
+
+        }
+        const enviarDatos = (datos) => {
+            let url_mask_copiar_precios_proceso = "{% url 'copiar_precios_proceso' %}";
+            jQuery.ajax({
+                    type: 'POST',
+                    url: url_mask_copiar_precios_proceso,
+                    contentType: 'application/json; charset=utf-8',
+                    headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                    data: JSON.stringify(datos),
+                    dataType:
+                        'json',
+                    success:
+                        function (result) {
+                            if (result.resultado = "COPIADA") {
+
+                                swal({
+                                    icon: 'success',
+                                    title: 'Copia Realizada',
+                                    button: 'Ok',
+                                }).then((value) => {
+                                    window.location.href = "/admin/articulo/precio/"
+                                });
+                            }
+                            if (result.error) {
+                                swal({
+                                    icon: 'error',
+                                    title: result.error,
+                                    button: 'Ok',
+                                }).then((value) => {
+                                    window.location.href = "/admin/articulo/precio/"
+                                });
+                            }
+                        },
+                    error: function (response) {
+                        console.log(response);
+                    }
+
+                }
+            );
+
+        }
+        const validar = () => {
+            if (!jQuery("#id_sucursal_origen").val()) {
+                swal({
+                    icon: 'error',
+                    title: 'Ups!',
+                    text: 'Debe seleccionar una Sucursal Origen',
+                    button: 'Ok'
+                });
+                return false;
+            }
+            if (!jQuery("#id_sucursal_destino").val()) {
+                swal({
+                    icon: 'error',
+                    title: 'Ups!',
+                    text: 'Debe seleccionar una Sucursal Destino',
+                    button: 'Ok'
+                });
+                return false;
+            }
+
+            if (suc_origen === suc_destino) {
+                swal({
+                    icon: 'error',
+                    title: 'Ups!',
+                    text: 'Sucursal Origen y Sucursal Destino No pueden ser Iguales!',
+                    button: 'Ok'
+                });
+                return false;
+            }
+            if (!jQuery("#id_check_todas_listas").is(':checked')) {
+                if (elemento_lista_precios < 1) {
+                    swal({
+                        icon: 'error',
+                        title: 'Ups!',
+                        text: 'Seleccione Correctamente alguna lista de precios, O seleccione todas!',
+                        button: 'Ok'
+                    });
+                    return false;
+                }
+
+            }
+            return true;
+        }
+        const deshabilitarSelectListaPrecios = (e) => {
+            //e.preventDefault();
+            if (jQuery("#id_check_todas_listas").is(':checked')) {
+                jQuery("#id_lista_precios").prop('disabled', 'disabled');
+                jQuery("#id_lista_precios").val(null);
+
+            } else {
+                jQuery("#id_lista_precios").prop('disabled', false);
+            }
+        }
+        const cargar_lista_precios = () => {
+            {% for promocion in promociones %}
+                jQuery("#id_lista_precios").append('<option value={{promocion.id}} > {{promocion.nombre}}</option>');
+            {% endfor %}
+        }
+
+
+        jQuery(document).ready(function () {
+
+            const iniciar_componentes = () => {
+                jQuery('#id_sucursal_origen').select2();
+                jQuery('#id_sucursal_destino').select2();
+                jQuery('#id_check_todas_listas').checked;
+                jQuery('#id_lista_precios').select2();
+                jQuery("#id_lista_precios").prop('disabled', 'disabled');
+                jQuery("#id_lista_precios").val(null);
+            }
+            const cargar_sucursales = () => {
+                {% for sucursal in sucursales %}
+                    jQuery("#id_sucursal_origen").append('<option value={{sucursal.id}} > {{sucursal.nombre}}</option>');
+                    jQuery("#id_sucursal_destino").append('<option value={{sucursal.id}} > {{sucursal.nombre}}</option>');
+
+                {% endfor %}
+            }
+            iniciar_componentes();
+            cargar_sucursales();
+
+
+        });
+    </script>
+
+
+    <!-- SWEETALERT -->
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
+    <script src="{% static 'js/jquery.bootstrap.modal.forms.js' %}"></script>
+    <script>    django.gettext = window.gettext    </script>
+
+{% endblock %}

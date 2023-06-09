@@ -1,0 +1,47 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+{% block submit_buttons_bottom %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
+    <script>    django.gettext = window.gettext    </script>
+    {% if not original %}
+        <script>
+            function sendRequest() {
+
+                jQuery.ajax({
+                    type: 'GET',
+                    url: 'http://localhost:4700',
+                    headers: {
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    crossDomain: true,
+
+                    success: function (data) {
+                        jQuery("#id_cantidad_peso").val(data.match(/^\d+(\.\d{1,2})?$/));
+                    },
+                    complete: function () {
+                        /* solo una vez que la petición se completa (success o no success)
+                                   pedimos una nueva petición en 3 segundos */
+                        setTimeout(function () {
+                            sendRequest();
+                        }, 3000);
+                    },
+                    error: function (response) {
+                        console.log(response);
+                        setTimeout(function () {
+                            sendRequest();
+                        }, 3000);
+                    }
+                });
+            }
+
+            jQuery(document).ready(function () {
+                jQuery("#id_cantidad_peso").prop("readonly", true);
+                sendRequest();
+            });
+
+
+        </script>
+    {% endif %}
+{% endblock %}
