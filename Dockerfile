@@ -1,8 +1,12 @@
-FROM python:3.10-alpine
-RUN apt-get update \
-	&& apt-get install -y --no-install-recommends \
-		postgresql-client \
-	&& rm -rf /var/lib/apt/lists/*
-WORKDIR /carniceriavv
-COPY requirements.txt /carniceriavv/
-
+# pull the official base image
+FROM python:3.9
+#Seteamos directorio de trabajo dentro de la nueva imagen
+WORKDIR /opt/carniceriavv
+# set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+RUN apt-get update && apt-get install libpq-dev python-dev -y --no-install-recommends
+COPY . .
+RUN pip install -r requirements/base.txt
+EXPOSE 8000
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

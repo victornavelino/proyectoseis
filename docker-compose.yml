@@ -1,0 +1,23 @@
+version: '3.9'
+
+services:
+  # aplicacion django
+  app_container:
+    container_name: app_container
+    build: .
+    working_dir: /opt/carniceriavv
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/opt/carniceriavv
+    ports:
+      - '80:8000'
+    depends_on:
+      - db_container
+  # postgres database
+  db_container:
+    image: postgres:13
+    volumes:
+      - /home/vvalle/proyectovvalle/postgres_data:/var/lib/postgresql/data/
+    environment:
+      - "POSTGRES_HOST_AUTH_METHOD=trust"
+
