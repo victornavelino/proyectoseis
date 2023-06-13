@@ -9,4 +9,4 @@ RUN apt-get update && apt-get install libpq-dev python-dev -y --no-install-recom
 COPY . .
 RUN pip install -r requirements/base.txt
 EXPOSE 8000
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+#CMD ["python", "manage.py", "migrate"]
