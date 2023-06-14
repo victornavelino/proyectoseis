@@ -9,7 +9,7 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/opt/carniceriavv
-    environment:
+    environment: []
       #- POSTGRES_NAME=vvalle
       #- POSTGRES_USER=postgres
       #- POSTGRES_PASSWORD=postgres
