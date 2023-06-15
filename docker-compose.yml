@@ -7,6 +7,7 @@ services:
     build: .
     working_dir: /opt/carniceriavv
     command: python manage.py runserver 0.0.0.0:8000
+    restart: always
     volumes:
       - .:/opt/carniceriavv
     environment: []
@@ -23,6 +24,7 @@ services:
     image: postgres:13
     volumes:
       - /home/vvalle/proyectovvalle/postgres_data:/var/lib/postgresql/data/
+    restart: always
     environment: []
       #- "POSTGRES_HOST_AUTH_METHOD=trust"
       #- POSTGRES_DB=DATABASE_NAME
