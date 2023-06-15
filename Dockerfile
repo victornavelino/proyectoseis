@@ -5,7 +5,7 @@ WORKDIR /opt/carniceriavv
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-RUN apt-get update && apt-get install libpq-dev python-dev -y --no-install-recommends
+RUN apt-get update && apt-get install libpq-dev python-dev-is-python3 -y --no-install-recommends
 COPY . .
 RUN pip install -r requirements/base.txt
 EXPOSE 8000
