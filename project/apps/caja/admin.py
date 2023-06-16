@@ -113,6 +113,10 @@ class CajaAdmin(admin.ModelAdmin):
             messages.error(request, 'Debe seleccionar una Caja Abierta para poder Cerrarla')
             return False
         movimientos_caja = MovimientoCaja.objects.filter(caja=caja)
+        ventas_sin_cobrar=Venta.objects.filter(cobrada=False)
+        if len(ventas_sin_cobrar) > 0:
+            messages.error(request, 'Existen ventas sin cobrar, no puede cerrar la caja')
+            return False
         total_ingresos = MovimientoCaja.objects.filter(caja=caja, tipo=INGRESO).aggregate(Sum('importe'))['importe__sum'] or 0.00
         results = []
         json_valores = {
