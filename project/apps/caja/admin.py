@@ -63,7 +63,7 @@ class CajaAdmin(admin.ModelAdmin):
             request.user.sucursal.DoesNotExist
         except Exception as e:
             messages.error(request, 'Debe existir sucursal asociada al usuario')
-            raise forms.ValidationError("Debe existir sucursal asociada al usuario")
+            return False
         obj.sucursal = request.user.sucursal
 
         if change:
