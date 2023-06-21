@@ -34,17 +34,23 @@ def get_valores(request, articulo_codigo, cliente_pk):
             try:
                 print('entro descuento empleado')
                 descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
-                precio = get_precio_articulo(articulo, cliente.lista_precio, request.user.sucursal)
-                monto_a_descontar = precio.precio * descuento_empleado.valor / 100
-                precio_final = round(precio.precio - monto_a_descontar, 2)
-                json_valores = {
+                print('descuento emplead prueba')
+                if descuento_empleado.valor > 0:
+                    print('entrooooo iiiiiiiiiiffffffff')
+                    precio = get_precio_articulo(articulo, cliente.lista_precio, request.user.sucursal)
+                    monto_a_descontar = precio.precio * descuento_empleado.valor / 100
+                    precio_final = round(precio.precio - monto_a_descontar, 2)
+                    json_valores = {
                     "precio": str(precio.precio),
                     "precio_promo": str(precio_final),
                     "articulo": precio.articulo.nombre,
                     "codigo": precio.articulo.codigo,
                     "es_por_peso": precio.articulo.es_por_peso
-                }
-                data = json.dumps(json_valores)
+                    }
+                    data = json.dumps(json_valores)
+                else:
+                    print("entro else descuento")
+                    
             except:
                 print("entro except")
                 json_valores = {'error': 'No existe Descuento de Empleado cargado'}
