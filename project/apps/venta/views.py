@@ -30,33 +30,26 @@ def get_valores(request, articulo_codigo, cliente_pk):
         precio_normal = get_precio_articulo(articulo, cliente.lista_precio, request.user.sucursal)
         results = []
         # SI ES EMPLEADO CALCULAMOS DESCUENTO EMPLEADO
-        if empleado(cliente.persona):
-            try:
-                print('entro descuento empleado')
-                descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
-                print('descuento emplead prueba')
-                if descuento_empleado.valor > 0:
-                    print('entrooooo iiiiiiiiiiffffffff')
-                    precio = get_precio_articulo(articulo, cliente.lista_precio, request.user.sucursal)
-                    monto_a_descontar = precio.precio * descuento_empleado.valor / 100
-                    precio_final = round(precio.precio - monto_a_descontar, 2)
-                    json_valores = {
-                    "precio": str(precio.precio),
-                    "precio_promo": str(precio_final),
-                    "articulo": precio.articulo.nombre,
-                    "codigo": precio.articulo.codigo,
-                    "es_por_peso": precio.articulo.es_por_peso
-                    }
-                    data = json.dumps(json_valores)
-                else:
-                    print("entro else descuento")
-                    
-            except:
-                print("entro except")
-                json_valores = {'error': 'No existe Descuento de Empleado cargado'}
+        try:
+            print('entro descuento empleado')
+            descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
+            print('descuento emplead prueba')
+            if empleado(cliente.persona) and descuento_empleado.valor > 0:
+                print('entrooooo iiiiiiiiiiffffffff')
+                precio = get_precio_articulo(articulo, cliente.lista_precio, request.user.sucursal)
+                monto_a_descontar = precio.precio * descuento_empleado.valor / 100
+                precio_final = round(precio.precio - monto_a_descontar, 2)
+                json_valores = {
+                "precio": str(precio.precio),
+                "precio_promo": str(precio_final),
+                "articulo": precio.articulo.nombre,
+                "codigo": precio.articulo.codigo,
+                "es_por_peso": precio.articulo.es_por_peso
+                }
                 data = json.dumps(json_valores)
-
-        else:
+            else:
+                print("entro else descuento")                   
+        except:
             if cumpleanio(cliente_pk):
                 try:
                     descuento_cumple = Descuento.objects.get(nombre='CUMPLEAÑOS')
