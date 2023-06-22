@@ -95,6 +95,7 @@ def get_valores(request, articulo_codigo, cliente_pk):
                     data = json.dumps(json_valores)
                 else:
                     # ES CLIENTE (NO lista comun)
+                    print('entro cliente')
                     try:
                         json_valores = {
                             "precio": str(precio_normal.precio),
