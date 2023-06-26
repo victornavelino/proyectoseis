@@ -32,19 +32,7 @@ def get_valores(request, articulo_codigo, cliente_pk):
         tipo_cliente ='EVENTUAL'
         data = {}
 
-        if empleado(cliente.persona):
-            try:
-                descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
-            except Descuento.DoesNotExist:
-                descuento_empleado = None
-            if descuento_empleado!= None and descuento_empleado.valor > 0:
-                print('aplicamos descuento ya que el descuento existe y es mayor que 0')
-                data = cargar_precio_descuento(cliente, articulo, request, descuento_empleado)
-            else:
-                print('No aplicamos descuento empleado. ya que es NONE o es igual a 0')
-                data = {}
-        
-        if cumpleanio(cliente_pk) and not empleado(cliente.persona):
+        if cumpleanio(cliente_pk):
             try:
                 descuento_cumpleanio = Descuento.objects.get(nombre='CUMPLEAÑOS')
             except Descuento.DoesNotExist:
@@ -53,60 +41,35 @@ def get_valores(request, articulo_codigo, cliente_pk):
                 print('aplicamos descuento CUMPLEAÑO ya que el descuento existe y es mayor que 0')
                 data = cargar_precio_descuento(cliente, articulo, request, descuento_cumpleanio)
             else:
-                print('No aplicamos descuento cumpleaño.y aplicamos cualquier promocion de la lista o precio de su lista')
-                data = cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk)
-
-        # SI ES EMPLEADO CALCULAMOS DESCUENTO EMPLEADO
-        try:
-            print('entro descuento empleado')
-            if empleado(cliente.persona):
-                descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
-                if descuento_empleado.valor > 0:
-                    print('entrooooo iiiiiiiiiiffffffff')
-                    precio = get_precio_articulo(articulo, cliente.lista_precio, request.user.sucursal)
-                    monto_a_descontar = precio.precio * descuento_empleado.valor / 100
-                    precio_final = round(precio.precio - monto_a_descontar, 2)
-                    json_valores = {
-                    "precio": str(precio.precio),
-                    "precio_promo": str(precio_final),
-                    "articulo": precio.articulo.nombre,
-                    "codigo": precio.articulo.codigo,
-                    "es_por_peso": precio.articulo.es_por_peso
-                    }
-                    data = json.dumps(json_valores)
-                else:
-                    data = cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk)
-            else:
-                print("si el descuento es 0 entonces aplicamos alguna promo o precio de su lista")
-                data = cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk)                   
-        except:
-            if cumpleanio(cliente_pk):
-                try:
-                    descuento_cumple = Descuento.objects.get(nombre='CUMPLEAÑOS')
-                    if descuento_cumple.valor > 0:
-                        print('enttro descuento cumple > 0')
-                        precio = Precio.objects.filter(articulo__codigo=articulo_codigo,
-                                                   lista_precio__cliente__pk=cliente_pk,
-                                                   sucursal=request.user.sucursal).last()
-                        monto_a_descontar = precio.precio * descuento_cumple.valor / 100
-                        precio_final = round(precio.precio - monto_a_descontar, 2)
-                        json_valores = {
-                        "precio": str(precio.precio),
-                        "precio_promo": str(precio_final),
-                        "articulo": precio.articulo.nombre,
-                        "codigo": precio.articulo.codigo,
-                        "es_por_peso": precio.articulo.es_por_peso
-                        }   
-                        data = json.dumps(json_valores)
+                if empleado(cliente.persona):
+                    try:
+                        descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
+                    except Descuento.DoesNotExist:
+                        descuento_empleado = None
+                    if descuento_empleado!= None and descuento_empleado.valor > 0:
+                        print('aplicamos descuento EMPLEADO ya que el descuento existe y es mayor que 0')
+                        data = cargar_precio_descuento(cliente, articulo, request, descuento_empleado)
                     else:
+                        print('No aplicamos descuento cumpleaño. ni empleado y aplicamos cualquier promocion de la lista o precio de su lista')
                         data = cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk)
-                except:
+                else:
+                    print('No aplicamos descuento cumpleaño. ni empleado y aplicamos cualquier promocion de la lista o precio de su lista')
+                    data = cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk)
+        else:
+            if empleado(cliente.persona):
+                try:
+                    descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
+                except Descuento.DoesNotExist:
+                    descuento_empleado = None
+                if descuento_empleado!= None and descuento_empleado.valor > 0:
+                    print('aplicamos descuento EMPLEADO ya que el descuento existe y es mayor que 0')
+                    data = cargar_precio_descuento(cliente, articulo, request, descuento_empleado)
+                else:
+                    print('No aplicamos descuento cumpleaño. ni empleado y aplicamos cualquier promocion de la lista o precio de su lista')
                     data = cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk)
             else:
+                print('No aplicamos descuento cumpleaño. ni empleado y aplicamos cualquier promocion de la lista o precio de su lista')
                 data = cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk)
-
-
-        print(data)
     else:
         valores = {}
         data = serializers.serialize('json', valores)
