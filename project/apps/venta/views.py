@@ -29,6 +29,33 @@ def get_valores(request, articulo_codigo, cliente_pk):
         articulo = Articulo.objects.get(codigo=articulo_codigo)
         precio_normal = get_precio_articulo(articulo, cliente.lista_precio, request.user.sucursal)
         results = []
+        tipo_cliente ='EVENTUAL'
+        data = {}
+
+        if empleado(cliente.persona):
+            try:
+                descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
+            except Descuento.DoesNotExist:
+                descuento_empleado = None
+            if descuento_empleado!= None and descuento_empleado.valor > 0:
+                print('aplicamos descuento ya que el descuento existe y es mayor que 0')
+                data = cargar_precio_descuento(cliente, articulo, request, descuento_empleado)
+            else:
+                print('No aplicamos descuento empleado. ya que es NONE o es igual a 0')
+                data = {}
+        
+        if cumpleanio(cliente_pk) and not empleado(cliente.persona):
+            try:
+                descuento_cumpleanio = Descuento.objects.get(nombre='CUMPLEAÑOS')
+            except Descuento.DoesNotExist:
+                descuento_cumpleanio = None
+            if descuento_cumpleanio!= None and descuento_cumpleanio.valor > 0:
+                print('aplicamos descuento CUMPLEAÑO ya que el descuento existe y es mayor que 0')
+                data = cargar_precio_descuento(cliente, articulo, request, descuento_cumpleanio)
+            else:
+                print('No aplicamos descuento cumpleaño.y aplicamos cualquier promocion de la lista o precio de su lista')
+                data = cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk)
+
         # SI ES EMPLEADO CALCULAMOS DESCUENTO EMPLEADO
         try:
             print('entro descuento empleado')
@@ -84,6 +111,23 @@ def get_valores(request, articulo_codigo, cliente_pk):
         valores = {}
         data = serializers.serialize('json', valores)
     return HttpResponse(data, content_type="application/json")
+
+
+def cargar_precio_descuento(cliente, articulo, request, descuento):
+    print('entrooooo cargar precio descuento')
+    precio = get_precio_articulo(articulo, cliente.lista_precio, request.user.sucursal)
+    monto_a_descontar = precio.precio * descuento.valor / 100
+    precio_final = round(precio.precio - monto_a_descontar, 2)
+    json_valores = {
+                    "precio": str(precio.precio),
+                    "precio_promo": str(precio_final),
+                    "articulo": precio.articulo.nombre,
+                    "codigo": precio.articulo.codigo,
+                    "es_por_peso": precio.articulo.es_por_peso
+                    }
+    data = json.dumps(json_valores)
+    return data
+
 
 def cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk):
     # SI ES EVENTUAL o cliente Comun
