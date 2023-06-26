@@ -33,8 +33,6 @@ class Cliente(models.Model):
 
     fecha_alta = models.DateField(auto_now=True)
 
-    fidelizado = models.BooleanField(default=False)
-
     def __str__(self):
         return self.persona.obtener_nombre_completo()
 

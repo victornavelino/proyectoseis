@@ -32,83 +32,52 @@ def get_valores(request, articulo_codigo, cliente_pk):
         # SI ES EMPLEADO CALCULAMOS DESCUENTO EMPLEADO
         try:
             print('entro descuento empleado')
-            descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
-            print('descuento emplead prueba')
-            if empleado(cliente.persona) and descuento_empleado.valor > 0:
-                print('entrooooo iiiiiiiiiiffffffff')
-                precio = get_precio_articulo(articulo, cliente.lista_precio, request.user.sucursal)
-                monto_a_descontar = precio.precio * descuento_empleado.valor / 100
-                precio_final = round(precio.precio - monto_a_descontar, 2)
-                json_valores = {
-                "precio": str(precio.precio),
-                "precio_promo": str(precio_final),
-                "articulo": precio.articulo.nombre,
-                "codigo": precio.articulo.codigo,
-                "es_por_peso": precio.articulo.es_por_peso
-                }
-                data = json.dumps(json_valores)
+            if empleado(cliente.persona):
+                descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
+                if descuento_empleado.valor > 0:
+                    print('entrooooo iiiiiiiiiiffffffff')
+                    precio = get_precio_articulo(articulo, cliente.lista_precio, request.user.sucursal)
+                    monto_a_descontar = precio.precio * descuento_empleado.valor / 100
+                    precio_final = round(precio.precio - monto_a_descontar, 2)
+                    json_valores = {
+                    "precio": str(precio.precio),
+                    "precio_promo": str(precio_final),
+                    "articulo": precio.articulo.nombre,
+                    "codigo": precio.articulo.codigo,
+                    "es_por_peso": precio.articulo.es_por_peso
+                    }
+                    data = json.dumps(json_valores)
+                else:
+                    data = cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk)
             else:
-                print("entro else descuento")                   
+                print("si el descuento es 0 entonces aplicamos alguna promo o precio de su lista")
+                data = cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk)                   
         except:
             if cumpleanio(cliente_pk):
                 try:
                     descuento_cumple = Descuento.objects.get(nombre='CUMPLEAÑOS')
-                    precio = Precio.objects.filter(articulo__codigo=articulo_codigo,
+                    if descuento_cumple.valor > 0:
+                        print('enttro descuento cumple > 0')
+                        precio = Precio.objects.filter(articulo__codigo=articulo_codigo,
                                                    lista_precio__cliente__pk=cliente_pk,
                                                    sucursal=request.user.sucursal).last()
-                    monto_a_descontar = precio.precio * descuento_cumple.valor / 100
-                    precio_final = round(precio.precio - monto_a_descontar, 2)
-                    json_valores = {
+                        monto_a_descontar = precio.precio * descuento_cumple.valor / 100
+                        precio_final = round(precio.precio - monto_a_descontar, 2)
+                        json_valores = {
                         "precio": str(precio.precio),
                         "precio_promo": str(precio_final),
                         "articulo": precio.articulo.nombre,
                         "codigo": precio.articulo.codigo,
                         "es_por_peso": precio.articulo.es_por_peso
-                    }
-                    data = json.dumps(json_valores)
+                        }   
+                        data = json.dumps(json_valores)
+                    else:
+                        data = cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk)
                 except:
-                    print("entro except")
-                    json_valores = {'error': 'No existe Descuento de cumpleanios cargado'}
-                    data = json.dumps(json_valores)
+                    data = cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk)
             else:
-                # SI ES EVENTUAL o cliente Comun
-                if cliente.lista_precio.nombre.__contains__('COMUN'):
-                    print('entro lista comunes')
-                    # verificamos si entra en alguna promocion
-                    promos_activas = get_promociones_activas(request.user.sucursal)
-                    precio = buscar_precio_articulo_en_promo(cliente, articulo, promos_activas, request.user.sucursal)
-                    # en caso que no entre.. se le asigna el precio comun
-                    if precio == 0:
-                        precio_normal = Precio.objects.filter(articulo__codigo=articulo_codigo,
-                                                       lista_precio__cliente__pk=cliente_pk,
-                                                       sucursal=request.user.sucursal).last()
-                        articulo = precio_normal.articulo
-                        precio = precio_normal.precio
+                data = cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk)
 
-                    json_valores = {
-                        "precio": str(precio_normal.precio),
-                        "precio_promo": str(precio),
-                        "articulo": articulo.nombre,
-                        "codigo": articulo.codigo,
-                        "es_por_peso": articulo.es_por_peso
-                    }
-                    data = json.dumps(json_valores)
-                else:
-                    # ES CLIENTE (NO lista comun)
-                    print('entro cliente')
-                    try:
-                        json_valores = {
-                            "precio": str(precio_normal.precio),
-                            "precio_promo": str(precio_normal.precio),
-                            "articulo": precio_normal.articulo.nombre,
-                            "codigo": precio_normal.articulo.codigo,
-                            "es_por_peso": precio_normal.articulo.es_por_peso
-                        }
-                        data = json.dumps(json_valores)
-                    except:
-                        print("articulo sin precio en la lista del cliente")
-                        json_valores = {'error': 'El articulo seleccionado no tiene Precio en la lista del Cliente'}
-                        data = json.dumps(json_valores)
 
         print(data)
     else:
@@ -116,6 +85,46 @@ def get_valores(request, articulo_codigo, cliente_pk):
         data = serializers.serialize('json', valores)
     return HttpResponse(data, content_type="application/json")
 
+def cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk):
+    # SI ES EVENTUAL o cliente Comun
+    if cliente.lista_precio.nombre.__contains__('COMUN'):
+        print('entro lista comunes')
+         # verificamos si entra en alguna promocion
+        promos_activas = get_promociones_activas(request.user.sucursal)
+        precio = buscar_precio_articulo_en_promo(cliente, articulo, promos_activas, request.user.sucursal)
+        # en caso que no entre.. se le asigna el precio comun
+        if precio == 0:
+            precio_normal = Precio.objects.filter(articulo__codigo=articulo_codigo,
+                                                       lista_precio__cliente__pk=cliente_pk,
+                                                       sucursal=request.user.sucursal).last()
+            articulo = precio_normal.articulo
+            precio = precio_normal.precio
+
+        json_valores = {
+                        "precio": str(precio_normal.precio),
+                        "precio_promo": str(precio),
+                        "articulo": articulo.nombre,
+                        "codigo": articulo.codigo,
+                        "es_por_peso": articulo.es_por_peso
+                    }
+        data = json.dumps(json_valores)
+    else:
+        # ES CLIENTE (NO lista comun)
+        print('entro cliente')
+        try:
+            json_valores = {
+                            "precio": str(precio_normal.precio),
+                            "precio_promo": str(precio_normal.precio),
+                            "articulo": precio_normal.articulo.nombre,
+                            "codigo": precio_normal.articulo.codigo,
+                            "es_por_peso": precio_normal.articulo.es_por_peso
+            }
+            data = json.dumps(json_valores)
+        except:
+            print("articulo sin precio en la lista del cliente")
+            json_valores = {'error': 'El articulo seleccionado no tiene Precio en la lista del Cliente'}
+            data = json.dumps(json_valores)
+    return data
 
 def get_articulos(request, articulo):
     if request.user.is_authenticated:
