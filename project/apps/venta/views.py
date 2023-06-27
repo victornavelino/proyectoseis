@@ -94,6 +94,10 @@ def cargar_precio_descuento(cliente, articulo, request, descuento):
 
 def cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk):
     # SI ES EVENTUAL o cliente Comun
+    # BUSCAMOS PRECIO NORMAL
+    precio_normal = Precio.objects.filter(articulo__codigo=articulo_codigo,
+                                                       lista_precio__cliente__pk=cliente_pk,
+                                                       sucursal=request.user.sucursal).last()
     if cliente.lista_precio.nombre.__contains__('COMUN'):
         print('entro lista comunes')
          # verificamos si entra en alguna promocion
@@ -101,9 +105,6 @@ def cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_p
         precio = buscar_precio_articulo_en_promo(cliente, articulo, promos_activas, request.user.sucursal)
         # en caso que no entre.. se le asigna el precio comun
         if precio == 0:
-            precio_normal = Precio.objects.filter(articulo__codigo=articulo_codigo,
-                                                       lista_precio__cliente__pk=cliente_pk,
-                                                       sucursal=request.user.sucursal).last()
             articulo = precio_normal.articulo
             precio = precio_normal.precio
 
