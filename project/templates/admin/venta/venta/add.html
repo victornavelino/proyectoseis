@@ -548,6 +548,42 @@
 
 
                             }
+                            // al seleccionar cliente cagar su lista de precio
+                    jQuery('#id_cliente').on('change', function () {
+                        let id_cliente;
+                        jQuery("#id_cliente option:selected").each(function () {
+                            id_cliente = jQuery(this).val();
+                        });
+
+                        if (id_cliente) {
+                            get_listaprecio(id_cliente);
+                        }
+
+
+                    });
+                    
+                    const get_listaprecio = (id_cliente) => {
+                        let url_mask = "{% url 'get_listaprecio' pk_cliente=1234567 %}".replace(/1234567/, id_cliente);
+
+                        jQuery.ajax({
+                            type: 'GET',
+                            url: url_mask,
+                            success: function (data) {
+                                console.log(data.resultado)
+                                if (data.resultado) {
+                                    jQuery("#id_listaprecio").val(data.resultado);
+                                    
+                                }
+
+                            },
+                            error: function (response) {
+                                console.log(response);
+                            }
+
+                        });
+
+
+                    }
 
                             //al perder el foco codigo articulo
                             jQuery("#id_ventaarticulo_set-0-codigo_articulo")

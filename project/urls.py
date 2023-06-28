@@ -25,6 +25,7 @@ from cuentacorriente.views import get_cc_cliente
 from inventario.views import recepcionar_movimiento_ingreso
 
 from project.apps.articulo.views import get_precio_articulo, copiar_precios, copiar_precios_proceso,get_listas_precio_sucursal
+from project.apps.venta.views import get_listaprecio
 from project.router import router
 from promocion.views import copiar_promos, copiar_promociones, get_promociones_sucursal
 from usuario.api import RegistroUsuarioAPIView
@@ -52,6 +53,7 @@ urlpatterns = [
                   path('admin/venta/articulos_todos/', get_articulos_todos, name='articulo_todos'),
                   path('admin/venta/clientes/', get_clientes, name='clientes'),
                   path('admin/venta/clientes/<int:pk_cliente>', verificar_cumpleanios, name='verificar_cumpleanios'),
+                  path('admin/venta/clientes/<int:pk_cliente>', get_listaprecio, name='get_listaprecio'),
                   path('admin/caja/tarjetas_de_credito/', get_tarjetas, name='tarjetas'),
                   path('admin/caja/planes_tarjeta/<int:pk_tarjeta>', planes_tarjeta, name='planes_tarjeta'),
                   path('admin/venta/venta/nuevo_pago_efectivo/', nuevo_pago_efectivo, name='nuevo_pago_efectivo'),

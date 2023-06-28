@@ -220,6 +220,17 @@ def get_tarjetas(request):
         data = serializers.serialize('json', valores)
     return HttpResponse(data, content_type="application/json")
 
+def get_listaprecio(request, pk_cliente):
+    if request.user.is_authenticated:
+        try:
+            cliente = Cliente.objects.get(pk=pk_cliente)
+            listaprecio = cliente.lista_precio.nombre
+            print(listaprecio)
+            data = {'resultado': listaprecio}
+        except:
+            data = {'error': 'Cliente no tiene lista'}
+        data = json.dumps(data)
+    return HttpResponse(data, content_type="application/json")
 
 def guardar_venta(request):
     if request.user.is_authenticated:
