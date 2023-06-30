@@ -563,8 +563,9 @@
                     });
                     
                     const get_listaprecio = (id_cliente) => {
+                        console.log('entro get_lista precio' + id_cliente)
                         let url_mask = "{% url 'get_listaprecio' pk_cliente=1234567 %}".replace(/1234567/, id_cliente);
-
+                        //console.log(url_mask)
                         jQuery.ajax({
                             type: 'GET',
                             url: url_mask,
