@@ -32,10 +32,50 @@ def get_precio_promocion(cliente, articulo, sucursal, precio_unitario):
 def guardar_venta_cliente_articulos(id_cliente, articulos, usuario):
     precio_total = 0
     cliente = Cliente.objects.get(pk=id_cliente)
-    if cumpleanio(id_cliente) or empleado(cliente.persona):
-        precio_total = calcular_total_con_descuento(articulos)
+
+    if cumpleanio(id_cliente):
+        try:
+            descuento_cumpleanio = Descuento.objects.get(nombre='CUMPLEAÑOS')
+        except Descuento.DoesNotExist:
+            descuento_cumpleanio = None
+        if descuento_cumpleanio!= None and descuento_cumpleanio.valor > 0:
+            print('aplicamos descuento CUMPLEAÑO ya que el descuento existe y es mayor que 0')
+            precio_total = calcular_total_con_descuento(articulos)
+        else:
+            if empleado(cliente.persona):
+                try:
+                    descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
+                except Descuento.DoesNotExist:
+                    descuento_empleado = None
+                if descuento_empleado!= None and descuento_empleado.valor > 0:
+                    print('aplicamos descuento EMPLEADO ya que el descuento existe y es mayor que 0')
+                    precio_total = calcular_total_con_descuento(articulos)
+                else:
+                    print('No aplicamos descuento cumpleaño. ni empleado y aplicamos cualquier promocion de la lista o precio de su lista')
+                    precio_total = calcular_total_cliente(cliente, articulos, usuario)
+            else:
+                print('No aplicamos descuento cumpleaño. ni empleado y aplicamos cualquier promocion de la lista o precio de su lista')
+                precio_total = calcular_total_cliente(cliente, articulos, usuario)
     else:
-        precio_total = calcular_total_cliente(cliente, articulos, usuario)
+        if empleado(cliente.persona):
+            try:
+                descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
+            except Descuento.DoesNotExist:
+                descuento_empleado = None
+            if descuento_empleado!= None and descuento_empleado.valor > 0:
+                print('aplicamos descuento EMPLEADO ya que el descuento existe y es mayor que 0')
+                precio_total = calcular_total_con_descuento(articulos)
+            else:
+                print('No aplicamos descuento cumpleaño. ni empleado y aplicamos cualquier promocion de la lista o precio de su lista')
+                precio_total = calcular_total_cliente(cliente, articulos, usuario)
+        else:
+            print('No aplicamos descuento cumpleaño. ni empleado y aplicamos cualquier promocion de la lista o precio de su lista')
+            precio_total = calcular_total_cliente(cliente, articulos, usuario)
+
+    #if cumpleanio(id_cliente) or empleado(cliente.persona):
+    #    precio_total = calcular_total_con_descuento(articulos)
+    #else:
+    #    precio_total = calcular_total_cliente(cliente, articulos, usuario)
 
     venta = Venta.objects.create(fecha=datetime.now(), monto=precio_total, descuento=0, sucursal=usuario.sucursal,
                                  cliente=cliente, usuario=usuario)
