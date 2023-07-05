@@ -8,5 +8,7 @@ ENV PYTHONUNBUFFERED 1
 RUN apt-get update && apt-get install libpq-dev python-dev-is-python3 -y --no-install-recommends
 COPY . .
 RUN pip install -r requirements/base.txt
+RUN chmod +x entrypoint.sh
+ENTRYPOINT [ "entrypoint.sh" ]
 EXPOSE 8000
 #CMD ["python", "manage.py", "migrate"]
