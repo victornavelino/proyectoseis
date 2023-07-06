@@ -10,7 +10,7 @@ COPY . .
 RUN pip install -r requirements/base.txt
 # These line for /entrypoint.sh
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN chmod 755 /entrypoint.sh
 ENTRYPOINT "/entrypoint.sh"
 #COPY ./entrypoint.sh /opt/carniceriavv/entrypoint.sh
 #RUN chmod -R 755 /opt/carniceriavv/entrypoint.sh 
