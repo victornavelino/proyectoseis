@@ -11,5 +11,5 @@ RUN pip install -r requirements/base.txt
 RUN chmod +x /opt/carniceriavv/entrypoint.sh
 #ENTRYPOINT [ "entrypoint.sh" ]
 EXPOSE 8000
-#CMD ["python", "manage.py", "migrate"]
-CMD ["/bin/sh","-c","/opt/carniceriavv/entrypoint.sh"]
+CMD ["python", "manage.py", "migrate"]
+#CMD ["/bin/sh","-c","/opt/carniceriavv/entrypoint.sh"]

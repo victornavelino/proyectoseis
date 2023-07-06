@@ -6,7 +6,7 @@ services:
     container_name: ${PROJECT_NAME}_app
     build: .
     working_dir: /opt/carniceriavv
-    #command: python manage.py runserver 0.0.0.0:8000
+    command: python manage.py runserver 0.0.0.0:8000
     restart: always
     volumes:
       - .:/opt/carniceriavv
