@@ -12,4 +12,4 @@ RUN chmod +x /opt/carniceriavv/entrypoint.sh
 #ENTRYPOINT [ "entrypoint.sh" ]
 EXPOSE 8000
 #CMD ["python", "manage.py", "migrate"]
-CMD ["/opt/carniceriavv/entrypoint.sh"]
+CMD ["/bin/sh","-c","/opt/carniceriavv/entrypoint.sh"]
