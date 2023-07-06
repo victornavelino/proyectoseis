@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 python /opt/carniceriavv/manage.py migrate
 
