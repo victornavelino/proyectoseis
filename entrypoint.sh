@@ -1,7 +1,5 @@
 #!/bin/sh
 
-
-python /opt/carniceriavv/manage.py makemigrations 
 python /opt/carniceriavv/manage.py migrate
 
 python /opt/carniceriavv/manage.py collectstatic
