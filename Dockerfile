@@ -13,7 +13,7 @@ COPY ./entrypoint.sh /opt/carniceriavv/entrypoint.sh
 RUN chmod -R 755 /opt/carniceriavv/entrypoint.sh 
 CMD ["/bin/sh","-c","/opt/carniceriavv/entrypoint.sh"]
 
-ENTRYPOINT ["/opt/carniceriavv/entrypoint.sh"]
+#ENTRYPOINT ["/opt/carniceriavv/entrypoint.sh"]
 #ENTRYPOINT [ "entrypoint.sh" ]
 EXPOSE 8000
 #CMD ["python", "manage.py", "migrate"]
