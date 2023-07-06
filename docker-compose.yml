@@ -7,7 +7,7 @@ services:
     build: .
     working_dir: /opt/carniceriavv
     #command: python manage.py runserver 0.0.0.0:8000
-    command: /bin/sh -c "entrypoint.sh"
+    command: /bin/sh -c "/entrypoint.sh"
     restart: always
     volumes:
       - .:/opt/carniceriavv
