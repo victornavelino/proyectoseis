@@ -9,9 +9,9 @@ RUN apt-get update && apt-get install libpq-dev python-dev-is-python3 -y --no-in
 COPY . .
 RUN pip install -r requirements/base.txt
 # These line for /entrypoint.sh
-COPY entrypoint.sh .
-RUN chmod +x /opt/carniceriavv/entrypoint.sh
-ENTRYPOINT "/opt/carniceriavv/entrypoint.sh"
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT "/entrypoint.sh"
 #COPY ./entrypoint.sh /opt/carniceriavv/entrypoint.sh
 #RUN chmod -R 755 /opt/carniceriavv/entrypoint.sh 
 #CMD ["/bin/sh","-c","/opt/carniceriavv/entrypoint.sh"]
