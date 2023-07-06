@@ -42,6 +42,7 @@ class Venta(models.Model):
     usuario = models.ForeignKey(Usuario, null=False, on_delete=models.PROTECT, verbose_name='Usuario')
     cierreventa = models.ForeignKey(CierreVentas, on_delete=models.CASCADE, null=True, verbose_name='Cierre de Venta')
     cobrada = models.BooleanField(default=False)
+    observaciones = models.CharField(max_length=100, verbose_name='Observaciones')
 
     def __str__(self):
         return f'{self.numero_ticket}'
