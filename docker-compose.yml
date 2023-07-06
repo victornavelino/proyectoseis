@@ -6,11 +6,7 @@ services:
     container_name: carniceriavv_app
     build: .
     working_dir: /opt/carniceriavv
-    #command: python manage.py migrate && python manage.py runserver 0.0.0.0:8000
-    command: >
-      sh -c "sleep 20 &&
-              python manage.py migrate --noinput &&
-              python manage.py runserver 0.0.0.0:8000 --noreload"
+    command: python manage.py runserver 0.0.0.0:8000
     restart: always
     volumes:
       - .:/opt/carniceriavv
