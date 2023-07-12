@@ -144,16 +144,21 @@ def calcular_importe_descuentos(cierre_venta):
     importe_descuento = Venta.objects.filter(numero_ticket__gte=cierre_venta.ticket_desde,
                                              numero_ticket__lte=cierre_venta.ticket_hasta,
                                              cliente__lista_precio__nombre__icontains='EMPLEADO').aggregate(
-        Sum('monto'))[
-                            'monto__sum'] or 0.00
+        Sum('monto'))['monto__sum'] or 0.00
     return importe_descuento
 
 
 def calcular_importe_asado(cierre_venta):
-    importe_asado = Venta.objects.filter(numero_ticket__gte=cierre_venta.ticket_desde,
+    ventas_asado = Venta.objects.filter(numero_ticket__gte=cierre_venta.ticket_desde,
                                          numero_ticket__lte=cierre_venta.ticket_hasta,
-                                         ventaarticulo__articulo__categoria__nombre__icontains='ASADO').aggregate(
-        Sum('ventaarticulo__precio'))['ventaarticulo__precio__sum'] or 0.00
+                                         ventaarticulo__articulo__categoria__nombre__icontains='ASADO')
+
+    if ventas_asado:
+        importe_asado = Venta.objects.filter(numero_ticket__gte=cierre_venta.ticket_desde,
+                                         numero_ticket__lte=cierre_venta.ticket_hasta,
+                                         ventaarticulo__articulo__categoria__nombre__icontains='ASADO').aggregate(Sum('monto'))['monto__sum']
+    else:
+        importe_asado = 0.00
     return importe_asado
 
 
@@ -161,7 +166,7 @@ def calcular_importe_blandos(cierre_venta):
     importe_blandos = Venta.objects.filter(numero_ticket__gte=cierre_venta.ticket_desde,
                                            numero_ticket__lte=cierre_venta.ticket_hasta,
                                            ventaarticulo__articulo__categoria__nombre__icontains='BLANDO').aggregate(
-        Sum('ventaarticulo__precio'))['ventaarticulo__precio__sum'] or 0.00
+        Sum('monto'))['monto__sum'] or 0.00
     return importe_blandos
 
 

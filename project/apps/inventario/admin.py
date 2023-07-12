@@ -10,7 +10,7 @@ from inventario.forms import InventarioAdminForm, MovimientoInternoArticuloInlin
 from inventario.models import Inventario, TipoInventario, ArticuloInventario, MovimientoInterno, \
     MovimientoInternoArticulo
 
-
+"""
 class ArticuloInventarioInline(admin.TabularInline):
     model = ArticuloInventario
     extra = 0
@@ -96,3 +96,4 @@ class MovimientoInternoAdmin(ImportExportModelAdmin):
         if request.user.is_superuser:
             return self.readonly_fields
         return self.readonly_fields + ('sucursal_origen',)
+"""

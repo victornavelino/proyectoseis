@@ -27,9 +27,8 @@ from venta.models import Venta
 
 @admin.register(Caja)
 class CajaAdmin(admin.ModelAdmin):
-    list_display = ('sucursal', 'usuario', 'caja_inicial', 'caja_final', 'fecha_inicio', 'fecha_fin',)
-    search_fields = ('sucursal__nombre', 'usuario__username',)
-    list_filter =['sucursal',]
+    list_display = ('usuario', 'caja_inicial', 'caja_final', 'fecha_inicio', 'fecha_fin',)
+    search_fields = ('usuario__username',)
     readonly_fields = ('caja_final',)
     actions = ['cerrar_caja', 'imprimir_cierre_caja']
     list_per_page = 30
@@ -44,6 +43,7 @@ class CajaAdmin(admin.ModelAdmin):
             if caja_cerrada:
                 print('entro por if si')
                 form.base_fields['caja_inicial'].initial = caja_cerrada.caja_final
+                #form.base_fields['caja_inicial'].disabled = True
             else:
                 if Caja.DoesNotExist:
                     form.base_fields['caja_inicial'].initial = 0.0
@@ -82,8 +82,8 @@ class CajaAdmin(admin.ModelAdmin):
             super().save_model(request, obj, form, change)
 
     def has_add_permission(self, request):
-        self.readonly_fields = ["usuario", "sucursal", ]
-        self.exclude = ('caja_final', 'fecha_fin',)
+        self.readonly_fields=['usuario',]
+        self.exclude = ('caja_final', 'fecha_fin','sucursal',)
         return True
 
     def has_change_permission(self, request, obj=None):
@@ -198,7 +198,7 @@ class CajaAdmin(admin.ModelAdmin):
 
 @admin.register(Sueldo)
 class SueldoAdmin(admin.ModelAdmin):
-    list_display = ('descripcion', 'importe', 'fecha', 'usuario',)
+    list_display = ('descripcion', 'importe', 'fecha', 'usuario','cerrado')
     search_fields = ('descripcion',)
     list_per_page = 30
 
@@ -268,7 +268,7 @@ class AdelantoAdmin(admin.ModelAdmin):
 
 @admin.register(Ingreso)
 class IngresoAdmin(admin.ModelAdmin):
-    list_display = ('tipo_ingreso', 'concepto', 'importe', 'fecha', 'usuario',)
+    list_display = ('tipo_ingreso', 'concepto', 'importe', 'fecha', 'usuario','cerrado')
     search_fields = ('concepto',)
     list_per_page = 30
 
@@ -296,7 +296,7 @@ class IngresoAdmin(admin.ModelAdmin):
 
 @admin.register(RetiroEfectivo)
 class RetiroEfectivoAdmin(admin.ModelAdmin):
-    list_display = ('concepto', 'importe', 'fecha', 'usuario',)
+    list_display = ('concepto', 'importe', 'fecha', 'usuario','cerrado')
     search_fields = ('concepto',)
     list_per_page = 30
 
@@ -305,11 +305,11 @@ class RetiroEfectivoAdmin(admin.ModelAdmin):
         return qs.filter(sucursal=request.user.sucursal)
 
     def has_add_permission(self, request):
-        self.exclude = ('cerrado', 'usuario', 'sucursal', 'caja', 'tipo_movimiento')
+        self.exclude = ('cerrado', 'usuario', 'sucursal', 'caja', 'tipo')
         return True
 
     def has_change_permission(self, request, obj=None):
-        self.exclude = ('cerrado', 'usuario', 'sucursal', 'caja', 'tipo_movimiento')
+        self.exclude = ('cerrado', 'usuario', 'sucursal', 'caja', 'tipo')
         return True
 
     def save_model(self, request, obj, form, change):
@@ -345,7 +345,7 @@ class TipoGastoAdmin(admin.ModelAdmin):
 
 @admin.register(Gasto)
 class GastoAdmin(admin.ModelAdmin):
-    list_display = ('tipo_gasto', 'concepto', 'importe', 'fecha', 'usuario',)
+    list_display = ('tipo_gasto', 'concepto', 'importe', 'fecha', 'usuario', 'cerrado')
     search_fields = ('concepto',)
     list_per_page = 30
 
@@ -354,11 +354,11 @@ class GastoAdmin(admin.ModelAdmin):
         return qs.filter(sucursal=request.user.sucursal)
 
     def has_add_permission(self, request):
-        self.exclude = ('cerrado', 'usuario', 'sucursal', 'caja', 'tipo_movimiento')
+        self.exclude = ('cerrado', 'usuario', 'sucursal', 'caja', 'tipo')
         return True
 
     def has_change_permission(self, request, obj=None):
-        self.exclude = ('cerrado', 'usuario', 'sucursal', 'caja', 'tipo_movimiento')
+        self.exclude = ('cerrado', 'usuario', 'sucursal', 'caja', 'tipo')
         return True
 
     def has_delete_permission(self, request, obj=None):
@@ -398,3 +398,23 @@ class CobroVentaAdmin(admin.ModelAdmin):
     list_display = ('venta',)
     change_list_template = 'admin/venta/cobro_venta/changelist.html'
     add_form_template = 'admin/venta/cobro_venta/changelist.html'
+
+
+@admin.register(CuponPagoTarjeta)
+class CuponPagoTarjetaAdmin(admin.ModelAdmin):
+    list_display = ('cliente', 'plan_tarjeta', 'importe', 'importe_con_recargo', 'fecha', 'caja')
+    search_fields = ('cliente__persona__apellido',)
+    list_per_page = 30
+
+    def caja(self, obj):
+        cobro_venta = CobroVenta.objects.get(venta=obj.venta)
+        print(cobro_venta.caja)
+        return cobro_venta.caja.pk
+    caja.short_description = 'Numero de Caja'
+    
+
+    def has_add_permission(self, request):
+        return False
+    
+    def has_delete_permission(self, request):
+        return False

@@ -96,15 +96,15 @@ class CierreVentasAdmin(admin.ModelAdmin):
 
             sucursal = request.user.sucursal
             form.base_fields['sucursal'].initial = sucursal
-            form.base_fields['sucursal'].disabled = True
+            #form.base_fields['sucursal'].disabled = True
             form.base_fields['ticket_desde'].initial = ticket_desde
-            form.base_fields['ticket_desde'].disabled = True
+            #form.base_fields['ticket_desde'].disabled = True
             form.base_fields['ticket_hasta'].initial = ticket_hasta
-            form.base_fields['ticket_hasta'].disabled = True
+            #form.base_fields['ticket_hasta'].disabled = True
             form.base_fields['ticket_cantidad'].initial = ticket_cantidad
-            form.base_fields['ticket_cantidad'].disabled = True
+            #form.base_fields['ticket_cantidad'].disabled = True
             form.base_fields['importe'].initial = importe
-            form.base_fields['importe'].disabled = True
+            #form.base_fields['importe'].disabled = True
         return form
 
     def save_model(self, request, obj, form, change):
@@ -129,7 +129,7 @@ class CierreVentasAdmin(admin.ModelAdmin):
         ventas = Venta.objects.filter(sucursal=request.user.sucursal, cobrada=True, anulado=False, cierreventa=None)
         print('ventas sin cerrar')
         print(ventas.count())
-        if ventas.count() == 0:
+        if ventas.count() > 0:
             return False
         return True
 
