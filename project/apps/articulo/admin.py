@@ -4,6 +4,7 @@ from django.contrib import admin
 from mptt.admin import MPTTModelAdmin
 
 from articulo.models import UnidadMedida, Articulo, ListaPrecio, Precio, Categoria, TipoIva
+from cliente.models import Cliente
 
 
 @admin.register(UnidadMedida)

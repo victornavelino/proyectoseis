@@ -1,7 +1,7 @@
 from django.contrib import admin, messages
 from django.db.models import Sum
 from jet.filters import RelatedFieldAjaxListFilter
-
+from decimal import Decimal
 from caja.models import Caja
 from cuentacorriente.constants import DEBITO, CREDITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
@@ -26,9 +26,9 @@ class CuentaCorrienteAdmin(admin.ModelAdmin):
 
     def saldo(self, obj):
         debito = MovimientoCuentaCorriente.objects.filter(cuenta=obj, tipo=DEBITO).aggregate(Sum('importe'))[
-            'importe__sum']
+            'importe__sum'] or Decimal(0.0)
         credito = MovimientoCuentaCorriente.objects.filter(cuenta=obj, tipo=CREDITO).aggregate(Sum('importe'))[
-            'importe__sum']
+            'importe__sum'] or Decimal(0.0)
         try:
             return debito - credito
         except:
@@ -45,6 +45,7 @@ class CuentaCorrienteAdmin(admin.ModelAdmin):
                 if caja_abierta is None and instance.tipo == CREDITO:
                     messages.error(request, 'La caja esta Cerrada')
                     return False
+        
             instance.save()
         formset.save_m2m()
 

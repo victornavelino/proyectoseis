@@ -23,15 +23,21 @@ from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from empleado.models import Sucursal
 from venta.forms import CobrarVentaForm
 from venta.models import Venta
+from import_export import resources
+from import_export.admin import ExportMixin, ExportActionMixin
 
 
 @admin.register(Caja)
 class CajaAdmin(admin.ModelAdmin):
-    list_display = ('usuario', 'caja_inicial', 'caja_final', 'fecha_inicio', 'fecha_fin',)
+    list_display = ('caja_pk','usuario', 'caja_inicial', 'caja_final', 'fecha_inicio', 'fecha_fin',)
     search_fields = ('usuario__username',)
     readonly_fields = ('caja_final',)
     actions = ['cerrar_caja', 'imprimir_cierre_caja']
     list_per_page = 30
+
+    def caja_pk(self, obj):
+        return obj.pk
+    caja_pk.short_description = 'Numero de Caja'
 
     def get_form(self, request, obj=None, *args, **kwargs):
         form = super(CajaAdmin, self).get_form(request, *args, **kwargs)
@@ -56,6 +62,7 @@ class CajaAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super(CajaAdmin, self).get_queryset(request)
         return qs.filter(sucursal=request.user.sucursal)
+    
 
     def save_model(self, request, obj, form, change):
         obj.usuario = request.user
@@ -268,7 +275,7 @@ class AdelantoAdmin(admin.ModelAdmin):
 
 @admin.register(Ingreso)
 class IngresoAdmin(admin.ModelAdmin):
-    list_display = ('tipo_ingreso', 'concepto', 'importe', 'fecha', 'usuario','cerrado')
+    list_display = ('concepto', 'importe', 'fecha', 'tipo_ingreso', 'usuario','cerrado')
     search_fields = ('concepto',)
     list_per_page = 30
 
@@ -292,6 +299,13 @@ class IngresoAdmin(admin.ModelAdmin):
             if obj.cerrado:
                 raise forms.ValidationError("No Puede Modificar este Movimiento, la caja esta Cerrada")
         super().save_model(request, obj, form, change)
+    
+    def has_delete_permission(self, request, obj=None):
+        if not request.user.is_superuser:
+            if obj:
+                if obj.cerrado:
+                    return False
+        return True
 
 
 @admin.register(RetiroEfectivo)
@@ -400,11 +414,20 @@ class CobroVentaAdmin(admin.ModelAdmin):
     add_form_template = 'admin/venta/cobro_venta/changelist.html'
 
 
+class CuponPagoTarjetaResource(resources.ModelResource):
+    fields = ('cliente', 'plan_tarjeta', 'importe',
+              'importe_con_recargo', 'fecha',)
+    class Meta:
+        model = CuponPagoTarjeta
+        fields = ('cliente__persona__apellido', 'plan_tarjeta__nombre_plan', 'importe', 'importe_con_recargo', 'fecha',)
+
 @admin.register(CuponPagoTarjeta)
-class CuponPagoTarjetaAdmin(admin.ModelAdmin):
+class CuponPagoTarjetaAdmin(ExportMixin, admin.ModelAdmin):
+    resource_class = CuponPagoTarjetaResource
     list_display = ('cliente', 'plan_tarjeta', 'importe', 'importe_con_recargo', 'fecha', 'caja')
     search_fields = ('cliente__persona__apellido',)
     list_per_page = 30
+    ordering = ('-fecha',)
 
     def caja(self, obj):
         cobro_venta = CobroVenta.objects.get(venta=obj.venta)
@@ -416,5 +439,5 @@ class CuponPagoTarjetaAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
     
-    def has_delete_permission(self, request):
+    def has_delete_permission(self, request, obj=None):
         return False

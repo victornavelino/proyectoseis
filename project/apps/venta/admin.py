@@ -7,6 +7,7 @@ from django.forms import forms
 from import_export import resources
 from wkhtmltopdf.views import PDFTemplateResponse
 from caja.models import Caja
+from caja.models import CobroVenta, CuponPagoTarjeta
 from venta.forms import VentaAdminForm, CobrarVentaForm
 from venta.models import VentaArticulo, Venta, CierreVentas
 from django.shortcuts import render
@@ -46,10 +47,26 @@ class VentaAdmin(ExportMixin, admin.ModelAdmin):
 
     @admin.action(description='Anular Venta')
     def anular_venta(self, request, queryset):
-        for venta in queryset:
-            venta.anulado=True
-            venta.save()
-            messages.success(request, 'Venta Anulada')
+        if len(queryset) != 1:
+            messages.error(request, 'Debe seleccionar solo una Venta para anular')
+            return False
+        venta=queryset[0]
+        if venta.cobrada:
+            cobro_venta=CobroVenta.objects.get(venta=venta)
+            if cobro_venta.caja.fecha_fin:
+                messages.error(request,'No se puede anular venta, la caja esta cerrada')
+                return False
+            else:
+                cupon_tarjeta =CuponPagoTarjeta.objects.get(venta=venta)
+                if cupon_tarjeta:
+                    cupon_tarjeta.delete
+                    cupon_tarjeta.save()    
+                cobro_venta.delete
+                cobro_venta.save()
+                print('entro anular venta cobrada')
+        venta.anulado=True
+        venta.save()
+        messages.success(request, 'Venta Anulada')
         return True
 
     @admin.action(description='Imprimir Ticket')
@@ -78,7 +95,7 @@ class VentaAdmin(ExportMixin, admin.ModelAdmin):
                                        )
         return response
 
-@admin.register(CierreVentas)
+"""@admin.register(CierreVentas)
 class CierreVentasAdmin(admin.ModelAdmin):
     list_display = ('numero_cierre', 'ticket_desde', 'ticket_hasta', 'importe', 'ticket_cantidad', 'fecha', 'sucursal')
     search_fields = ('numero_cierre',)
@@ -162,4 +179,4 @@ class CierreVentasAdmin(admin.ModelAdmin):
                                        cmd_options={'margin-top': 3,
                                                     'margin-left': 0},
                                        )
-        return response
+        return response"""
