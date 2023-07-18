@@ -50,9 +50,9 @@ class MovimientoCaja(models.Model):
             first = Caja.objects.latest('id')
             self.caja = first
             if self.caja.fecha_fin:
-                raise ValidationError("Debe existir una caja abierta")
+                raise ValidationError("La Caja se encuentra Cerrada")
         except Exception as e:
-            raise ValidationError("Debe existir una caja abierta")
+            raise ValidationError("La Caja se encuentra Cerrada")
 
     def save(self, *args, **kwargs):
         self.full_clean()
