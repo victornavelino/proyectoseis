@@ -847,9 +847,7 @@
                                 .blur(function (e) {
                                     e.preventDefault();
                                     var a_pagar = parseFloat(jQuery("#id_pagoefectivo_set-0-apagar").val());
-                                    console.log(a_pagar)
                                     var saldo = parseFloat(jQuery("#id_pagoefectivo_set-0-saldo").val());
-                                    console.log(saldo)
                                     result = saldo - a_pagar
                                     console.log('result: '+ result)
                                     if (a_pagar > saldo){
