@@ -470,9 +470,10 @@
                                             }
                                             else {
                                                 console.log('ingreso por no es por peso')
-                                                jQuery("#id_ventaarticulo_set-0-cantidad_peso").focus();
                                                 jQuery("#id_ventaarticulo_set-0-cantidad_peso").prop("readonly", false);
-                                            }                                        }
+                                                jQuery("#id_ventaarticulo_set-0-cantidad_peso").focus();
+                                            }                                     
+                                        }
                                     },
                                     error: function (response) {
                                         console.log(response);
