@@ -456,8 +456,23 @@
                                             jQuery("#id_ventaarticulo_set-0-precio").val(data.precio);
                                             jQuery("#id_ventaarticulo_set-0-precio_promo").val(data.precio_promo);
                                             //id_ventaarticulo_set-0-cantidad_peso if data.es_por_peso
-                                            jQuery("#id_ventaarticulo_set-0-cantidad_peso").focus();
-                                        }
+                                            console.log('es por peso: ', data.es_por_peso)
+                                            if (data.es_por_peso){
+                                                console.log('ingreso por es por peso')
+                                                jQuery.get('http://localhost:4700', function(data) {
+                                                // Utilizar la respuesta del servidor para establecer el valor de #id_ventaarticulo_set-0-cantidad_peso
+                                                jQuery("#id_ventaarticulo_set-0-cantidad_peso").val(data);
+                                                jQuery("#id_ventaarticulo_set-0-cantidad_peso").prop("readonly", true);
+                                                }).fail(function() {
+                                                  // Manejar errores en caso de que la solicitud falle
+                                                  console.log("Error al hacer la solicitud GET.");
+                                                });
+                                            }
+                                            else {
+                                                console.log('ingreso por no es por peso')
+                                                jQuery("#id_ventaarticulo_set-0-cantidad_peso").focus();
+                                                jQuery("#id_ventaarticulo_set-0-cantidad_peso").prop("readonly", false);
+                                            }                                        }
                                     },
                                     error: function (response) {
                                         console.log(response);
