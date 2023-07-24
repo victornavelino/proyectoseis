@@ -250,7 +250,7 @@ class CuponPagoTarjeta(models.Model):
     numero_cupon = models.CharField(null=True, max_length=10, verbose_name='Numero de Cupon')
     lote = models.CharField(null=True, max_length=10, verbose_name='Lote')
     fecha = models.DateTimeField(auto_now=True, verbose_name='Fecha')
-    venta = models.ForeignKey(Venta, on_delete=models.PROTECT, null=True, verbose_name='Venta')
+    venta = models.ForeignKey(Venta, on_delete=models.PROTECT, blank=True, null=True, verbose_name='Venta')
     observaciones = models.CharField(max_length=100, null=True, verbose_name='Observaciones')
 
     def __str__(self):
