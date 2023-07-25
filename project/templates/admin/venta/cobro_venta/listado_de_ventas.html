@@ -58,6 +58,7 @@
                     <th>Cliente</th>
                     <th>Detalle</th>
                     <th>Monto Total</th>
+                    <th>Vendedor</th>
                     <th>Accion</th>
                 </tr>
             </thead>
@@ -73,6 +74,7 @@
                         {% endfor %}
                     </td>
                     <td>{{venta.monto}}</td>
+                    <td>{{venta.usuario}}</td>
                     <td><input type="button" class="btn btn-primary"
                                onclick="window.location.href='{% url 'cobrar_venta' venta.numero_ticket %}';"
                                value="COBRAR" />
