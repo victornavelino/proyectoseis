@@ -202,6 +202,21 @@ class CajaAdmin(admin.ModelAdmin):
         return response
 
 
+@admin.register(MovimientoCaja)
+class MovimientoCajaAdmin(admin.ModelAdmin):
+    list_display = ( 'importe', 'fecha', 'usuario','cerrado', 'importe')
+    search_fields = ('usuario',)
+    list_per_page = 30
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(Sueldo)
 class SueldoAdmin(admin.ModelAdmin):

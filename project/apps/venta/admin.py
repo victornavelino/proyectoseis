@@ -27,15 +27,16 @@ class VentaArticuloInline(admin.StackedInline):
 
 class VentaResource(resources.ModelResource):
     fields = ('numero_ticket', 'fecha', 'monto',
-              'descuento', 'anulado', 'sucursal',)
+              'descuento', 'anulado', 'sucursal', 'usuario__username',)
     class Meta:
         model = Venta
-        fields = ('numero_ticket', 'fecha', 'monto', 'descuento', 'anulado', 'sucursal__nombre',)
+        fields = ('numero_ticket', 'fecha', 'monto', 'descuento', 'anulado', 'sucursal__nombre', 'usuario__username',)
+
 
 @admin.register(Venta)
 class VentaAdmin(ExportMixin, admin.ModelAdmin):
     resource_class = VentaResource
-    list_display = ('cliente', 'monto', 'numero_ticket', 'fecha', 'anulado', 'cobrada', 'sucursal', 'cierreventa')
+    list_display = ('cliente', 'monto', 'numero_ticket', 'fecha', 'anulado', 'cobrada', 'sucursal', 'cierreventa', 'usuario',)
     search_fields = ('numero_ticket',)
     exclude = ('es_persona', 'monto', 'descuento')
     list_filter = ['sucursal']
