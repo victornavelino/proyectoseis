@@ -202,14 +202,21 @@ class CajaAdmin(admin.ModelAdmin):
         return response
 
 
+class MovimientoCajaResource(resources.ModelResource):
+    fields = ( 'tipo', 'fecha', 'importe', 'sucursal', 'usuario__username',)
+    class Meta:
+        model = MovimientoCaja
+        fields = ( 'tipo', 'fecha', 'importe', 'sucursal__nombre', 'usuario__username',)
+
 @admin.register(MovimientoCaja)
-class MovimientoCajaAdmin(admin.ModelAdmin):
+class MovimientoCajaAdmin(ExportMixin, admin.ModelAdmin):
+    resource_class = MovimientoCajaResource
     list_display = ( 'importe', 'fecha', 'usuario','cerrado', 'importe')
     search_fields = ('usuario',)
     list_per_page = 30
 
     def has_add_permission(self, request):
-        return False
+        return True
 
     def has_change_permission(self, request, obj=None):
         return False
