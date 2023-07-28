@@ -32,7 +32,7 @@ class CajaAdmin(admin.ModelAdmin):
     list_display = ('caja_pk','usuario', 'caja_inicial', 'caja_final', 'fecha_inicio', 'fecha_fin',)
     search_fields = ('usuario__username',)
     readonly_fields = ('caja_final',)
-    actions = ['cerrar_caja', 'imprimir_cierre_caja']
+    actions = ['cerrar_caja', 'imprimir_cierre_caja', 'exportar_movimientos']
     list_per_page = 30
 
     def caja_pk(self, obj):
@@ -200,6 +200,19 @@ class CajaAdmin(admin.ModelAdmin):
                                        cmd_options={'margin-top': 50, },
                                        )
         return response
+    
+    @admin.action(description='Exportar Movimientos')
+    def exportar_movimientos(self, request, queryset):
+        if len(queryset) != 1:
+            messages.error(request, 'Debe seleccionar solo Una Caja')
+            return False
+        caja = queryset[0]
+        movimientos_caja = MovimientoCaja.objects.filter(caja=caja).select_subclasses()
+        for movimiento in movimientos_caja:
+            print(movimiento.__class__.__name__)
+        #print(movimientos_caja)
+        response = None
+        return response
 
 
 class MovimientoCajaResource(resources.ModelResource):
@@ -220,16 +233,6 @@ class MovimientoCajaAdmin(ExportMixin, admin.ModelAdmin):
     search_fields = ('usuario',)
     list_per_page = 30
 
-    def get_queryset(self, request):
-        qs = super(MovimientoCajaAdmin, self).get_queryset(request)
-        print('entro movimientocaja')
-
-        for movimiento in qs:
-            print('imprimimos tipo')
-            print(isinstance(movimiento, MovimientoCaja))
-
-
-        return qs.filter(sucursal=request.user.sucursal)
 
     def has_add_permission(self, request):
         return True
@@ -239,6 +242,8 @@ class MovimientoCajaAdmin(ExportMixin, admin.ModelAdmin):
     
     def has_delete_permission(self, request, obj=None):
         return False
+
+
 
 
 @admin.register(Sueldo)

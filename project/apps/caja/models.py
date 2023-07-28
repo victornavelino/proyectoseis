@@ -9,6 +9,7 @@ from cliente.models import Cliente
 from empleado.models import Sucursal, Empleado
 from usuario.models import Usuario
 from venta.models import Venta
+from model_utils.managers import InheritanceManager
 
 
 class Caja(models.Model):
@@ -33,7 +34,7 @@ class MovimientoCaja(models.Model):
         verbose_name = 'Movimiento de Caja'
         verbose_name_plural = 'Movimientos de Caja'
         ordering = ['-id']
-
+    objects = InheritanceManager()
 
     fecha = models.DateTimeField(auto_now=True)
     usuario = models.ForeignKey(Usuario, null=False, on_delete=models.PROTECT, verbose_name='Usuario')
