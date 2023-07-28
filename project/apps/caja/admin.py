@@ -207,6 +207,11 @@ class MovimientoCajaResource(resources.ModelResource):
     class Meta:
         model = MovimientoCaja
         fields = ( 'tipo', 'fecha', 'importe', 'sucursal__nombre', 'usuario__username',)
+    
+    def dehydrate_full_title(self, Cliente):
+        book_name = getattr(Cliente, "name", "unknown")
+        author_name = getattr(Cliente.persona.obtener_nombre_completo(), "name", "unknown")
+        return '%s by %s' % (book_name, author_name)
 
 @admin.register(MovimientoCaja)
 class MovimientoCajaAdmin(ExportMixin, admin.ModelAdmin):
@@ -214,6 +219,17 @@ class MovimientoCajaAdmin(ExportMixin, admin.ModelAdmin):
     list_display = ( 'importe', 'fecha', 'usuario','cerrado', 'importe')
     search_fields = ('usuario',)
     list_per_page = 30
+
+    def get_queryset(self, request):
+        qs = super(MovimientoCajaAdmin, self).get_queryset(request)
+        print('entro movimientocaja')
+
+        for movimiento in qs:
+            print('imprimimos tipo')
+            print(isinstance(movimiento, MovimientoCaja))
+
+
+        return qs.filter(sucursal=request.user.sucursal)
 
     def has_add_permission(self, request):
         return True
