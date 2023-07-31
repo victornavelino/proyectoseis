@@ -25,6 +25,7 @@ from venta.forms import CobrarVentaForm
 from venta.models import Venta
 from import_export import resources
 from import_export.admin import ExportMixin, ExportActionMixin
+from import_export.fields import Field
 
 
 @admin.register(Caja)
@@ -216,29 +217,33 @@ class CajaAdmin(admin.ModelAdmin):
 
 
 class MovimientoCajaResource(resources.ModelResource):
-    fields = ( 'tipo', 'fecha', 'importe', 'sucursal', 'usuario__username',)
+
+    movimiento = Field()
+    usuario = Field(attribute='usuario__username', column_name='Usuario')
+    sucursal = Field(attribute='sucursal__nombre', column_name='Sucursal')
+    caja = Field(attribute='caja__pk', column_name='Nro de Caja')
+
     class Meta:
         model = MovimientoCaja
-        fields = ( 'tipo', 'fecha', 'importe', 'sucursal__nombre', 'usuario__username',)
+        fields = ( 'caja', 'movimiento', 'tipo', 'fecha', 'importe', 'sucursal', 'usuario',)
     
-    def dehydrate_full_title(self, Cliente):
-        book_name = getattr(Cliente, "name", "unknown")
-        author_name = getattr(Cliente.persona.obtener_nombre_completo(), "name", "unknown")
-        return '%s by %s' % (book_name, author_name)
+    def dehydrate_movimiento(self, movimientocaja):
+        clase = movimientocaja.clase()
+        return clase
 
 @admin.register(MovimientoCaja)
 class MovimientoCajaAdmin(ExportMixin, admin.ModelAdmin):
     resource_class = MovimientoCajaResource
-    list_display = ( 'importe', 'fecha', 'usuario','cerrado', 'importe')
+    list_display = ('clase', 'importe', 'fecha', 'usuario','cerrado', 'importe')
     search_fields = ('usuario',)
     list_per_page = 30
 
 
     def has_add_permission(self, request):
-        return True
+        return False
 
     def has_change_permission(self, request, obj=None):
-        return False
+        return True
     
     def has_delete_permission(self, request, obj=None):
         return False

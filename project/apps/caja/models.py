@@ -44,6 +44,7 @@ class MovimientoCaja(models.Model):
     caja = models.ForeignKey(Caja, on_delete=models.PROTECT, null=True, verbose_name='Caja')
     tipo = models.CharField(max_length=7, choices=TIPOS_MOVIMIENTO_CAJA, verbose_name='Tipo')
 
+
     def clean(self):
         if self.importe <= 0.0:
             raise ValidationError("El importe del movimiento tiene que ser mayor que Cero")
@@ -93,6 +94,8 @@ class MovimientoCaja(models.Model):
                 return 'Gasto'
         except:
             pass
+    clase.short_description = 'Movimiento'
+
 
 
 class TipoIngreso(models.Model):
