@@ -13,6 +13,7 @@ from venta.models import VentaArticulo, Venta, CierreVentas
 from django.shortcuts import render
 from venta.forms import CobrarVentaForm
 from import_export.admin import ExportMixin, ExportActionMixin
+from import_export.fields import Field
 
 from venta.utils import calcular_importe_eventuales, calcular_importe_descuentos, calcular_importe_asado, \
     calcular_importe_blandos
@@ -26,11 +27,14 @@ class VentaArticuloInline(admin.StackedInline):
 
 
 class VentaResource(resources.ModelResource):
-    fields = ('numero_ticket', 'fecha', 'monto',
-              'descuento', 'anulado', 'sucursal', 'usuario__username',)
+
+    usuario = Field(attribute='usuario__username', column_name='Usuario')
+    sucursal = Field(attribute='sucursal__nombre', column_name='Sucursal')
+    cliente = Field(attribute='cliente__persona__obtener_nombre_completo', column_name='Cliente')
     class Meta:
         model = Venta
-        fields = ('numero_ticket', 'fecha', 'monto', 'descuento', 'anulado', 'sucursal__nombre', 'usuario__username',)
+        fields = ('numero_ticket', 'cliente', 'fecha', 'monto', 'descuento', 'anulado', 'sucursal', 'usuario',)
+        export_order = ('fecha', 'cliente','numero_ticket','monto','descuento','anulado','usuario','sucursal',)
 
 
 @admin.register(Venta)
