@@ -15,7 +15,7 @@ class Persona(models.Model):
     documento_identidad = models.CharField(max_length=12, verbose_name='Documento Identidad', unique=True)
     telefono = models.CharField(max_length=30, verbose_name='Teléfono', blank=True, null=True)
     correo_electronico = models.EmailField(blank=True, null=True, verbose_name='Correo Electrónico')
-    domicilio = models.CharField(max_length=100, verbose_name='Domicilio')
+    domicilio = models.CharField(max_length=100, verbose_name='Domicilio', blank=True, null=True)
     fecha_nacimiento = models.DateField(verbose_name='Fecha de Nacimiento', blank=True, null=True)
 
     @staticmethod
