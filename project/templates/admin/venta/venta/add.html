@@ -496,6 +496,7 @@
                             jQuery('#id_cliente').select2();
                             cargar_articulos();
                             cargar_clientes();
+                            jQuery("#id_cliente").focus();
                             django.jQuery('#add_id_articulo').click(function (e) {
                                 e.preventDefault();
                                 jQuery("#id_cliente option:selected").each(function () {
@@ -576,6 +577,17 @@
                         }
 
 
+                    });
+
+                    //Funciones de Teclas F
+                    jQuery( function() {
+                        jQuery(document).on('keydown', 'body', function(event) {
+                            //F2 Elegir cliente
+                            if(event.keyCode==113){
+                                event.preventDefault();
+                                console.log('entro f2 seleccionar cliente')
+                            }
+                        });
                     });
                     
                     const get_listaprecio = (id_cliente) => {

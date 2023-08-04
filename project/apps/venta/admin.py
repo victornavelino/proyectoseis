@@ -47,6 +47,7 @@ class VentaAdmin(ExportMixin, admin.ModelAdmin):
     readonly_fields = ('usuario',)
     list_per_page = 30
     add_form_template = 'admin/venta/venta/add.html'
+    change_list_template = 'admin/venta/venta/change_list.html'
     inlines = (VentaArticuloInline,)
     actions = ['anular_venta', 'imprimir_ticket']
 
