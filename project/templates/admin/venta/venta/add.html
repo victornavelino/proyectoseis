@@ -118,7 +118,6 @@
 
                             </select>
 
-
                         </div>
 
                         <div class="form-row1 field-listaprecio">
@@ -496,7 +495,7 @@
                             jQuery('#id_cliente').select2();
                             cargar_articulos();
                             cargar_clientes();
-                            jQuery("#id_cliente").focus();
+                            
                             django.jQuery('#add_id_articulo').click(function (e) {
                                 e.preventDefault();
                                 jQuery("#id_cliente option:selected").each(function () {
@@ -510,6 +509,24 @@
                                     alert('Debe seleccionar primero un cliente')
                                 }
                             });
+                                                      //FUNCION F2
+                                                      jQuery(document).on("keydown", function(event) {
+                                                        // Verificar si la tecla presionada es F2 (código de tecla 113)
+                                                        if (event.keyCode === 113) {
+                                                          // Simular un clic en el componente select para abrirlo
+                                                          event.preventDefault();
+                                                          jQuery("#id_cliente option:selected").each(function () {
+                                                              cliente = jQuery(this).val();
+                                                          });
+                                                          if (cliente) {
+                                                              clear();
+                                                              django.jQuery('#related-popup-container-articulo').show();
+                                                              jQuery('#id_cliente').select2("enable", false)
+                                                          } else {
+                                                              alert('Debe seleccionar primero un cliente')
+                                                          }
+                                                        }
+                                                      });
                             django.jQuery('#related-popup-back-articulo').click(function (e) {
                                 e.preventDefault();
                                 django.jQuery('#related-popup-container-articulo').hide();
@@ -524,6 +541,8 @@
                                 cargar();
 
                             });
+
+                            jQuery("#id_cliente").focus();
                             // al seleccionar cliente verificar si cumpleanios
                             jQuery('#id_cliente').on('change', function () {
                                 let id_cliente;
@@ -537,6 +556,7 @@
 
 
                             });
+  
 
                             const verificar_cumpleanio = (id_cliente) => {
                                 let url_mask = "{% url 'verificar_cumpleanios' pk_cliente=1234567 %}".replace(/1234567/, id_cliente);
@@ -578,18 +598,10 @@
 
 
                     });
+                
 
-                    //Funciones de Teclas F
-                    jQuery( function() {
-                        jQuery(document).on('keydown', 'body', function(event) {
-                            //F2 Elegir cliente
-                            if(event.keyCode==113){
-                                event.preventDefault();
-                                console.log('entro f2 seleccionar cliente')
-                            }
-                        });
-                    });
-                    
+
+                  
                     const get_listaprecio = (id_cliente) => {
                         console.log('entro get_lista precio' + id_cliente)
                         let url_mask = "{% url 'get_listaprecio' pk_cliente=1234567 %}".replace(/1234567/, id_cliente);
