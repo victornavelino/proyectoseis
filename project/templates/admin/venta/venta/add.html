@@ -504,29 +504,33 @@
                                 if (cliente) {
                                     clear();
                                     django.jQuery('#related-popup-container-articulo').show();
+                                    jQuery('#id_ventaarticulo_set-0-codigo_articulo').focus()
                                     jQuery('#id_cliente').select2("enable", false)
                                 } else {
                                     alert('Debe seleccionar primero un cliente')
                                 }
                             });
-                                                      //FUNCION F2
-                                                      jQuery(document).on("keydown", function(event) {
-                                                        // Verificar si la tecla presionada es F2 (código de tecla 113)
-                                                        if (event.keyCode === 113) {
-                                                          // Simular un clic en el componente select para abrirlo
-                                                          event.preventDefault();
-                                                          jQuery("#id_cliente option:selected").each(function () {
-                                                              cliente = jQuery(this).val();
-                                                          });
-                                                          if (cliente) {
-                                                              clear();
-                                                              django.jQuery('#related-popup-container-articulo').show();
-                                                              jQuery('#id_cliente').select2("enable", false)
-                                                          } else {
-                                                              alert('Debe seleccionar primero un cliente')
-                                                          }
-                                                        }
-                                                      });
+
+                            //FUNCION F2 AGREGAR ARTICULO
+                            jQuery(document).on("keydown", function(event) {
+                            // Verificar si la tecla presionada es F2 (código de tecla 113)
+                                if (event.keyCode === 113) {
+                                    // Simular un clic en el componente select para abrirlo
+                                    event.preventDefault();
+                                    jQuery("#id_cliente option:selected").each(function () {
+                                        cliente = jQuery(this).val();
+                                        });
+                                    if (cliente) {
+                                        clear();
+                                        django.jQuery('#related-popup-container-articulo').show();
+                                        jQuery('#id_ventaarticulo_set-0-codigo_articulo').focus();
+                                        jQuery('#id_cliente').select2("enable", false)
+                                    } else {
+                                        alert('Debe seleccionar primero un cliente')
+                                            }
+                                    }
+                            });
+
                             django.jQuery('#related-popup-back-articulo').click(function (e) {
                                 e.preventDefault();
                                 django.jQuery('#related-popup-container-articulo').hide();
