@@ -273,6 +273,7 @@
                                         <input type="button" onclick="agregar_tabla()" value="Agregar" class="default"
                                                name="add">
                                         <h2> F3 - Buscar articulo</h2>
+                                        <h2> F5 - Guardar Producto</h2>
 
                                     </div>
 
@@ -291,7 +292,11 @@
                         var cliente;
 
                         function agregar_tabla() {
-                            if (!jQuery("#id_ventaarticulo_set-0-cantidad_peso").val() || !jQuery("id_ventaarticulo_set-0-codigo_articulo").val()) {
+                            console.log("imprimo peso y codigo de articulo");
+                            cant_peso = jQuery("#id_ventaarticulo_set-0-cantidad_peso").val();
+                            cod_articulo = jQuery("id_ventaarticulo_set-0-codigo_articulo").val()
+
+                            if (jQuery("#id_ventaarticulo_set-0-cantidad_peso").val() > 0|| jQuery("id_ventaarticulo_set-0-codigo_articulo").val() > 0) {
 
                                 let id_articulo = jQuery("#id_ventaarticulo_set-0-codigo_articulo").val();
                                 let nombre_articulo = jQuery('#id_ventaarticulo_set-0-nombre_articulo').val();
@@ -311,12 +316,20 @@
                                     precio_total +
                                     '</td></tr>');
                                 django.jQuery('#related-popup-container-articulo').hide();
+                                calcularTotal();
                             } else {
-                                jQuery("#id_ventaarticulo_set-0-cantidad_peso").focus();
+                                swal({
+                                    icon: 'warning',
+                                    title: 'Debe cargar correctamente articulos y Cantidad/Peso',
+                                    text: ' Presione ESC para continuar',
+                                    button: 'Ok',
+                                });
+                                jQuery("#id_ventaarticulo_set-0-codigo_articulo").focus();
 
                             }
-                            calcularTotal();
+                            
                         }
+
 
                         function clear() {
                             jQuery("#id_ventaarticulo_set-0-codigo_articulo").val(null);
@@ -553,6 +566,16 @@
                                     jQuery('#id_articulo').focus();
                                     }
                             });
+
+                            //FUNCION F5 Habilitar SELECT articulo
+                            jQuery(document).on("keydown", function(event){
+                                if (event.keyCode ===116){
+                                    event.preventDefault();
+                                    agregar_tabla();
+                                }
+                            })
+
+                            
 
                             django.jQuery('#related-popup-back-articulo').click(function (e) {
                                 e.preventDefault();
