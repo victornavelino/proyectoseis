@@ -7,7 +7,7 @@ from empleado.models import Sucursal
 from promocion.models import Promocion, DiasSemana, PromocionArticulo, Descuento
 
 
-"""class PromocionArticuloInline(admin.TabularInline):
+class PromocionArticuloInline(admin.TabularInline):
     model = PromocionArticulo
 
 
@@ -48,7 +48,7 @@ class PromocionArticuloAdmin(admin.ModelAdmin):
     search_fields = ('articulo',)
     list_per_page = 30
 
-"""
+
 
 @admin.register(Descuento)
 class Descuento(admin.ModelAdmin):

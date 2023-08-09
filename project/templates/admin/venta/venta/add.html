@@ -272,7 +272,7 @@
 
                                         <input type="button" onclick="agregar_tabla()" value="Agregar" class="default"
                                                name="add">
-
+                                        <h2> F3 - Buscar articulo</h2>
 
                                     </div>
 
@@ -492,6 +492,7 @@
 
                         django.jQuery(document).ready(function () {
                             jQuery('#id_articulo').select2();
+                            jQuery('#id_articulo').select2("enable", false)
                             jQuery('#id_cliente').select2();
                             cargar_articulos();
                             cargar_clientes();
@@ -506,8 +507,13 @@
                                     django.jQuery('#related-popup-container-articulo').show();
                                     jQuery('#id_ventaarticulo_set-0-codigo_articulo').focus()
                                     jQuery('#id_cliente').select2("enable", false)
+                                    jQuery('#id_articulo').select2("enable", false)
                                 } else {
-                                    alert('Debe seleccionar primero un cliente')
+                                    swal({
+                                        icon: 'warning',
+                                        title: 'Debe seleccionar primero un cliente',
+                                        button: 'Ok'
+                                    });
                                 }
                             });
 
@@ -525,9 +531,26 @@
                                         django.jQuery('#related-popup-container-articulo').show();
                                         jQuery('#id_ventaarticulo_set-0-codigo_articulo').focus();
                                         jQuery('#id_cliente').select2("enable", false)
+                                        jQuery('#id_articulo').select2("enable", false)
                                     } else {
-                                        alert('Debe seleccionar primero un cliente')
+                                        //swal('Debe seleccionar primero un cliente')
+                                        swal({
+                                            icon: 'warning',
+                                            title: 'Debe seleccionar primero un cliente',
+                                            button: 'Ok'
+                                        });
                                             }
+                                    }
+                            });
+
+                            //FUNCION F3 Habilitar SELECT articulo
+                            jQuery(document).on("keydown", function(event) {
+                            // Verificar si la tecla presionada es F3 (código de tecla 114)
+                                if (event.keyCode === 114) {
+                                    // Simular un clic en el componente select para abrirlo
+                                    event.preventDefault();
+                                    jQuery('#id_articulo').select2("enable", true);
+                                    jQuery('#id_articulo').focus();
                                     }
                             });
 
@@ -638,9 +661,11 @@
                                 })
                             jQuery("#id_ventaarticulo_set-0-codigo_articulo").on('keypress', function (e) {
                                 if (e.which === 13) {
+                                    e.preventDefault();
                                     cargar();
                                 }
                             });
+                            
 
                         });
 
@@ -668,7 +693,7 @@
 
                     <h1>Total: $ <span id="total">0.00</span></h1>
 
-
+                
                 {% endblock %}
 
                 {% block after_field_sets %}{% endblock %}
@@ -681,6 +706,8 @@
                     <button class="button default" onclick="return guardar_venta(event);">Guardar
                     </button>
                     <!-- {% submit_row %} -->
+                    <p>&nbsp;</p>
+                    <h2>F2 - Añadir Articulo </h2> <h2> F4 - Realizar Venta </h2>
                 {% endblock %}
 
                 {% block admin_change_form_document_ready %}
