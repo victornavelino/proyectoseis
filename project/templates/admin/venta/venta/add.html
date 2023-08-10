@@ -112,7 +112,7 @@
 
 
                             <select name="cliente" required="" id="id_cliente" tabindex="-1"
-                                    class="vTextField"
+                                    style="width: 400px;"
                                     aria-hidden="true">
                                 <option value="" selected="">---------</option>
 
@@ -376,17 +376,7 @@
 
                             });
 
-                            jQuery('#id_cliente').select2({
-                                minimumInputLength: 1,
-                                theme: "bootstrap",
-                                tags: true,
-                                multiple: false,
-                                scrollable: true
-                              }).on('select2:select', function (e) {
-                                    //clear the input box after a selection is made
-                                    $(this).val([]).trigger('change');
-                                    $(this).val([e.params.data.id]).trigger("change");
-                                });
+
 
                         }
 
@@ -438,7 +428,7 @@
 
                                     }
                                 );
-                            } else alert('No se puede guardar una venta sin artículos')
+                            } else swal('No se puede guardar una venta sin artículos')
                             return false;
                         }
 
@@ -523,6 +513,7 @@
                             cargar_articulos();
                             cargar_clientes();
                             jQuery("#id_cliente").focus();
+
                             django.jQuery('#add_id_articulo').click(function (e) {
                                 e.preventDefault();
                                 jQuery("#id_cliente option:selected").each(function () {
@@ -543,6 +534,14 @@
                                 }
                             });
 
+                            //FUNCION F1 Seleccionar Cliente
+                            jQuery(document).on("keydown", function(event){
+                                if (event.keyCode ===112){
+                                    console.log("entro F1")
+                                    event.preventDefault();
+                                    jQuery('#id_cliente').select2("open"); 
+                                }
+                            })
                             //FUNCION F2 AGREGAR ARTICULO
                             jQuery(document).on("keydown", function(event) {
                             // Verificar si la tecla presionada es F2 (código de tecla 113)
@@ -580,6 +579,14 @@
                                     }
                             });
 
+                            //FUNCION F4 GUARDAR VENTA
+                            jQuery(document).on("keydown", function(event){
+                                if (event.keyCode ===115){
+                                    //event.preventDefault();
+                                    guardar_venta(event);
+                                }
+                            })
+
                             //FUNCION F5 Habilitar SELECT articulo
                             jQuery(document).on("keydown", function(event){
                                 if (event.keyCode ===116){
@@ -587,6 +594,10 @@
                                     agregar_tabla();
                                 }
                             })
+                            
+
+
+                            
 
                             
 
@@ -743,6 +754,7 @@
                     </button>
                     <!-- {% submit_row %} -->
                     <p>&nbsp;</p>
+                    <h2>F1 - Seleccionar Cliente </h2>
                     <h2>F2 - Añadir Articulo </h2> <h2> F4 - Realizar Venta </h2>
                 {% endblock %}
 
