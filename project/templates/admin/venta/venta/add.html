@@ -375,6 +375,19 @@
                                 }
 
                             });
+
+                            jQuery('#id_cliente').select2({
+                                minimumInputLength: 1,
+                                theme: "bootstrap",
+                                tags: true,
+                                multiple: false,
+                                scrollable: true
+                              }).on('select2:select', function (e) {
+                                    //clear the input box after a selection is made
+                                    $(this).val([]).trigger('change');
+                                    $(this).val([e.params.data.id]).trigger("change");
+                                });
+
                         }
 
                         function guardar_venta(e) {
@@ -509,7 +522,7 @@
                             jQuery('#id_cliente').select2();
                             cargar_articulos();
                             cargar_clientes();
-                            
+                            jQuery("#id_cliente").focus();
                             django.jQuery('#add_id_articulo').click(function (e) {
                                 e.preventDefault();
                                 jQuery("#id_cliente option:selected").each(function () {
@@ -592,7 +605,7 @@
 
                             });
 
-                            jQuery("#id_cliente").focus();
+                            
                             // al seleccionar cliente verificar si cumpleanios
                             jQuery('#id_cliente').on('change', function () {
                                 let id_cliente;
