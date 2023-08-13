@@ -9,6 +9,7 @@ from promocion.models import Promocion, DiasSemana, PromocionArticulo, Descuento
 
 class PromocionArticuloInline(admin.TabularInline):
     model = PromocionArticulo
+    extra = 1
 
 
 @admin.register(Promocion)
@@ -20,6 +21,7 @@ class PromocionAdmin(admin.ModelAdmin):
     inlines = [PromocionArticuloInline]
     actions = ['copiar_promociones']
     change_list_template = 'admin/promocion/promocion/promocion_changelist.html'
+    change_form_template = 'admin/promocion/promocion/promocion_changeform.html'
 
     @admin.action(description='Copiar Promocion')
     def copiar_promociones(self, request, queryset):
