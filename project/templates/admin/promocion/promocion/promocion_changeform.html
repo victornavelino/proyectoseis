@@ -3,32 +3,8 @@
 
 {% block admin_change_form_document_ready %}
 {{ block.super }}
-<script>
-    django.jQuery(document).ready(function () {
 
-        jQuery("#id_es_por_precio").click(function(event) {
-            if (!jQuery("#id_es_por_precio").is(":checked")) {
-            alert("Por favor, marque el checkbox para aceptar los términos y condiciones.");
-            event.preventDefault();
-            }
-         });
+<script src="{% static 'promocion/formset_handlers.js' %}"></script>
 
-        if (!jQuery("#id_es_por_precio").is(":checked")) {
-            jQuery("#id_promocionarticulo_set-0-valor").val(0)
-            jQuery("#id_promocionarticulo_set-0-valor").prop("disabled", true);
-            
-        }
-    });
-
-
-
-    console.log('funcionaaaaaaaa change form jquery')
-</script>
-    <!-- SWEETALERT -->
-    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-    <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
-    <script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
-    <script src="{% static 'js/jquery.bootstrap.modal.forms.js' %}"></script>
-    <script>    django.gettext = window.gettext    </script>
 
 {% endblock %}
