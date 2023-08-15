@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin, messages
 
 # Register your models here.
@@ -23,6 +24,11 @@ class PromocionAdmin(admin.ModelAdmin):
     change_list_template = 'admin/promocion/promocion/promocion_changelist.html'
     change_form_template = 'admin/promocion/promocion/promocion_changeform.html'
 
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        if db_field.name == 'valor':
+            kwargs['widget'] = forms.Textarea(attrs={'rows': 5})  # Cambia el widget a un textarea con 5 filas de altura
+        return super().formfield_for_dbfield(db_field, **kwargs)
+
     @admin.action(description='Copiar Promocion')
     def copiar_promociones(self, request, queryset):
         if len(queryset) != 1:
@@ -39,7 +45,7 @@ class PromocionAdmin(admin.ModelAdmin):
 
 @admin.register(DiasSemana)
 class DiasSemanaAdmin(admin.ModelAdmin):
-    list_display = ('lunes',)
+    list_display = ('lunes','martes', 'miercoles','jueves','viernes','sabado','domingo',)
     search_fields = ('lunes',)
     list_per_page = 30
 

@@ -91,12 +91,13 @@ class PromocionArticulo(models.Model):
         verbose_name_plural = 'Articulos'
         ordering = ['-id']
 
-    valor = models.DecimalField(max_digits=12, decimal_places=2)
+    valor = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE, null=False, verbose_name='Articulo Promocion')
     promocion = models.ForeignKey(Promocion, on_delete=models.CASCADE, null=True, verbose_name='Promocion')
 
     def __str__(self):
         return f'{self.articulo}'
+    
 
 
 class Descuento(models.Model):
