@@ -8,9 +8,23 @@ from empleado.models import Sucursal
 from promocion.models import Promocion, DiasSemana, PromocionArticulo, Descuento
 
 
+class PromocionArticuloInlineForm(forms.ModelForm):
+    class Meta:
+        model = PromocionArticulo
+        fields = "__all__"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        articulo = cleaned_data.get("articulo")
+        if not articulo:
+            raise forms.ValidationError("El Articulo no puede estar vacío.")
+        return cleaned_data
+
+
 class PromocionArticuloInline(admin.TabularInline):
     model = PromocionArticulo
-    extra = 1
+    form = PromocionArticuloInlineForm
+    extra = 0
 
 
 @admin.register(Promocion)
@@ -24,10 +38,8 @@ class PromocionAdmin(admin.ModelAdmin):
     change_list_template = 'admin/promocion/promocion/promocion_changelist.html'
     change_form_template = 'admin/promocion/promocion/promocion_changeform.html'
 
-    def formfield_for_dbfield(self, db_field, **kwargs):
-        if db_field.name == 'valor':
-            kwargs['widget'] = forms.Textarea(attrs={'rows': 5})  # Cambia el widget a un textarea con 5 filas de altura
-        return super().formfield_for_dbfield(db_field, **kwargs)
+
+
 
     @admin.action(description='Copiar Promocion')
     def copiar_promociones(self, request, queryset):
