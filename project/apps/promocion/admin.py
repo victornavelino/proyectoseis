@@ -5,20 +5,8 @@ from django.contrib import admin, messages
 from django.shortcuts import render
 
 from empleado.models import Sucursal
+from promocion.forms import PromocionArticuloInlineForm
 from promocion.models import Promocion, DiasSemana, PromocionArticulo, Descuento
-
-
-class PromocionArticuloInlineForm(forms.ModelForm):
-    class Meta:
-        model = PromocionArticulo
-        fields = "__all__"
-
-    def clean(self):
-        cleaned_data = super().clean()
-        articulo = cleaned_data.get("articulo")
-        if not articulo:
-            raise forms.ValidationError("El Articulo no puede estar vacío.")
-        return cleaned_data
 
 
 class PromocionArticuloInline(admin.TabularInline):
@@ -36,8 +24,6 @@ class PromocionAdmin(admin.ModelAdmin):
     inlines = [PromocionArticuloInline]
     actions = ['copiar_promociones']
     change_list_template = 'admin/promocion/promocion/promocion_changelist.html'
-    change_form_template = 'admin/promocion/promocion/promocion_changeform.html'
-
 
 
 
