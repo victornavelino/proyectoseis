@@ -16,4 +16,3 @@ class PromocionArticuloInlineForm(forms.ModelForm):
             raise forms.ValidationError("El Articulo no puede estar vacío.")
         return cleaned_data
 
-    
