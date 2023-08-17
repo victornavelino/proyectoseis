@@ -1,18 +1,15 @@
 
 from django import forms
+from promocion.models import Promocion
 from promocion.models import PromocionArticulo
 
-
-class PromocionArticuloInlineForm(forms.ModelForm):
-    
+class PromocionForm(forms.ModelForm):
     class Meta:
-        model = PromocionArticulo 
+        model= Promocion
         fields = "__all__"
-
+    
     def clean(self):
         cleaned_data = super().clean()
-        articulo = cleaned_data.get("articulo")
-        if not articulo:
-            raise forms.ValidationError("El Articulo no puede estar vacío.")
+        print('self.data:  ', self.data)
         return cleaned_data
-
+    

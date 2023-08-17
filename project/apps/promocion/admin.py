@@ -5,18 +5,18 @@ from django.contrib import admin, messages
 from django.shortcuts import render
 
 from empleado.models import Sucursal
-from promocion.forms import PromocionArticuloInlineForm
+from promocion.forms import PromocionForm
 from promocion.models import Promocion, DiasSemana, PromocionArticulo, Descuento
 
 
 class PromocionArticuloInline(admin.TabularInline):
     model = PromocionArticulo
-    form = PromocionArticuloInlineForm
     extra = 0
 
 
 @admin.register(Promocion)
 class PromocionAdmin(admin.ModelAdmin):
+    form = PromocionForm
     list_display = ('nombre', 'prioridad', 'fecha_inicio', 'fecha_fin', 'es_por_precio', 'dias_semana', 'sucursal', 'habilitada')
     search_fields = ('nombre', 'sucursal')
     list_filter =['sucursal',]
