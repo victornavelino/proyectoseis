@@ -50,7 +50,7 @@ class VentaAdmin(ExportMixin, admin.ModelAdmin):
     change_list_template = 'admin/venta/venta/change_list.html'
     inlines = (VentaArticuloInline,)
     actions = ['anular_venta', 'imprimir_ticket']
-
+    
     @admin.action(description='Anular Venta')
     def anular_venta(self, request, queryset):
         if len(queryset) != 1:

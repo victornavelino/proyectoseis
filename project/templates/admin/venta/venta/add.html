@@ -315,7 +315,7 @@
                                     precio_unitario + '</td><td>' +
                                     precio_total +
                                     '</td></tr>');
-                                django.jQuery('#related-popup-container-articulo').hide();
+                                jQuery('#related-popup-container-articulo').hide();
                                 calcularTotal();
                             } else {
                                 swal({
@@ -506,7 +506,7 @@
                             jQuery('#total').html(total.toFixed(2));
                         }
 
-                        django.jQuery(document).ready(function () {
+                            jQuery(document).ready(function () {
                             jQuery('#id_articulo').select2();
                             jQuery('#id_articulo').select2("enable", false)
                             jQuery('#id_cliente').select2();
@@ -514,14 +514,14 @@
                             cargar_clientes();
                             jQuery("#id_cliente").focus();
 
-                            django.jQuery('#add_id_articulo').click(function (e) {
+                                jQuery('#add_id_articulo').click(function (e) {
                                 e.preventDefault();
                                 jQuery("#id_cliente option:selected").each(function () {
                                     cliente = jQuery(this).val();
                                 });
                                 if (cliente) {
                                     clear();
-                                    django.jQuery('#related-popup-container-articulo').show();
+                                    jQuery('#related-popup-container-articulo').show();
                                     jQuery('#id_ventaarticulo_set-0-codigo_articulo').focus()
                                     jQuery('#id_cliente').select2("enable", false)
                                     jQuery('#id_articulo').select2("enable", false)
@@ -553,7 +553,7 @@
                                         });
                                     if (cliente) {
                                         clear();
-                                        django.jQuery('#related-popup-container-articulo').show();
+                                        jQuery('#related-popup-container-articulo').show();
                                         jQuery('#id_ventaarticulo_set-0-codigo_articulo').focus();
                                         jQuery('#id_cliente').select2("enable", false)
                                         jQuery('#id_articulo').select2("enable", false)
@@ -601,9 +601,9 @@
 
                             
 
-                            django.jQuery('#related-popup-back-articulo').click(function (e) {
+                            jQuery('#related-popup-back-articulo').click(function (e) {
                                 e.preventDefault();
-                                django.jQuery('#related-popup-container-articulo').hide();
+                                jQuery('#related-popup-container-articulo').hide();
                             });
                             jQuery('#id_articulo').on('change', function () {
                                 let id_articulo;

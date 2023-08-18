@@ -280,7 +280,7 @@
                                     precio_unitario + '</td><td>' +
                                     precio_total +
                                     '</td></tr>');
-                                django.jQuery('#related-popup-container-articulo').hide();
+                                jQuery('#related-popup-container-articulo').hide();
                             } else {
                                 jQuery("#id_ventaarticulo_set-0-cantidad_peso").focus();
 
@@ -413,27 +413,27 @@
                             jQuery('#total').html(total.toFixed(2));
                         }
 
-                        django.jQuery(document).ready(function () {
+                        jQuery(document).ready(function () {
                             jQuery('#id_articulo').select2();
                             jQuery('#id_cliente').select2();
                             cargar_articulos();
                             cargar_clientes();
-                            django.jQuery('#add_id_articulo').click(function (e) {
+                            jQuery('#add_id_articulo').click(function (e) {
                                 e.preventDefault();
                                 jQuery("#id_cliente option:selected").each(function () {
                                     cliente = jQuery(this).val();
                                 });
                                 if (cliente) {
                                     clear();
-                                    django.jQuery('#related-popup-container-articulo').show();
+                                    jQuery('#related-popup-container-articulo').show();
                                     jQuery('#id_cliente').select2("enable", false)
                                 } else {
                                     alert('Debe seleccionar primero un cliente')
                                 }
                             });
-                            django.jQuery('#related-popup-back-articulo').click(function (e) {
+                            jQuery('#related-popup-back-articulo').click(function (e) {
                                 e.preventDefault();
-                                django.jQuery('#related-popup-container-articulo').hide();
+                                jQuery('#related-popup-container-articulo').hide();
                             });
                             jQuery('#id_articulo').on('change', function () {
                                 let id_articulo;

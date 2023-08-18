@@ -11,8 +11,8 @@ class PromocionForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         print('self.data:  ', self.data)
-        """promocionesarticulos = [int(self.data[key]) for key in self.data if
-                        key.startswith('promocionarticulo_set-') and self.data[key] != '']
-        print('PROMOCIONES ARTICULOS', promocionesarticulos)"""
+        for key in self.data:
+            if key.startswith('promocionarticulo_set-'):
+                print('IMPRIMIENDO KEY:', key)  
         return cleaned_data
     

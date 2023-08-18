@@ -16,8 +16,8 @@ class UnidadMedidaAdmin(admin.ModelAdmin):
 
 @admin.register(Articulo)
 class ArticuloAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'abreviatura', 'categoria', 'unidad_medida')
-    search_fields = ('nombre',)
+    list_display = ('nombre','codigo', 'abreviatura', 'categoria', 'unidad_medida')
+    search_fields = ('nombre','codigo')
     list_filter = ('categoria',)
     list_per_page = 30
 
