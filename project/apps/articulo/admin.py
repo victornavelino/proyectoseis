@@ -38,10 +38,16 @@ class TipoIvaAdmin(admin.ModelAdmin):
 
 @admin.register(Precio)
 class PrecioAdmin(admin.ModelAdmin):
-    list_display = ('articulo', 'sucursal', 'lista_precio', 'precio')
-    search_fields = ('articulo',)
-    list_filter = ('sucursal', 'lista_precio')
+    list_display = ('articulo', 'get_articulo_codigo' ,'sucursal', 'lista_precio', 'precio')
+    search_fields = ('articulo__nombre', 'articulo__codigo')
     list_per_page = 30
+
+    def get_articulo_codigo(self, obj):
+        if obj.articulo.codigo:
+            return obj.articulo.codigo
+        else:
+            return 'Not Available'
+    get_articulo_codigo.short_description = 'Codigo'
 
 
 @admin.register(Categoria)
