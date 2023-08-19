@@ -44,6 +44,19 @@ services:
       PGADMIN_DEFAULT_PASSWORD: vallE.159
     volumes:
       - pgadmin-data:/var/lib/pgadmin
+  # PORTAINER CE
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /home/vvalle/proyectovvalle/portainer-data:/data
+    ports:
+      - 9000:9000
 
 volumes:
   pgadmin-data:
