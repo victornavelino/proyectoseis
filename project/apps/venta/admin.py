@@ -95,7 +95,7 @@ class VentaAdmin(ExportMixin, admin.ModelAdmin):
                                                 'vendedor': vendedor,
                                                 'articulos': articulos_venta,
                                                 'monto_descuento': monto_descuento},
-                                       show_content_in_browser=False,
+                                       show_content_in_browser=True,
                                        cmd_options={'margin-top': 3,
                                                     'margin-left': 0},
                                        )

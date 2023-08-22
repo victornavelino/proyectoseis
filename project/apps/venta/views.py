@@ -8,6 +8,7 @@ from django.core import serializers
 from django.urls import reverse_lazy
 from django.views.generic import ListView, FormView
 from datetime import date
+from wkhtmltopdf.views import PDFTemplateView
 
 from articulo.models import Precio, ListaPrecio, Articulo
 
@@ -296,13 +297,6 @@ def get_ventas(request):
                       context={'ventas': ventas})
 
 
-# class BookCreateView(BSModalCreateView):
-#     print("CREATE BOOK")
-#     template_name = 'admin/venta/new_pago.html'
-#     form_class = BookModelForm
-#     success_message = 'Success: Book was created.'
-#     success_url = reverse_lazy('index')
-
 class mostrar_dialog_pago(ListView):
     print("MOSTRAR DIALOG PAGO")
     template_name = 'admin/venta/cobro_venta/new_pago.html'
@@ -319,15 +313,18 @@ def mostrar_dialog(request):
                   context={'form': form})
 
 
-#
-# class mostrar_dialog(FormView):
-#     template_name = "admin/venta/new_pago.html"
-#     form_class = form_dialog_pago
-
-
 def form_test(request, *args, **kwargs):
     form = form_dialog_pago()
     context = {
         'form': form
     }
     return render(request, 'admin/venta/cobro_venta/new_pago.html', context)
+
+#PARA GENERAR EL TICKET PDF PARA IMPRIMIR EN MODAL
+class GeneratePDFView(PDFTemplateView):
+    template_name = 'pdf_template.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Add context data for the PDF template
+        return context
