@@ -9,12 +9,14 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, FormView
 from datetime import date
 from wkhtmltopdf.views import PDFTemplateView
+from wkhtmltopdf.views import PDFTemplateResponse
 
 from articulo.models import Precio, ListaPrecio, Articulo
 
 # Create your views here.
 from caja.models import TarjetaDeCredito, Caja
 from cliente.models import Cliente
+from venta.models import VentaArticulo
 from promocion.models import Promocion, Descuento
 from venta.forms import CobrarVentaForm, form_dialog_pago
 from venta.models import Venta
@@ -173,7 +175,8 @@ def get_articulos_todos(request):
 
 def get_clientes(request):
     if request.user.is_authenticated:
-        clientes = Cliente.objects.all()
+        clientes = Cliente.objects.all().order_by('persona__apellido')
+        print(clientes)
         results = []
         for a in clientes:
             json_valores = {
@@ -321,10 +324,26 @@ def form_test(request, *args, **kwargs):
     return render(request, 'admin/venta/cobro_venta/new_pago.html', context)
 
 #PARA GENERAR EL TICKET PDF PARA IMPRIMIR EN MODAL
-class GeneratePDFView(PDFTemplateView):
-    template_name = 'pdf_template.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # Add context data for the PDF template
-        return context
+def imprimir_ticket(request, numero_ticket):
+    if request.user.is_authenticated:
+        venta = Venta.objects.get(sucursal=request.user.sucursal, numero_ticket=numero_ticket)
+        nombre_archivo = "venta-" + str(venta.numero_ticket)+"-" + str(venta.fecha) + ".pdf"
+        vendedor = request.user
+        articulos_venta = VentaArticulo.objects.filter(venta=venta)
+        monto_descuento = 0
+        for articulo in articulos_venta:
+            descuento_individual = articulo.precio_unitario - articulo.precio_promocion
+            monto_descuento = monto_descuento + descuento_individual
+        print("Entro a vista imprimir ticket: ", venta.numero_ticket)
+        response = PDFTemplateResponse(request=request,
+                                       template='admin/venta/ticket_venta.html',
+                                       filename=nombre_archivo,
+                                       context={'venta': venta,
+                                                'vendedor': vendedor,
+                                                'articulos': articulos_venta,
+                                                'monto_descuento': monto_descuento},
+                                       show_content_in_browser=True,
+                                       cmd_options={'margin-top': 3,
+                                                    'margin-left': 0},
+                                       )
+        return response

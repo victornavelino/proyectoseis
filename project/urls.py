@@ -19,14 +19,13 @@ from django.contrib import admin
 from django.views.generic import RedirectView
 from oauth2_provider.urls import base_urlpatterns
 from django.urls import path, include
-from venta.views import GeneratePDFView
 
 from caja.views import planes_tarjeta, cobrar_ticket, cerrar_caja, imprimir_cierre_caja, imprimir_cierre_caja_pdf
 from cuentacorriente.views import get_cc_cliente
 from inventario.views import recepcionar_movimiento_ingreso
 
 from project.apps.articulo.views import get_precio_articulo, copiar_precios, copiar_precios_proceso,get_listas_precio_sucursal
-from project.apps.venta.views import get_listaprecio
+from project.apps.venta.views import get_listaprecio, imprimir_ticket
 from project.router import router
 from promocion.views import copiar_promos, copiar_promociones, get_promociones_sucursal
 from usuario.api import RegistroUsuarioAPIView
@@ -63,7 +62,7 @@ urlpatterns = [
                   path('admin/venta/venta/cobrar_venta/<int:numero_ticket>', cobrar_venta, name='cobrar_venta'),
                   path('admin/venta/venta/cobrar_venta/', cobrar_ticket, name='cobrar_ticket'),
                   path('admin/venta/venta/cobrar_venta/', mostrar_dialog, name='nuevo_pago'),
-                  path('generate_pdf/', GeneratePDFView.as_view(), name='generate_pdf'),
+                  path('admin/venta/venta/<int:numero_ticket>', imprimir_ticket, name='imprimir_ticket'),
                   path('admin/promocion/promocion/copiar_promociones/', copiar_promociones, name='copiar_promociones'),
                   path('admin/articulo/precio/copiar_precios/', copiar_precios, name='copiar_precios'),
                   path('admin/articulo/precio/copiar_precios_proceso/', copiar_precios_proceso, name='copiar_precios_proceso'),

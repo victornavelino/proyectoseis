@@ -348,7 +348,7 @@
                                 url: url_mask,
                                 success: function (data) {
                                     jQuery.each(data, function (key, registro) {
-                                        jQuery("#id_articulo").append('<option value=' + registro.codigo + '>' + registro.articulo + '</option>');
+                                        jQuery("#id_articulo").append('<option value=' + registro.codigo + '>' + registro.codigo+' - '+ registro.articulo + '</option>');
                                     });
                                 },
                                 error: function (response) {
@@ -400,14 +400,25 @@
                                             'json',
                                         success:
                                             function (result) {
-                                                if (result.numero_ticket > 0) {
-                                                    swal({
-                                                        icon: 'success',
-                                                        title: 'Exito!',
-                                                        text: "La venta N° " + result.numero_ticket + " se realizó correctamente",
-                                                        button: 'Ok'
-                                                    });
-                                                    limpiarTodo();
+                                                if (result.numero_ticket > 0) {                                                  
+                                                        let url = "{% url 'imprimir_ticket' numero_ticket=1234567 %}".replace(/1234567/, result.numero_ticket);
+                                                        var iframe = document.createElement('iframe');
+                                                        iframe.setAttribute("id", "iframeTicket");
+                                                        iframe.src = url;    
+                                                        iframe.height = 0; //alto 0
+                                                        swal({
+                                                            title: "La venta N° " + result.numero_ticket + " se realizó correctamente",
+                                                            icon: 'success',
+                                                            content: iframe,
+                                                            //  '<iframe width="560" height="315" src="' + url + '" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>',
+                                                            showCloseButton: true,
+                                                            focusConfirm: false,
+                                                            button: 'Ok',                                              
+                                                        }).then((value) => {
+                                                            document.getElementById('iframeTicket').contentWindow.print();
+                                                         });
+                                                      //  window.location.href = "{% url 'imprimir_ticket' numero_ticket=1234567 %}".replace(/1234567/, result.numero_ticket);
+                                                                                                       limpiarTodo();
                                                 } else {
                                                     if (result.caja = "cerrada") {
 
@@ -593,6 +604,7 @@
                                     agregar_tabla();
                                 }
                             })
+
                             
 
 
@@ -773,6 +785,6 @@
             </div>
         </form>
         <!-- SWEETALERT -->
-        <script src="{% static 'js/sweetalert.min.js' %}"></script>
+        <script src="https://unpkg.com/sweetalert@2.1.2/dist/sweetalert.min.js"></script>
     </div>
 {% endblock %}
