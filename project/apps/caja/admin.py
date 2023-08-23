@@ -478,8 +478,16 @@ class CuponPagoTarjetaAdmin(ExportMixin, admin.ModelAdmin):
     resource_class = CuponPagoTarjetaResource
     list_display = ('cliente', 'plan_tarjeta', 'importe', 'importe_con_recargo', 'fecha', 'caja')
     search_fields = ('cliente__persona__apellido',)
+    readonly_fields = ('importe_con_recargo','recargo')
     list_per_page = 30
     ordering = ('-fecha',)
+    change_form_template = 'admin/caja/cuponpagotarjeta_changeform.html'
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        # Si estás editando un objeto existente, oculta el campo 'campo_a_ocultar'
+        form.base_fields['venta'].widget = forms.HiddenInput()
+        return form
 
     def caja(self, obj):
         cobro_venta = CobroVenta.objects.get(venta=obj.venta)

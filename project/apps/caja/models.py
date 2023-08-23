@@ -246,16 +246,16 @@ class CuponPagoTarjeta(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, null=True, verbose_name='Cliente')
     plan_tarjeta = models.ForeignKey(PlanTarjetaDeCredito, on_delete=models.PROTECT, null=False,
                                      verbose_name='Plan Tarjeta')
-    numero_tarjeta = models.CharField(max_length=10, null=True, verbose_name='Numero de Tarjeta')
+    numero_tarjeta = models.CharField(max_length=10, null=True, blank=True, verbose_name='Numero de Tarjeta')
     importe = models.DecimalField(max_digits=12, decimal_places=2, default=0, null=False, verbose_name='Importe Pago')
     recargo = models.DecimalField(max_digits=12, decimal_places=2, default=0, null=False, verbose_name='Recargo')
     importe_con_recargo = models.DecimalField(max_digits=12, decimal_places=2, default=0, null=False,
                                               verbose_name='Importe con Recargo')
-    numero_cupon = models.CharField(null=True, max_length=10, verbose_name='Numero de Cupon')
-    lote = models.CharField(null=True, max_length=10, verbose_name='Lote')
+    numero_cupon = models.CharField(null=True, blank=True, max_length=10, verbose_name='Numero de Cupon')
+    lote = models.CharField(null=True, blank=True, max_length=10, verbose_name='Lote')
     fecha = models.DateTimeField(auto_now=True, verbose_name='Fecha')
     venta = models.ForeignKey(Venta, on_delete=models.PROTECT, blank=True, null=True, verbose_name='Venta')
-    observaciones = models.CharField(max_length=100, null=True, verbose_name='Observaciones')
+    observaciones = models.CharField(max_length=100, null=True, blank=True, verbose_name='Observaciones')
 
     def __str__(self):
         return f'{self.cliente}'
