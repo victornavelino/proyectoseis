@@ -19,7 +19,7 @@ class MovimientoCuentaCorrienteInline(admin.TabularInline):
 @admin.register(CuentaCorriente)
 class CuentaCorrienteAdmin(admin.ModelAdmin):
     list_display = ('cliente', 'fecha', 'activa', 'saldo')
-    list_display_links = ('saldo',)
+    list_display_links = ('cliente', 'saldo',)
     list_filter = (('cliente', RelatedFieldAjaxListFilter), 'cliente__persona__documento_identidad')
     list_per_page = 30
     inlines = (MovimientoCuentaCorrienteInline,)
