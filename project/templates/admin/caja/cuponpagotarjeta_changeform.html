@@ -1,9 +1,58 @@
 {% extends "admin/change_form.html" %}
-
+{% load static %}
 {% block extrahead %}
+<script type="text/javascript" src="{% static 'js/sweetalert.min.js' %}"></script>
     {{ block.super }}
+
+
     <script type="text/javascript">
-        // Tu código JavaScript aquí
-        alert("JavaScript agregado al formulario de añadir de Django admin.");
+
+            jQuery(document).ready(function () {
+            // ventana inicial
+            swal({
+            icon: 'warning',
+            title: 'Advertencia',
+            text: 'Utilice este formulario solo para Cupones de Tarjeta para Cuentas Corrientes',
+            });        
+
+            let interes_tarjeta = 0.00
+            console.log('ENTROOOO')
+            //SELECT PLAN TARJETA
+            jQuery("#id_plan_tarjeta")
+                                .change(function (e) {
+                                    e.preventDefault();
+                                    console.log('cambio el elemento')
+                                    let id_plan_tarjeta = jQuery("#id_plan_tarjeta").val();
+                                    getInteresTarjeta(id_plan_tarjeta)
+                                });
+            //CARGAR INTERES DESDE EL BACK
+            const getInteresTarjeta = (id_plan_tarjeta) =>{
+                if (id_plan_tarjeta > 0){
+                    //limpiarPlanesTarjeta();
+                    let url_mask = "{% url 'plan_tarjeta' id_plan_tarjeta=8246 %}".replace(/8246/, id_plan_tarjeta);
+                    jQuery.ajax({
+                                type: 'GET',
+                                url: url_mask,
+                                success: function (data) {
+                                    if(data.id !=null){
+                                        console.log("trajo valores")
+                                        console.log(data.id)
+                                        console.log(data.nombre_plan)
+                                        console.log(data.interes)
+                                    }
+                                },
+                                error: function (response) {
+                                    console.log(response);
+                                }
+
+                                });
+
+                 }
+
+            }
+
+        });
+        
     </script>
+    
 {% endblock %}

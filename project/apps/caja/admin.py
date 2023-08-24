@@ -478,7 +478,7 @@ class CuponPagoTarjetaAdmin(ExportMixin, admin.ModelAdmin):
     resource_class = CuponPagoTarjetaResource
     list_display = ('cliente', 'plan_tarjeta', 'importe', 'importe_con_recargo', 'fecha', 'caja')
     search_fields = ('cliente__persona__apellido',)
-    readonly_fields = ('importe_con_recargo','recargo')
+    readonly_fields = ('recargo','importe_con_recargo',)
     list_per_page = 30
     ordering = ('-fecha',)
     change_form_template = 'admin/caja/cuponpagotarjeta_changeform.html'

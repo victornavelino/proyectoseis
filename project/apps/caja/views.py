@@ -40,6 +40,23 @@ def planes_tarjeta(request, pk_tarjeta):
         data = serializers.serialize('json', valores)
     return HttpResponse(data, content_type="application/json")
 
+def plan_tarjeta(request, id_plan_tarjeta):
+    if request.user.is_authenticated:
+        plan = PlanTarjetaDeCredito.objects.get(pk=id_plan_tarjeta)
+        if plan:
+            json_valores = {
+                "id": str(plan.pk),
+                "nombre_plan": plan.nombre_plan,
+                "interes": str(plan.interes)
+            }           
+            data = json.dumps(json_valores)
+        else:
+            valores = {}
+            data = serializers.serialize('json', valores)
+    else:
+        valores = {}
+        data = serializers.serialize('json', valores)
+    return HttpResponse(data, content_type="application/json")
 
 def cobrar_ticket(request):
     if request.user.is_authenticated:

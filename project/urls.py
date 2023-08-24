@@ -20,7 +20,7 @@ from django.views.generic import RedirectView
 from oauth2_provider.urls import base_urlpatterns
 from django.urls import path, include
 
-from caja.views import planes_tarjeta, cobrar_ticket, cerrar_caja, imprimir_cierre_caja, imprimir_cierre_caja_pdf
+from caja.views import planes_tarjeta, cobrar_ticket, cerrar_caja, imprimir_cierre_caja, plan_tarjeta, imprimir_cierre_caja_pdf
 from cuentacorriente.views import get_cc_cliente
 from inventario.views import recepcionar_movimiento_ingreso
 
@@ -56,6 +56,7 @@ urlpatterns = [
                   path('admin/venta/clientes/get_listaprecio/<int:pk_cliente>', get_listaprecio, name='get_listaprecio'),
                   path('admin/caja/tarjetas_de_credito/', get_tarjetas, name='tarjetas'),
                   path('admin/caja/planes_tarjeta/<int:pk_tarjeta>', planes_tarjeta, name='planes_tarjeta'),
+                  path('admin/caja/plan_tarjeta/<int:id_plan_tarjeta>', plan_tarjeta, name='plan_tarjeta'),
                   path('admin/venta/venta/nuevo_pago_efectivo/', nuevo_pago_efectivo, name='nuevo_pago_efectivo'),
                   path('admin/venta/venta/listado_de_ventas/', listar_ventas, name='listar_ventas'),
                   path('admin/venta/venta/listado_de_ventas/', get_ventas, name='get_ventas'),
