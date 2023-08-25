@@ -229,7 +229,7 @@ class PlanTarjetaDeCredito(models.Model):
 
     tarjeta = models.ForeignKey(TarjetaDeCredito, null=False, on_delete=models.PROTECT,
                                 verbose_name='Tarjeta de Credito')
-    nombre_plan = models.CharField(max_length=30, null=False, verbose_name='Nombre del Plan')
+    nombre_plan = models.CharField(max_length=75, null=False, verbose_name='Nombre del Plan')
     interes = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='Interes')
     es_vale = models.BooleanField(default=False, verbose_name="Es Vale?")
 
@@ -246,7 +246,7 @@ class CuponPagoTarjeta(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, null=True, verbose_name='Cliente')
     plan_tarjeta = models.ForeignKey(PlanTarjetaDeCredito, on_delete=models.PROTECT, null=False,
                                      verbose_name='Plan Tarjeta')
-    numero_tarjeta = models.CharField(max_length=10, null=True, blank=True, verbose_name='Numero de Tarjeta')
+    numero_tarjeta = models.CharField(max_length=16, null=True, blank=True, verbose_name='Numero de Tarjeta')
     importe = models.DecimalField(max_digits=12, decimal_places=2, default=0, null=False, verbose_name='Importe Pago')
     recargo = models.DecimalField(max_digits=12, decimal_places=2, default=0, null=False, verbose_name='Recargo')
     importe_con_recargo = models.DecimalField(max_digits=12, decimal_places=2, default=0, null=False,

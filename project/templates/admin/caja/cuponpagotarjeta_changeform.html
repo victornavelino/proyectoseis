@@ -13,18 +13,19 @@
             icon: 'warning',
             title: 'Advertencia',
             text: 'Utilice este formulario solo para Cupones de Tarjeta para Cuentas Corrientes',
-            });        
-
+            });
             let interes_tarjeta = 0.00
-            console.log('ENTROOOO')
-            //SELECT PLAN TARJETA
-            jQuery("#id_plan_tarjeta")
-                                .change(function (e) {
-                                    e.preventDefault();
-                                    console.log('cambio el elemento')
-                                    let id_plan_tarjeta = jQuery("#id_plan_tarjeta").val();
-                                    getInteresTarjeta(id_plan_tarjeta)
-                                });
+            let id_plan_tarjeta = 0
+            jQuery("#id_recargo").prop("readonly", true);
+            jQuery("#id_importe_con_recargo").prop("readonly", true);
+
+            // evitamos que enter haga post
+            jQuery("#id_importe").keydown(function(event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                return false;
+            }
+            });
             //CARGAR INTERES DESDE EL BACK
             const getInteresTarjeta = (id_plan_tarjeta) =>{
                 if (id_plan_tarjeta > 0){
@@ -39,6 +40,9 @@
                                         console.log(data.id)
                                         console.log(data.nombre_plan)
                                         console.log(data.interes)
+                                        //guardamos en una variable local el interes
+                                        interes_tarjeta = data.interes
+                                        
                                     }
                                 },
                                 error: function (response) {
@@ -49,7 +53,49 @@
 
                  }
 
-            }
+            }            
+            //inicializamos el valor del interes en caso de modificacion
+            const inicializar = () =>{
+                console.log('imprimo valor inicial del id plan tarjeta');
+                id_plan_tarjeta = jQuery("#id_plan_tarjeta").val();
+                if (id_plan_tarjeta > 0){
+                    getInteresTarjeta(id_plan_tarjeta)
+                    }              
+                 }
+
+            inicializar();
+
+
+
+            //MEtodo para calcular intereses al perder foto del texto del importe
+            const calcularInteres = ()=>{
+                                if(interes_tarjeta > 0){
+                                        let importe_cupon = jQuery("#id_importe").val();
+                                        if (importe_cupon > 0 ){
+                                            let recargo = importe_cupon * interes_tarjeta /100;
+                                            let totalConInteres = parseFloat(importe_cupon) + recargo;
+                                            jQuery("#id_recargo").val(recargo);
+                                            jQuery("#id_importe_con_recargo").val(totalConInteres);
+                                        }
+                                }
+                            }
+            //SELECT PLAN TARJETA
+            jQuery("#id_plan_tarjeta")
+                                .change(function (e) {
+                                    e.preventDefault();
+                                    console.log('cambio el elemento')
+                                    id_plan_tarjeta = jQuery("#id_plan_tarjeta").val();
+                                    getInteresTarjeta(id_plan_tarjeta)
+                                });
+
+               // al elegir cantidad a pagar y perder el foco
+            jQuery("#id_importe")
+                .blur(function (e) {
+                     e.preventDefault();
+                     calcularInteres()
+                });
+
+
 
         });
         

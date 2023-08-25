@@ -458,6 +458,15 @@ class PlanTarjetaDeCreditoAdmin(admin.ModelAdmin):
     search_fields = ('nombre_plan',)
     list_per_page = 30
 
+    def save_model(self, request, obj, form, change):
+        if change:
+            super().save_model(request, obj, form, change)
+        else:
+            valor = str(obj.tarjeta.nombre)+' - '+ str(obj.nombre_plan)
+            obj.nombre_plan = valor
+            print(obj.nombre_plan)
+            super().save_model(request, obj, form, change)
+
 
 @admin.register(CobroVenta)
 class CobroVentaAdmin(admin.ModelAdmin):
@@ -478,7 +487,6 @@ class CuponPagoTarjetaAdmin(ExportMixin, admin.ModelAdmin):
     resource_class = CuponPagoTarjetaResource
     list_display = ('cliente', 'plan_tarjeta', 'importe', 'importe_con_recargo', 'fecha', 'caja')
     search_fields = ('cliente__persona__apellido',)
-    readonly_fields = ('recargo','importe_con_recargo',)
     list_per_page = 30
     ordering = ('-fecha',)
     change_form_template = 'admin/caja/cuponpagotarjeta_changeform.html'
