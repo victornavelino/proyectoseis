@@ -503,6 +503,20 @@ class CuponPagoTarjetaAdmin(ExportMixin, admin.ModelAdmin):
         return cobro_venta.caja.pk
     caja.short_description = 'Numero de Caja'
     
+    
+    def save_model(self, request, obj, form, change):
+        try:
+            cuenta_corriente = CuentaCorriente.objects.get(cliente=obj.cliente)
+            if cuenta_corriente.activa:
+                super().save_model(request, obj, form, change)
+            else:
+                 messages.error(request, 'El Cliente tiene cuenta corriente inactiva')
+                 return False
+        except:
+            messages.error(request, "El cliente no tiene cuenta corriente")
+            return False
+
+        
 
     """def has_add_permission(self, request):
         return False
