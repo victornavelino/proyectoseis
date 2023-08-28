@@ -519,7 +519,6 @@ class CuponPagoTarjetaAdmin(ExportMixin, admin.ModelAdmin):
                                                                            tipo=CREDITO)
                     movimiento_cc.importe=obj.importe_con_recargo
                     movimiento_cc.save()
-
                 else:
                     movimiento_cc = MovimientoCuentaCorriente.objects.create(cuenta=cuenta_corriente, importe=obj.importe_con_recargo,
                                                                            tipo=CREDITO,
