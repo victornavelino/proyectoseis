@@ -507,6 +507,9 @@ class CuponPagoTarjetaAdmin(ExportMixin, admin.ModelAdmin):
     
     
     def save_model(self, request, obj, form, change):
+        if obj.importe_con_recargo ==0:
+            messages.error(request, 'El importe tiene que ser mayor que CERO')
+            return False
         try:
             cuenta_corriente = CuentaCorriente.objects.get(cliente=obj.cliente)
             print(cuenta_corriente)

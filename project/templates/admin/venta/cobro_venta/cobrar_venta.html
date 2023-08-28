@@ -383,9 +383,37 @@
                            }
 
                         }
+                        const boolean tieneSaldoElClienteCC = (apagar_cc) =>{
+                            cliente_id = {{ venta.cliente.pk }}
+                            let urlmask = "{% url 'get_cc_cliente' cliente_id=8246 %}".replace(/8246/, cliente_id);
+                            resultado = false;
+                            jQuery.ajax({
+                                type: 'GET',
+                                url: urlmask,
+                                success: function (data) {
+                                   if (data.saldo_cc <= apagar_cc){
+                                    resultado = true;
+                                   }else{
+                                    resultado = false;
+                                   }
+                                },
+                                error: function (response) {
+                                    console.log(response);
+                                    resultado = false;
+                                }
+
+                            });
+                            return resultado
+                        }
+
+
                         const validarCamposCCorriente = () => {
                             if(jQuery("#id_pagoccorriente_set-0-apagar").val() <=0){
                                 swal('El valor a pagar debe ser mayor a 0');
+                                return false;
+                            }
+                            if(!tieneSaldoElClienteCC(jQuery("#id_pagoccorriente_set-0-apagar").val())){
+                                swal('El Saldo del cliente es menor al pago que desea realizar');
                                 return false;
                             }
                             return true;

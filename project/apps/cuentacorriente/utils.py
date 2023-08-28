@@ -1,11 +1,12 @@
 import decimal
 from decimal import Decimal
-
+from django.db.models import Sum
 from caja.constants import INGRESO, EGRESO
 from caja.models import MovimientoCaja, CobroVenta, Caja, PlanTarjetaDeCredito, CuponPagoTarjeta, TipoIngreso, Ingreso
 from cuentacorriente.constants import DEBITO, CREDITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from venta.models import Venta
+
 
 
 def guardar_pago_ccorriente(pago_ccorriente, numero_ticket, usuario):
@@ -29,3 +30,13 @@ def cobrar_ccorriente(cliente, importe, observaciones, usuario, caja):
                            sucursal=usuario.sucursal, caja=caja, usuario=usuario)
     ccorriente.refresh_from_db()
     return ccorriente
+
+def calcular_saldo_cc(cuenta_corriente):
+    debito = MovimientoCuentaCorriente.objects.filter(cuenta=cuenta_corriente, tipo=DEBITO).aggregate(Sum('importe'))[
+        'importe__sum'] or Decimal(0.0)
+    credito = MovimientoCuentaCorriente.objects.filter(cuenta=cuenta_corriente, tipo=CREDITO).aggregate(Sum('importe'))[
+        'importe__sum'] or Decimal(0.0)
+    try:
+        return debito - credito
+    except:
+        return 0
