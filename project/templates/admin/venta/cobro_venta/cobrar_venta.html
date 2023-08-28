@@ -383,10 +383,12 @@
                            }
 
                         }
-                        const tieneSaldoElClienteCC = (apagar_cc) =>{
+                        const validarSaldoCC = (apagar_cc) =>{
+                            console.log('a pagarrr')
+                            console.log(apagar_cc)
                             cliente_id = {{ venta.cliente.pk }}
                             let urlmask = "{% url 'get_cc_cliente' cliente_id=8246 %}".replace(/8246/, cliente_id);
-                            resultado = false;
+                            let resultado = false;
                             jQuery.ajax({
                                 type: 'GET',
                                 url: urlmask,
@@ -398,30 +400,45 @@
                                     if(data.saldo_cc < 0 ){
                                         saldocc= data.saldo_cc * -1
                                         console.log(saldocc)
+                                        if (saldocc >= apagar_cc){
+                                            console.log('entro TRUE')
+                                            resultado = true;
+                                           }else{
+                                            resultado = false;
+                                           }
                                     }
-                                   if (data.saldo_cc >= apagar_cc){
-                                    resultado = true;
-                                   }else{
-                                    resultado = false;
-                                   }
+ 
                                 },
                                 error: function (response) {
                                     console.log(response);
-                                    resultado = false;
+                                    
                                 }
 
                             });
+                            console.log('resultado')
+                            console.log(resultado)
                             return resultado
                         }
 
 
                         const validarCamposCCorriente = () => {
                             if(jQuery("#id_pagoccorriente_set-0-apagar").val() <=0){
-                                swal('El valor a pagar debe ser mayor a 0');
+                                swal({
+                                    icon: 'error',
+                                    title: 'Ups!',
+                                    text: 'El valor a pagar debe ser mayor a 0',
+                                    button: 'Ok'
+                                });
                                 return false;
                             }
-                            if(!tieneSaldoElClienteCC(jQuery("#id_pagoccorriente_set-0-apagar").val())){
-                                swal('El Saldo del cliente es menor al pago que desea realizar');
+                            
+                            if(!validarSaldoCC(jQuery("#id_pagoccorriente_set-0-apagar").val())){
+                                swal({
+                                    icon: 'error',
+                                    title: 'Ups!',
+                                    text: 'El cliente No posee saldo Suficiente para el pago que desea realizar!',
+                                    button: 'Ok'
+                                });
                                 return false;
                             }
                             return true;
