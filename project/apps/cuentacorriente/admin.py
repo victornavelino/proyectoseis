@@ -12,8 +12,9 @@ class MovimientoCuentaCorrienteInline(admin.TabularInline):
     extra = 0
     verbose_name = "Movimiento"
     verbose_name_plural = "Movimientos"
-    fields = ('importe', 'fecha', 'tipo', 'usuario', 'venta')
+    fields = ('importe', 'fecha', 'tipo', 'usuario', 'venta', 'observaciones')
     readonly_fields = ('usuario', 'venta', 'fecha')
+    can_delete = True
 
 
 @admin.register(CuentaCorriente)
@@ -35,7 +36,7 @@ class CuentaCorrienteAdmin(admin.ModelAdmin):
             return 0
 
     def save_formset(self, request, form, formset, change):
-        instances = formset.save(commit=False)
+        instances = formset.save()
         caja_abierta = Caja.objects.filter(sucursal=request.user.sucursal, fecha_fin__isnull=True,
                                            fecha_inicio__isnull=False).last()
         for instance in instances:
@@ -47,7 +48,7 @@ class CuentaCorrienteAdmin(admin.ModelAdmin):
                     return False
         
             instance.save()
-        formset.save_m2m()
+        #formset.save_m2m()
 
 
 

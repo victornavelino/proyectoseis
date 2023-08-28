@@ -39,7 +39,7 @@ class MovimientoCuentaCorriente(models.Model):
     tipo = models.CharField(max_length=1,choices=TIPOS_MOVIMIENTO_CTA_CTE, verbose_name='Tipo de movimiento')
     usuario = models.ForeignKey('usuario.Usuario', on_delete=models.PROTECT, verbose_name='Usuario')
     venta = models.ForeignKey('venta.Venta', on_delete=models.PROTECT, null=True, verbose_name='Venta relacionada')
-    observaciones = models.TextField(max_length=30, verbose_name='Observaciones', null=True)
+    observaciones = models.CharField(max_length=40, verbose_name='Observaciones', null=True)
 
 
     def __str__(self):

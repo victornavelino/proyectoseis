@@ -5,9 +5,10 @@ from decimal import Decimal
 from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
-from django.db.models import Sum
+from django.db.models import Sum, F
 from jet.filters import RelatedFieldAjaxListFilter
 from wkhtmltopdf.views import PDFTemplateResponse
+
 
 # Register your models here.
 from django.shortcuts import render
@@ -21,6 +22,7 @@ from caja.utils import calcular_saldo_caja, calcular_caja_final, calcular_ingres
 from cuentacorriente.constants import DEBITO, CREDITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from empleado.models import Sucursal
+from cuentacorriente.constants import TIPOS_MOVIMIENTO_CTA_CTE
 from venta.forms import CobrarVentaForm
 from venta.models import Venta
 from import_export import resources
@@ -507,7 +509,23 @@ class CuponPagoTarjetaAdmin(ExportMixin, admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         try:
             cuenta_corriente = CuentaCorriente.objects.get(cliente=obj.cliente)
+            print(cuenta_corriente)
             if cuenta_corriente.activa:
+                #Creamos el movimiento de cuenta corriente
+                print('entro activa')
+                if change:
+                    fecha=obj.fecha
+                    movimiento_cc = MovimientoCuentaCorriente.objects.get(cuenta=cuenta_corriente, fecha=F('fecha'),
+                                                                           tipo=CREDITO)
+                    movimiento_cc.importe=obj.importe_con_recargo
+                    movimiento_cc.save()
+
+                else:
+                    movimiento_cc = MovimientoCuentaCorriente.objects.create(cuenta=cuenta_corriente, importe=obj.importe_con_recargo,
+                                                                           tipo=CREDITO,
+                                                                           usuario=request.user,
+                                                                           venta=None, observaciones=' Cupon tarjeta Cuenta Corriente')
+                    movimiento_cc.refresh_from_db()
                 super().save_model(request, obj, form, change)
             else:
                  messages.error(request, 'El Cliente tiene cuenta corriente inactiva')
