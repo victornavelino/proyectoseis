@@ -383,7 +383,7 @@
                            }
 
                         }
-                        const boolean tieneSaldoElClienteCC = (apagar_cc) =>{
+                        const tieneSaldoElClienteCC = (apagar_cc) =>{
                             cliente_id = {{ venta.cliente.pk }}
                             let urlmask = "{% url 'get_cc_cliente' cliente_id=8246 %}".replace(/8246/, cliente_id);
                             resultado = false;
@@ -391,7 +391,15 @@
                                 type: 'GET',
                                 url: urlmask,
                                 success: function (data) {
-                                   if (data.saldo_cc <= apagar_cc){
+                                    console.log('imprimo apagar')
+                                    console.log(apagar_cc)
+                                    console.log('imprimo saldo CC')
+                                    console.log(data.saldo_cc)
+                                    if(data.saldo_cc < 0 ){
+                                        saldocc= data.saldo_cc * -1
+                                        console.log(saldocc)
+                                    }
+                                   if (data.saldo_cc >= apagar_cc){
                                     resultado = true;
                                    }else{
                                     resultado = false;
