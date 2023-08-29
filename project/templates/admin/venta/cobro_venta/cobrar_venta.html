@@ -384,27 +384,30 @@
 
                         }
                         const validarSaldoCC = (apagar_cc) =>{
-                            console.log('a pagarrr')
-                            console.log(apagar_cc)
+                            //console.log('a pagarrr')
+                            //console.log(apagar_cc)
                             cliente_id = {{ venta.cliente.pk }}
                             let urlmask = "{% url 'get_cc_cliente' cliente_id=8246 %}".replace(/8246/, cliente_id);
-                            let resultado = false;
+                            let resultado;
                             jQuery.ajax({
                                 type: 'GET',
                                 url: urlmask,
                                 success: function (data) {
-                                    console.log('imprimo apagar')
-                                    console.log(apagar_cc)
-                                    console.log('imprimo saldo CC')
-                                    console.log(data.saldo_cc)
+                                    //console.log('imprimo apagar')
+                                    //console.log(apagar_cc)
+                                    //console.log('imprimo saldo CC')
+                                    //console.log(data.saldo_cc)
                                     if(data.saldo_cc < 0 ){
                                         saldocc= data.saldo_cc * -1
-                                        console.log(saldocc)
+                                        //console.log(saldocc)
                                         if (saldocc >= apagar_cc){
-                                            console.log('entro TRUE')
-                                            resultado = true;
+                                            //console.log('entro TRUE')
+                                            return true;
+                                            //return resultado;
                                            }else{
-                                            resultado = false;
+                                            //console.log('entro FALSE')
+                                            resureturn= false;
+                                            //return resultado;
                                            }
                                     }
  
@@ -415,8 +418,6 @@
                                 }
 
                             });
-                            console.log('resultado')
-                            console.log(resultado)
                             return resultado
                         }
 
@@ -431,8 +432,9 @@
                                 });
                                 return false;
                             }
-                            
-                            if(!validarSaldoCC(jQuery("#id_pagoccorriente_set-0-apagar").val())){
+                            console.log('imprimo RESULTADO DEL METODO VALIDARSALDOCC')
+                            console.log(validarSaldoCC(jQuery("#id_pagoccorriente_set-0-apagar").val()));
+                            if(validarSaldoCC(jQuery("#id_pagoccorriente_set-0-apagar").val())===false){
                                 swal({
                                     icon: 'error',
                                     title: 'Ups!',
@@ -440,8 +442,10 @@
                                     button: 'Ok'
                                 });
                                 return false;
+                            }else{
+                                return true;
                             }
-                            return true;
+                           
                         }
                         //BOTON FORMULARIO CCORRIENTE
                         const agregarRegistroTablaCCorriente = () => {
