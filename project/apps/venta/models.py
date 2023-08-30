@@ -4,7 +4,7 @@ from django.db import models
 # Create your models here.
 from articulo.models import Articulo
 from cliente.models import Cliente
-from empleado.models import Sucursal
+from empleado.models import Sucursal, Empleado
 from usuario.models import Usuario
 
 
@@ -30,7 +30,7 @@ class Venta(models.Model):
         verbose_name = 'Venta'
         verbose_name_plural = 'Ventas'
         ordering = ['-numero_ticket']
-
+    empleado = models.ForeignKey(Empleado, null=False, on_delete=models.PROTECT, verbose_name='Empleado')
     numero_ticket = models.AutoField(primary_key=True, verbose_name='Numero de Ticket')
     fecha = models.DateTimeField(verbose_name='Fecha de venta', null=False)
     monto = models.DecimalField(max_digits=12, decimal_places=2)
