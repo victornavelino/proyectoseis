@@ -16,6 +16,7 @@ from articulo.models import Precio, ListaPrecio, Articulo
 # Create your views here.
 from caja.models import TarjetaDeCredito, Caja
 from cliente.models import Cliente
+from empleado.models import Empleado
 from venta.models import VentaArticulo
 from promocion.models import Promocion, Descuento
 from venta.forms import CobrarVentaForm, form_dialog_pago
@@ -347,3 +348,23 @@ def imprimir_ticket(request, numero_ticket):
                                                     'margin-left': 0},
                                        )
         return response
+
+
+def get_empleados(request):
+    if request.user.is_authenticated:
+        empleados = Empleado.objects.filter(fecha_baja=None).order_by('persona__apellido')
+        print(empleados)
+        results = []
+        for a in empleados:
+            json_valores = {
+                "id": a.id,
+                "nombre": a.persona.obtener_nombre_completo(),
+                "dni": a.persona.documento_identidad,
+                "fecha_nacimiento": str(a.persona.fecha_nacimiento)
+            }
+            results.append(json_valores)
+        data = json.dumps(results)
+    else:
+        valores = {}
+        data = serializers.serialize('json', valores)
+    return HttpResponse(data, content_type="application/json")

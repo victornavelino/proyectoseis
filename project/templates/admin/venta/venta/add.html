@@ -103,7 +103,19 @@
                             </div>
 
                         </div>
+                        <div class="form-row1 field-empleado">
 
+                            <label class="required" for="id_empleado">Vendedor:</label>
+
+
+                            <select name="empleado" required="" id="id_empleado" tabindex="-1"
+                                    style="width: 400px;"
+                                    aria-hidden="true">
+                                <option value="" selected="">---------</option>
+
+                            </select>
+
+                        </div>
 
                         <div class="form-row1 field-articulo">
 
@@ -289,6 +301,7 @@
                     <script>
                         var articulos = [];
                         var cliente;
+                        let id_empleado;
 
                         function agregar_tabla() {
                             console.log("imprimo peso y codigo de articulo");
@@ -378,13 +391,37 @@
 
 
                         }
+                        //CARGAR EMPLEADOS
+                        function cargar_empleados() {
+                            let url_mask = "{% url 'empleados' %}";
 
+                            jQuery.ajax({
+                                type: 'GET',
+                                url: url_mask,
+                                success: function (data) {
+                                    jQuery.each(data, function (key, registro) {
+                                        jQuery("#id_empleado").append('<option value=' + registro.id + '>' + registro.nombre + '</option>');
+                                    });
+                                },
+                                error: function (response) {
+                                    console.log(response);
+                                }
+
+                            });
+
+
+
+                        }
                         function guardar_venta(e) {
                             e.preventDefault();
 
                             let miVenta = {
                                 "venta":
-                                    {"cliente": cliente, "articulos": articulos}
+                                    {
+                                     "empleado": id_empleado,
+                                     "cliente": cliente, 
+                                     "articulos": articulos
+                                    }
                             }
 
                             if (articulos.length > 0) {
@@ -520,11 +557,14 @@
                             jQuery('#id_articulo').select2();
                             jQuery('#id_articulo').select2("enable", false)
                             jQuery('#id_cliente').select2();
+                            jQuery('#id_empleado').select2();
                             cargar_articulos();
+                            cargar_empleados();
                             cargar_clientes();
-                            jQuery("#id_cliente").focus();
+                            jQuery("#id_empleado").focus();
+                            //jQuery("#id_cliente").focus();
 
-                                jQuery('#add_id_articulo').click(function (e) {
+                            jQuery('#add_id_articulo').click(function (e) {
                                 e.preventDefault();
                                 jQuery("#id_cliente option:selected").each(function () {
                                     cliente = jQuery(this).val();
@@ -544,6 +584,30 @@
                                 }
                             });
 
+                            //FUNCION F9 Seleccionar Vendedor
+                            jQuery(document).on("keydown", function(event){
+                                if (event.keyCode ===120){
+                                    console.log("entro F9 vendedor")
+                                    event.preventDefault();
+                                    jQuery('#id_empleado').select2("open"); 
+                                }
+                            })
+                            // CUANDO PIERDE EL FOCO EL SELECT DE EMPLEADOS
+                            jQuery("#id_empleado").blur(function (e) {
+                                //jQuery('#id_cliente').focus();
+                                //jQuery('#id_cliente').select2("open");
+                            })
+
+
+                            // al seleccionar Empleado seteamos su ID
+                            jQuery('#id_empleado').on('change', function () {
+                                jQuery("#id_empleado option:selected").each(function () {
+                                    id_empleado = jQuery(this).val();
+                                    console.log('empleado seleccionado')
+                                    console.log(id_empleado)
+                                });
+                            });
+
                             //FUNCION F1 Seleccionar Cliente
                             jQuery(document).on("keydown", function(event){
                                 if (event.keyCode ===112){
@@ -552,6 +616,7 @@
                                     jQuery('#id_cliente').select2("open"); 
                                 }
                             })
+
                             //FUNCION F2 AGREGAR ARTICULO
                             jQuery(document).on("keydown", function(event) {
                             // Verificar si la tecla presionada es F2 (código de tecla 113)
@@ -765,6 +830,7 @@
                     </button>
                        <!-- {% submit_row %} -->
                     <p>&nbsp;</p>
+                    <h2>F9 - Seleccionar Vendedor </h2>
                     <h2>F1 - Seleccionar Cliente </h2>
                     <h2>F2 - Añadir Articulo </h2> <h2> F4 - Realizar Venta </h2>
                 {% endblock %}

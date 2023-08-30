@@ -30,6 +30,7 @@ class Venta(models.Model):
         verbose_name = 'Venta'
         verbose_name_plural = 'Ventas'
         ordering = ['-numero_ticket']
+
     empleado = models.ForeignKey(Empleado, null=False, on_delete=models.PROTECT, verbose_name='Empleado')
     numero_ticket = models.AutoField(primary_key=True, verbose_name='Numero de Ticket')
     fecha = models.DateTimeField(verbose_name='Fecha de venta', null=False)

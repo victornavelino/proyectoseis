@@ -34,7 +34,7 @@ from django.conf import settings
 from venta.forms import form_dialog_pago
 from venta.views import get_valores, get_articulos, get_articulos_todos, get_clientes, guardar_venta, \
     nuevo_pago_efectivo, listar_ventas, get_ventas, cobrar_venta, mostrar_dialog, form_test, get_tarjetas, \
-    verificar_cumpleanios
+    verificar_cumpleanios, get_empleados
 
 admin.site.site_header = getattr(settings, 'PROJECT_NAME_HEADER')
 admin.site.site_title = getattr(settings, 'PROJECT_NAME_TITLE')
@@ -52,6 +52,7 @@ urlpatterns = [
                   path('admin/venta/articulos/<str:articulo>', get_articulos, name='articulos'),
                   path('admin/venta/articulos_todos/', get_articulos_todos, name='articulo_todos'),
                   path('admin/venta/clientes/', get_clientes, name='clientes'),
+                  path('admin/venta/empleados/', get_empleados, name='empleados'),
                   path('admin/venta/clientes/<int:pk_cliente>', verificar_cumpleanios, name='verificar_cumpleanios'),
                   path('admin/venta/clientes/get_listaprecio/<int:pk_cliente>', get_listaprecio, name='get_listaprecio'),
                   path('admin/caja/tarjetas_de_credito/', get_tarjetas, name='tarjetas'),
