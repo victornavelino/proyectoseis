@@ -342,6 +342,8 @@
                             jQuery("#id_saldo").val(saldo);
                         let nroticket = 0;
                         nroticket = {{ venta.numero_ticket }}
+                        let cc_cliente = {}
+                        let saldo_cc_cliente = 0
 
                         //BOTON FORMULARIO EFECTIVO
                         const agregarRegistroTablaEfectivo = () => {
@@ -386,40 +388,23 @@
                         const validarSaldoCC = (apagar_cc) =>{
                             //console.log('a pagarrr')
                             //console.log(apagar_cc)
-                            cliente_id = {{ venta.cliente.pk }}
-                            let urlmask = "{% url 'get_cc_cliente' cliente_id=8246 %}".replace(/8246/, cliente_id);
-                            let resultado;
-                            jQuery.ajax({
-                                type: 'GET',
-                                url: urlmask,
-                                success: function (data) {
-                                    //console.log('imprimo apagar')
-                                    //console.log(apagar_cc)
-                                    //console.log('imprimo saldo CC')
-                                    //console.log(data.saldo_cc)
-                                    if(data.saldo_cc < 0 ){
-                                        saldocc= data.saldo_cc * -1
-                                        console.log(saldocc)
-                                        if (saldocc >= apagar_cc){
-                                            //console.log('entro TRUE')
-                                            return true;
-                                            //return resultado;
-                                           }else{
-                                            //console.log('entro FALSE')
-                                            resureturn= false;
-                                            //return resultado;
-                                           }
-                                    }
- 
-                                },
-                                error: function (response) {
-                                    console.log(response);
-                                    
-                                }
-
-                            });
-                            return resultado
+                            let saldo_cc = 0;
+                            if(saldo_cc_cliente < 0 ){
+                                saldocc= saldo_cc_cliente * -1
+                                console.log(saldocc)
+                                if (saldocc >= apagar_cc){
+                                    //console.log('entro TRUE')
+                                    return true;
+                                    //return resultado;
+                                   }else{
+                                    //console.log('entro FALSE')
+                                    return false;
+                                    //return resultado;
+                                   }
+                        }else{
+                            return false;
                         }
+                    }
 
 
                         const validarCamposCCorriente = () => {
@@ -716,7 +701,10 @@
                             django.jQuery("#id_pagoefectivo_set-0-apagar").val(saldo);
                             django.jQuery('#related-popup-container-pagoefectivo').show();
                         }
-                        const inicializarYAbrirDialogCCorriente =()=> {
+                        const inicializarYAbrirDialogCCorriente =(data)=> {
+                            cc_cliente = data;
+                            saldo_cc_cliente = data.saldo_cc
+                            console.log(cc_cliente)
                             django.jQuery("#id_pagoccorriente_set-0-saldo").val(saldo);
                             django.jQuery("#id_pagoccorriente_set-0-apagar").val(saldo);
                             django.jQuery('#related-popup-container-pagoccorriente').show();
@@ -758,7 +746,7 @@
                                             if(data.id !=null){
                                                 console.log('cliente con cuenta')
                                                 if(saldo > 0){
-                                                    inicializarYAbrirDialogCCorriente();
+                                                    inicializarYAbrirDialogCCorriente(data);
                                                 }else{
                                                     swal("No puede agregar mas pagos, el saldo es 0")
                                                     }
@@ -851,17 +839,27 @@
                                         success: function (data) {
                                             if(data.id !=null){
                                                 console.log('cliente con cuenta')
-                                                if(saldo > 0){
-                                                    inicializarYAbrirDialogCCorriente();
-                                                }else{
+
+                                                if(pagosCCorriente.length > 0){
                                                     swal({
-                                                    icon: 'error',
-                                                    title: 'Ups!',
-                                                    text: 'No puede agregar mas pagos, el saldo es 0',
-                                                    button: 'Aceptar'
-                                                    });
+                                                        icon: 'error',
+                                                        title: 'Ups!',
+                                                        text: 'No puede agregar mas pagos en Cuenta Corriente',
+                                                        button: 'Aceptar'
+                                                        });
+                                                }else{
+                                                    if(saldo > 0){
+                                                        inicializarYAbrirDialogCCorriente(data);
+                                                    }else{
+                                                        swal({
+                                                            icon: 'error',
+                                                            title: 'Ups!',
+                                                            text: 'No puede agregar mas pagos, el saldo es 0',
+                                                            button: 'Aceptar'
+                                                            });
                                                     }
-                                            }else{
+                                                }
+                                                }else{
                                                 swal({
                                                     icon: 'error',
                                                     title: 'Ups!',

@@ -28,7 +28,7 @@ def get_cc_cliente(request, cliente_id):
                         "saldo_cc": str(saldo_cc)
                         }
             except ObjectDoesNotExist:
-                data = {'error': 'El cliente No tiene Cuenta Corrientesdsdsdsd'}
+                data = {'error': 'El cliente No tiene Cuenta Corriente'}
             print('imprimiento cdata')
             print(data)
             data = json.dumps(data)
