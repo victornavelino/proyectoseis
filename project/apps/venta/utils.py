@@ -10,7 +10,7 @@ from venta.models import VentaArticulo, Venta
 
 
 def get_precio_promocion(cliente, articulo, sucursal, precio_unitario):
-    if cumpleanio(cliente.pk) or empleado(cliente.persona):
+    if cumpleanio(cliente.pk) or es_empleado(cliente.persona):
         valor = precio_unitario
     else:
         # SI ES EVENTUAL o cliente Comun
@@ -29,8 +29,9 @@ def get_precio_promocion(cliente, articulo, sucursal, precio_unitario):
     return valor
 
 
-def guardar_venta_cliente_articulos(id_cliente, articulos, usuario):
+def guardar_venta_cliente_articulos(id_empleado, id_cliente, articulos, usuario):
     precio_total = 0
+    empleado = Empleado.objects.get(pk=id_empleado)
     cliente = Cliente.objects.get(pk=id_cliente)
 
     if cumpleanio(id_cliente):
@@ -42,7 +43,7 @@ def guardar_venta_cliente_articulos(id_cliente, articulos, usuario):
             print('aplicamos descuento CUMPLEAÑO ya que el descuento existe y es mayor que 0')
             precio_total = calcular_total_con_descuento(articulos)
         else:
-            if empleado(cliente.persona):
+            if es_empleado(cliente.persona):
                 try:
                     descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
                 except Descuento.DoesNotExist:
@@ -57,7 +58,7 @@ def guardar_venta_cliente_articulos(id_cliente, articulos, usuario):
                 print('No aplicamos descuento cumpleaño. ni empleado y aplicamos cualquier promocion de la lista o precio de su lista')
                 precio_total = calcular_total_cliente(cliente, articulos, usuario)
     else:
-        if empleado(cliente.persona):
+        if es_empleado(cliente.persona):
             try:
                 descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
             except Descuento.DoesNotExist:
@@ -78,7 +79,7 @@ def guardar_venta_cliente_articulos(id_cliente, articulos, usuario):
     #    precio_total = calcular_total_cliente(cliente, articulos, usuario)
 
     venta = Venta.objects.create(fecha=datetime.now(), monto=precio_total, descuento=0, sucursal=usuario.sucursal,
-                                 cliente=cliente, usuario=usuario)
+                                 cliente=cliente, usuario=usuario, empleado=empleado)
     for a in articulos:
         id_articulo = a['id_articulo']
         cantidad_peso = a['cantidad_peso']
@@ -183,7 +184,7 @@ def cumpleanio(pk_cliente):
     return result
 
 
-def empleado(persona):
+def es_empleado(persona):
     try:
         Empleado.objects.get(persona=persona, fecha_baja=None)
         result = True

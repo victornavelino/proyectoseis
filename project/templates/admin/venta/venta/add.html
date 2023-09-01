@@ -270,6 +270,23 @@
 
                                     </div>
 
+                                    <div class="form-row1 field-total_articulo">
+
+
+                                        <div>
+
+
+                                            <label class="required" for="id_ventaarticulo_set-0-total_articulo">Total Articulo:
+                                                </label>
+
+                                            <input type="number" name="ventaarticulo_set-0-cantidad_peso" step="0.01"
+                                                   id="id_ventaarticulo_set-0-total_articulo" readonly>
+
+
+                                        </div>
+
+                                    </div>
+
 
                                     <input type="hidden" name="ventaarticulo_set-0-precio_promocion"
                                            id="id_ventaarticulo_set-0-precio_promocion">
@@ -349,6 +366,7 @@
                             jQuery("#id_ventaarticulo_set-0-precio").val(null);
                             jQuery("#id_ventaarticulo_set-0-precio_promo").val(null);
                             jQuery("#id_ventaarticulo_set-0-cantidad_peso").val(null);
+                            jQuery("#id_ventaarticulo_set-0-total_articulo").val(null);
                             jQuery("#id_articulo").val(null).trigger("change");
 
                         }
@@ -414,16 +432,14 @@
                         }
                         function guardar_venta(e) {
                             e.preventDefault();
-
                             let miVenta = {
                                 "venta":
                                     {
                                      "empleado": id_empleado,
                                      "cliente": cliente, 
                                      "articulos": articulos
-                                    }
+                                    }  
                             }
-
                             if (articulos.length > 0) {
                                 let url_mask = "{% url 'guardar_venta' %}";
 
@@ -525,6 +541,11 @@
                                                 // Utilizar la respuesta del servidor para establecer el valor de #id_ventaarticulo_set-0-cantidad_peso
                                                 jQuery("#id_ventaarticulo_set-0-cantidad_peso").val(data);
                                                 jQuery("#id_ventaarticulo_set-0-cantidad_peso").prop("readonly", true);
+                                                let total_articulo = 0;
+                                                if(jQuery("#id_ventaarticulo_set-0-cantidad_peso").val()>0){
+                                                    total_articulo = jQuery("#id_ventaarticulo_set-0-cantidad_peso").val() * data.precio_promo;
+                                                    }
+                                                jQuery("#id_ventaarticulo_set-0-total_articulo").val(total_articulo);
                                                 }).fail(function() {
                                                   // Manejar errores en caso de que la solicitud falle
                                                   console.log("Error al hacer la solicitud GET.");
@@ -689,6 +710,16 @@
 
                                 jQuery("#id_ventaarticulo_set-0-codigo_articulo").val(id_articulo);
                                 cargar();
+
+                            });
+
+                            //al cambiar el valor de la pesada se actualiza el total del articulo
+                            jQuery('#id_ventaarticulo_set-0-cantidad_peso').on('change', function () {
+                                let total_articulo = 0;
+                                if(jQuery("#id_ventaarticulo_set-0-cantidad_peso").val()>0){
+                                    total_articulo = (jQuery("#id_ventaarticulo_set-0-cantidad_peso").val() * jQuery("#id_ventaarticulo_set-0-precio_promo").val()).toFixed(2);
+                                   }
+                                jQuery("#id_ventaarticulo_set-0-total_articulo").val(total_articulo);
 
                             });
 

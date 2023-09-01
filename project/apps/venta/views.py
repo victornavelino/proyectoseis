@@ -22,7 +22,7 @@ from promocion.models import Promocion, Descuento
 from venta.forms import CobrarVentaForm, form_dialog_pago
 from venta.models import Venta
 from venta.utils import guardar_venta_cliente_articulos, cumpleanio, get_promociones_activas, \
-    buscar_precio_articulo_en_promo, get_precio_articulo, empleado
+    buscar_precio_articulo_en_promo, get_precio_articulo, es_empleado
 
 
 def get_valores(request, articulo_codigo, cliente_pk):
@@ -45,7 +45,7 @@ def get_valores(request, articulo_codigo, cliente_pk):
                 print('aplicamos descuento CUMPLEAÑO ya que el descuento existe y es mayor que 0')
                 data = cargar_precio_descuento(cliente, articulo, request, descuento_cumpleanio)
             else:
-                if empleado(cliente.persona):
+                if es_empleado(cliente.persona):
                     try:
                         descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
                     except Descuento.DoesNotExist:
@@ -60,7 +60,7 @@ def get_valores(request, articulo_codigo, cliente_pk):
                     print('No aplicamos descuento cumpleaño. ni empleado y aplicamos cualquier promocion de la lista o precio de su lista')
                     data = cargar_precio_cliente(cliente, articulo, request, articulo_codigo, cliente_pk)
         else:
-            if empleado(cliente.persona):
+            if es_empleado(cliente.persona):
                 try:
                     descuento_empleado = Descuento.objects.get(nombre='EMPLEADOS')
                 except Descuento.DoesNotExist:
@@ -248,7 +248,7 @@ def guardar_venta(request):
                 json_data = json.loads(request.body)
                 try:
                     venta = json_data['venta']
-                    venta_realizada = guardar_venta_cliente_articulos(venta['cliente'], venta['articulos'],
+                    venta_realizada = guardar_venta_cliente_articulos(venta['empleado'],venta['cliente'], venta['articulos'],
                                                                       request.user)
                     data = {'cliente': venta_realizada.cliente.pk, 'numero_ticket': venta_realizada.numero_ticket,
                             'sucursal': venta_realizada.sucursal.pk, 'importe': str(venta_realizada.monto)}
