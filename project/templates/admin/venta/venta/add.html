@@ -533,22 +533,28 @@
                                             //  jQuery("#id_mes").val(data.mes).change();
                                             jQuery("#id_ventaarticulo_set-0-precio").val(data.precio);
                                             jQuery("#id_ventaarticulo_set-0-precio_promo").val(data.precio_promo);
-                                            //id_ventaarticulo_set-0-cantidad_peso if data.es_por_peso
+                                        
                                             console.log('es por peso: ', data.es_por_peso)
                                             if (data.es_por_peso){
                                                 console.log('ingreso por es por peso')
+                                                let total_articulo = 0.00;
                                                 jQuery.get('http://localhost:4700', function(data) {
                                                 // Utilizar la respuesta del servidor para establecer el valor de #id_ventaarticulo_set-0-cantidad_peso
                                                 jQuery("#id_ventaarticulo_set-0-cantidad_peso").val(data);
                                                 jQuery("#id_ventaarticulo_set-0-cantidad_peso").prop("readonly", true);
-                                                let total_articulo = 0;
-                                                if(jQuery("#id_ventaarticulo_set-0-cantidad_peso").val()>0){
-                                                    total_articulo = jQuery("#id_ventaarticulo_set-0-cantidad_peso").val() * data.precio_promo;
-                                                    }
+                                                
+                                                console.log("imprimo cantidad peso qeu viene de la balanza")
+                                                console.log(jQuery("#id_ventaarticulo_set-0-cantidad_peso").val());
+                                                if(jQuery("#id_ventaarticulo_set-0-cantidad_peso").val()!==null){
+                                                    total_articulo = (jQuery("#id_ventaarticulo_set-0-cantidad_peso").val() * jQuery("#id_ventaarticulo_set-0-precio_promo").val()).toFixed(2);
+                                                    console.log(total_articulo);    
+                                                }
                                                 jQuery("#id_ventaarticulo_set-0-total_articulo").val(total_articulo);
+
                                                 }).fail(function() {
                                                   // Manejar errores en caso de que la solicitud falle
                                                   console.log("Error al hacer la solicitud GET.");
+                                                  jQuery("#id_ventaarticulo_set-0-total_articulo").val(total_articulo);
                                                 });
                                             }
                                             else {
