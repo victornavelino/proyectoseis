@@ -329,7 +329,7 @@ def imprimir_ticket(request, numero_ticket):
     if request.user.is_authenticated:
         venta = Venta.objects.get(sucursal=request.user.sucursal, numero_ticket=numero_ticket)
         nombre_archivo = "venta-" + str(venta.numero_ticket)+"-" + str(venta.fecha) + ".pdf"
-        vendedor = request.user
+        vendedor = venta.empleado
         articulos_venta = VentaArticulo.objects.filter(venta=venta)
         monto_descuento = 0
         for articulo in articulos_venta:

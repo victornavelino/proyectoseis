@@ -82,7 +82,7 @@ class VentaAdmin(ExportMixin, admin.ModelAdmin):
             return False
         venta = queryset[0]
         nombre_archivo = "venta-" + str(venta.numero_ticket)+"-" + str(venta.fecha) + ".pdf"
-        vendedor = request.user
+        vendedor = venta.empleado
         articulos_venta = VentaArticulo.objects.filter(venta=venta)
         monto_descuento = 0
         for articulo in articulos_venta:

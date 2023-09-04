@@ -34,6 +34,9 @@
         -webkit-overflow-scrolling: touch;
         overflow-y: scroll;
     }
+    .selected {
+            background-color: #ccc;
+        }
     </style>
 {% endblock %}
 
@@ -316,14 +319,32 @@
                     </div>
 
                     <script>
+
                         var articulos = [];
                         var cliente;
                         let id_empleado;
+                        //AGREGADO PARA SELECCIONAR FILA Y ELIMINAR ARTICULO
+                        let $filas = jQuery('#id_table tbody tr');
+                        let filaSeleccionada = 0; 
+                        //FIN
+                        function existeProducto(cod_articulo){
+                            let art = jQuery.grep(articulos, function(articulo, indice) {
+                            return articulo.id_articulo = cod_articulo;
+                            });
+                            console.log(art)
+                            console.log(art.length)
+                            if(art.length==0){
+                                return false;
+                            }else{
+                                return true;
+                            }
+                        }
 
                         function agregar_tabla() {
                             console.log("imprimo peso y codigo de articulo");
                             cant_peso = jQuery("#id_ventaarticulo_set-0-cantidad_peso").val();
                             cod_articulo = jQuery("id_ventaarticulo_set-0-codigo_articulo").val()
+                            if(!existeProducto(cod_articulo)){
 
                             if (jQuery("#id_ventaarticulo_set-0-cantidad_peso").val() > 0|| jQuery("id_ventaarticulo_set-0-codigo_articulo").val() > 0) {
 
@@ -344,6 +365,8 @@
                                     precio_unitario + '</td><td>' +
                                     precio_total +
                                     '</td></tr>');
+                                    $filas = jQuery('#id_table tbody tr');
+                                    filaSeleccionada++;
                                 jQuery('#related-popup-container-articulo').hide();
                                 calcularTotal();
                             } else {
@@ -356,8 +379,20 @@
                                 jQuery("#id_ventaarticulo_set-0-codigo_articulo").focus();
 
                             }
+
+                        }else{
+                            swal({
+                                    icon: 'error',
+                                    title: 'Ya existe pesada para ese articulo, no se puede agregar nuevamente',
+                                    text: ' Presione ESC para continuar',
+                                    button: 'Ok',
+                                });
+                                jQuery("#id_ventaarticulo_set-0-codigo_articulo").focus();
+                        }
                             
                         }
+
+
 
 
                         function clear() {
@@ -543,11 +578,9 @@
                                                 jQuery("#id_ventaarticulo_set-0-cantidad_peso").val(data);
                                                 jQuery("#id_ventaarticulo_set-0-cantidad_peso").prop("readonly", true);
                                                 
-                                                console.log("imprimo cantidad peso qeu viene de la balanza")
-                                                console.log(jQuery("#id_ventaarticulo_set-0-cantidad_peso").val());
                                                 if(jQuery("#id_ventaarticulo_set-0-cantidad_peso").val()!==null){
                                                     total_articulo = (jQuery("#id_ventaarticulo_set-0-cantidad_peso").val() * jQuery("#id_ventaarticulo_set-0-precio_promo").val()).toFixed(2);
-                                                    console.log(total_articulo);    
+                                                    console.log(total_articulo);
                                                 }
                                                 jQuery("#id_ventaarticulo_set-0-total_articulo").val(total_articulo);
 
@@ -581,6 +614,7 @@
                         }
 
                             jQuery(document).ready(function () {
+
                             jQuery('#id_articulo').select2();
                             jQuery('#id_articulo').select2("enable", false)
                             jQuery('#id_cliente').select2();
@@ -697,7 +731,31 @@
                                 }
                             })
 
+                    // Agregar un evento de escucha para las teclas de flecha hacia arriba y abajo
+                    jQuery(document).on("keydown", function(event){
+                        if (event.keyCode === 38  && filaSeleccionada > 0) {
+                            event.preventDefault();
                             
+                             $filas.eq(filaSeleccionada).removeClass('selected');
+                                filaSeleccionada--;
+                                $filas.eq(filaSeleccionada).addClass('selected');
+                        } else if (event.keyCode === 40 && filaSeleccionada < $filas.length - 1) {
+                            event.preventDefault();
+                            
+                             $filas.eq(filaSeleccionada).removeClass('selected');
+                            filaSeleccionada++;
+                            $filas.eq(filaSeleccionada).addClass('selected');
+                            } else if (event.key === 'Delete' && filaSeleccionada !== -1) {
+                                // Eliminar la fila seleccionada
+                            $filas.eq(filaSeleccionada).remove();
+                            filaSeleccionada = -1; // Reiniciar la selección
+                            swal({
+                                        icon: 'success',
+                                        title: 'Producto Eliminado!',
+                                        button: 'Ok'
+                                    });
+                            }
+                    });
 
 
                             
