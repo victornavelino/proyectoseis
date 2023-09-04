@@ -327,12 +327,11 @@
                         let $filas = jQuery('#id_table tbody tr');
                         let filaSeleccionada = 0; 
                         //FIN
+                        
                         function existeProducto(cod_articulo){
                             let art = jQuery.grep(articulos, function(articulo, indice) {
-                            return articulo.id_articulo = cod_articulo;
+                            return articulo.id_articulo == cod_articulo;
                             });
-                            console.log(art)
-                            console.log(art.length)
                             if(art.length==0){
                                 return false;
                             }else{
@@ -343,7 +342,7 @@
                         function agregar_tabla() {
                             console.log("imprimo peso y codigo de articulo");
                             cant_peso = jQuery("#id_ventaarticulo_set-0-cantidad_peso").val();
-                            cod_articulo = jQuery("id_ventaarticulo_set-0-codigo_articulo").val()
+                            cod_articulo = jQuery("#id_ventaarticulo_set-0-codigo_articulo").val();
                             if(!existeProducto(cod_articulo)){
 
                             if (jQuery("#id_ventaarticulo_set-0-cantidad_peso").val() > 0|| jQuery("id_ventaarticulo_set-0-codigo_articulo").val() > 0) {
