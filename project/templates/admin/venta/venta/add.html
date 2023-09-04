@@ -525,7 +525,11 @@
 
                                     }
                                 );
-                            } else swal('No se puede guardar una venta sin artículos')
+                            } else swal({
+                                icon: 'error',
+                                title: 'No se puede guardar una venta sin artículos!',
+                                button: 'Ok'
+                                })
                             return false;
                         }
 
@@ -610,6 +614,11 @@
                                 total = total + (articulo.cantidad_peso * articulo.precio_unitario);
                             })
                             jQuery('#total').html(total.toFixed(2));
+                        }
+
+                        function eliminarArticuloTabla(registroAEliminar){
+                            articulos = articulos.filter(registro => registro.id_articulo !== registroAEliminar);
+                            calcularTotal();
                         }
 
                             jQuery(document).ready(function () {
@@ -746,9 +755,11 @@
                             $filas.eq(filaSeleccionada).addClass('selected');
                             } else if (event.key === 'Delete' && filaSeleccionada !== -1) {
                                 // Eliminar la fila seleccionada
-                            $filas.eq(filaSeleccionada).remove();
-                            filaSeleccionada = -1; // Reiniciar la selección
-                            swal({
+                                var registroAEliminar = $filas.eq(filaSeleccionada).find('td:first').text();
+                                eliminarArticuloTabla(registroAEliminar);
+                                $filas.eq(filaSeleccionada).remove();
+                                filaSeleccionada = -1; // Reiniciar la selección
+                                swal({
                                         icon: 'success',
                                         title: 'Producto Eliminado!',
                                         button: 'Ok'
