@@ -323,6 +323,7 @@
                         var articulos = [];
                         var cliente;
                         let id_empleado;
+                        let id_fila = 1;
                         //AGREGADO PARA SELECCIONAR FILA Y ELIMINAR ARTICULO
                         let $filas = jQuery('#id_table tbody tr');
                         let filaSeleccionada = 0; 
@@ -343,7 +344,7 @@
                             console.log("imprimo peso y codigo de articulo");
                             cant_peso = jQuery("#id_ventaarticulo_set-0-cantidad_peso").val();
                             cod_articulo = jQuery("#id_ventaarticulo_set-0-codigo_articulo").val();
-                            if(!existeProducto(cod_articulo)){
+                           // if(!existeProducto(cod_articulo)){
 
                             if (jQuery("#id_ventaarticulo_set-0-cantidad_peso").val() > 0|| jQuery("id_ventaarticulo_set-0-codigo_articulo").val() > 0) {
 
@@ -379,15 +380,15 @@
 
                             }
 
-                        }else{
-                            swal({
-                                    icon: 'error',
-                                    title: 'Ya existe pesada para ese articulo, no se puede agregar nuevamente',
-                                    text: ' Presione ESC para continuar',
-                                    button: 'Ok',
-                                });
-                                jQuery("#id_ventaarticulo_set-0-codigo_articulo").focus();
-                        }
+                        //}else{
+                         //   swal({
+                          //          icon: 'error',
+                          //          title: 'Ya existe pesada para ese articulo, no se puede agregar nuevamente',
+                          //          text: ' Presione ESC para continuar',
+                        //            button: 'Ok',
+                        //        });
+                         //       jQuery("#id_ventaarticulo_set-0-codigo_articulo").focus();
+                        //}
                             
                         }
 
@@ -904,7 +905,8 @@
                     <table class="table-striped" id="id_table">
                         <thead>
                         <tr>
-                            <th>Cod</th>
+                            <th>Item</th>
+                            <th>Codigo</th>
                             <th style="width: 400px">Articulo</th>
                             <th>Cantidad</th>
                             <th>Precio Unitario</th>
