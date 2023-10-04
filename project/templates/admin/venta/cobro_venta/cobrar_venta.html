@@ -76,6 +76,8 @@
                 <span class="related-widget-wrapper-icon"></span></a>
                 <b>F3 PAGO C.CORRIENTE:</b><a class="related-widget-wrapper-link add-related initialized" id="add_id_pagoccorriente" href="#" title="Añadir Pago C.Corriente">
                 <span class="related-widget-wrapper-icon"></span></a>
+                <b>F6 PAGO TRANSFERENCIA:</b><a class="related-widget-wrapper-link add-related initialized" id="add_id_pagotransferencia" href="#" title="Añadir Pago Transferencia">
+                <span class="related-widget-wrapper-icon"></span></a>
             </h2>
         </div>
         <!-- PAGO EFECTIVO -->
@@ -306,32 +308,57 @@
                 
                                                 <fieldset class="module aligned">
                                                     <!--CAMPOS DEL FORMULARIO PAGO TRANSFERENCIA -->
-                                                        <div class="form-row1 field-nombre">
-                                                            <div>
-                                                                <label class="required" for="id_pagotransferencia_set-0-nombre">Nombre:</label>
-                                                                <input type="number" name="pagotransferencia_set-0-nombre" step="0.01" id="id_pagotransferencia_set-0-nombre" readonly>
-                                                            </div>
+                                                    <div class="form-row1 field-saldo">
+                                                        <div>
+                                                            <label class="required" for="id_pagotransferencia_set-0-saldo">Saldo:</label>
+                                                            <input type="number" name="pagotransferencia_set-0-saldo" step="0.01" id="id_pagotransferencia_set-0-saldo" readonly>
                                                         </div>
-                
-                                                        <div class="form-row1 field-apagar">
-                                                            <div>
-                                                                <label class="required" for="id_id_pagotransferencia_set_set-0-apagar">A pagar:</label>
-                                                                <input type="number" name="id_pagotransferencia_set_set-0-apagar" step="0.01" id="id_id_pagotransferencia_set_set-0-apagar">
-                                                            </div>
+                                                    </div>
+            
+                                                   <div class="form-row1 field-apagar">
+                                                        <div>
+                                                    <label class="required" for="id_pagotransferencia_set-0-apagar">A Pagar:</label>
+                                                    <input type="number" name="pagotransferencia_set-0-apagar" step="0.01" id="id_pagotransferencia_set-0-apagar">
                                                         </div>
-                
-                
-                
+                                                    </div>
+                                                    <!--NOMBRE-->
+                                                    <div class="form-row1 field-nombre">
+                                                        <div>
+                                                            <label class="required" for="id_pagoccorriente_set-0-nombre">Nombre:</label>
+                                                            <input type="text" name="pagoccorriente_set-0-nombre" size="40" id="id_pagoccorriente_set-0-nombre">
+                                                        </div>
+                                                    </div>
+                                                    <!--APELLIDO-->
+                                                    <div class="form-row1 field-apellido">
+                                                        <div>
+                                                            <label class="required" for="id_pagoccorriente_set-0-apellido">Apellido:</label>
+                                                            <input type="text" name="pagoccorriente_set-0-apellido" size="40" id="id_pagoccorriente_set-0-apellido">
+                                                        </div>
+                                                    </div>      
+                                                    <!--DOCUMENTO-->                                         
+                                                    <div class="form-row1 field-documento">
+                                                        <div>
+                                                            <label for="id_pagotransferencia_set-0-documento">Nro Documento:</label>
+                                                            <input type="number" name="pagotransferencia_set-0-documento" size="8" maxlength="8" id="id_pagotransferencia_set-0-documento">
+                                                        </div>
+                                                    </div>
+                                                    <!--BANCO-->
+                                                    <div class="form-row1 field-banco">
+                                                        <div>
+                                                            <label class="required" for="id_pagotransferencia_set-0-banco">Banco:</label>
+                                                            <input type="text" name="pagotransferencia_set-0-banco" size="60" id="id_pagotransferencia_set-0-banco">
+                                                        </div>
+                                                    </div>
                                                     <!--OBSERVACIONES-->
-                                                       <div class="form-row1 field-observaciones">
-                                                                <div>
-                                                                    <label class="required" for="id_pagoccorriente_set-0-observaciones">Observaciones:</label>
-                                                                    <input type="text" name="pagoccorriente_set-0-observaciones" size="50" id="id_pagoccorriente_set-0-observaciones">
-                                                                </div>
+                                                    <div class="form-row1 field-observaciones">
+                                                        <div>
+                                                            <label class="required" for="id_pagotransferencia_set-0-observaciones">Observaciones:</label>
+                                                            <input type="text" name="pagotransferencia_set-0-observaciones" size="60" id="id_pagotransferencia_set-0-observaciones">
                                                         </div>
-                                                    <!-- BOTON GUARDAR PAGO CCORRIENTE-->
+                                                    </div>                                                                      
+                                                    <!-- BOTON GUARDAR PAGO TRANSFERENCIA-->
                                                     <div class="submit-row">
-                                                        <input type="button" onclick="agregarRegistroTablaCCorriente()" value="Agregar" class="default"
+                                                        <input type="button" onclick="agregarRegistroTablaTransferencia()" value="Agregar" class="default"
                                                                name="add">
                                                     </div>
                 
@@ -586,6 +613,13 @@
                             jQuery("#id_pagoefectivo_set-0-vuelto").val(null);
                         }
 
+                        const limpiarCamposTransferencia =() => {
+                            jQuery("#id_pagoefectivo_set-0-saldo").val(null);
+                            jQuery("#id_pagoefectivo_set-0-apagar").val(null);
+                            jQuery("#id_pagoefectivo_set-0-pagacon").val(null);
+                            jQuery("#id_pagoefectivo_set-0-vuelto").val(null);
+                        }
+
                         const validarCamposTarjeta = () => {
                             if(jQuery("#id_pagotarjeta_set-0-apagar").val() <=0){
                                 swal('El valor a pagar debe ser mayor a 0');
@@ -676,6 +710,7 @@
                         limpiarCamposEfectivo()
                         limpiarCamposCCorriente();
                         limpiarCamposTarjeta();
+                        limpiarCamposTransferencia();
                         }
                         const validarSaldoYPago = () => {
                             if(saldo > 0){
@@ -757,6 +792,11 @@
                             django.jQuery("#id_pagoccorriente_set-0-saldo").val(saldo);
                             django.jQuery("#id_pagoccorriente_set-0-apagar").val(saldo);
                             django.jQuery('#related-popup-container-pagoccorriente').show();
+                        }
+                        const inicializarYAbrirDialogTransferencia = () => {
+                            django.jQuery("#id_pagotransferencia_set-0-saldo").val(saldo);
+                            django.jQuery("#id_pagotransferencia_set-0-apagar").val(saldo);
+                            django.jQuery('#related-popup-container-pagotransferencia').show();
                         }
 
                         //EVENTOS F1  F2 F3
@@ -931,6 +971,26 @@
                                 limpiarCamposCCorriente();
                             });
 
+                            //Boton TRANSFERENCIA
+                            django.jQuery('#add_id_pagotransferencia').click(function (e) {
+                                e.preventDefault();
+                                if(saldo > 0){
+                                        inicializarYAbrirDialogTransferencia();
+                                    }else{
+                                        swal({
+                                            icon: 'error',
+                                            title: 'Ups!',
+                                            text: 'No puede agregar mas pagos, el saldo es 0',
+                                            button: 'Aceptar'
+                                            });
+                                    }
+                            });
+                            //Boton volver TRANSFERENCIA
+                            django.jQuery('#related-popup-back-pagotransferencia').click(function (e) {
+                                e.preventDefault();
+                                django.jQuery('#related-popup-container-pagotransferencia').hide();
+                                limpiarCamposTransferencia();
+                            });
 
                             //calcular saldo al escribir en pagacon
                             jQuery("#id_pagoefectivo_set-0-pagacon")
