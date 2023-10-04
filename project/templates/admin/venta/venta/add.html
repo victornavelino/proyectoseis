@@ -354,12 +354,14 @@
                                 let precio_unitario = jQuery('#id_ventaarticulo_set-0-precio_promo').val();
                                 let precio_total = (jQuery('#id_ventaarticulo_set-0-precio_promo').val() * jQuery('#id_ventaarticulo_set-0-cantidad_peso').val()).toFixed(2);
                                 articulos.push({
+                                    "id_fila": id_fila,
                                     "id_articulo": id_articulo,
                                     "cantidad_peso": cantidad_peso,
                                     "precio_unitario": precio_unitario
                                 });
 
-                                jQuery('#id_table tr:last').after('<tr><td>' + id_articulo + '</td><td>' +
+                                jQuery('#id_table tr:last').after('<tr><td>' + id_fila + '</td><td>' +
+                                    id_articulo + '</td><td>' +
                                     nombre_articulo + '</td><td>' +
                                     cantidad_peso + '</td> <td>' +
                                     precio_unitario + '</td><td>' +
@@ -368,6 +370,7 @@
                                     $filas = jQuery('#id_table tbody tr');
                                     filaSeleccionada++;
                                 jQuery('#related-popup-container-articulo').hide();
+                                id_fila++;
                                 calcularTotal();
                             } else {
                                 swal({
@@ -509,7 +512,7 @@
                                                                                                        limpiarTodo();
                                                 } else {
                                                     if (result.caja = "cerrada") {
-
+                                                        limpiarTodo();
                                                         swal({
                                                             icon: 'error',
                                                             title: 'Ups!',
@@ -535,6 +538,7 @@
                         }
 
                         function limpiarTodo() {
+                            id_fila = 1;
                             articulos = [];
                             cliente = null;
                             jQuery('#id_table').find("tr:gt(0)").remove();
@@ -618,7 +622,8 @@
                         }
 
                         function eliminarArticuloTabla(registroAEliminar){
-                            articulos = articulos.filter(registro => registro.id_articulo !== registroAEliminar);
+                            articulos = articulos.filter(i => i.id_fila!= registroAEliminar);
+                            console.log(articulos)
                             calcularTotal();
                         }
 
@@ -757,6 +762,8 @@
                             } else if (event.key === 'Delete' && filaSeleccionada !== -1) {
                                 // Eliminar la fila seleccionada
                                 var registroAEliminar = $filas.eq(filaSeleccionada).find('td:first').text();
+                                console.log('REGISTRO A ELIMINAR');
+                                console.log(registroAEliminar)
                                 eliminarArticuloTabla(registroAEliminar);
                                 $filas.eq(filaSeleccionada).remove();
                                 filaSeleccionada = -1; // Reiniciar la selección

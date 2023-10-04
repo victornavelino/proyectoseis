@@ -292,6 +292,55 @@
 
         </div>
 
+                        <!--PAGO TRANSFERENCIA -->
+                        <div id="pagotransferencia_set-0">
+                            <div id="related-popup-container-pagotransferencia" class="related-popup-container scrollable"
+                                             style="display: none;">
+                                            <a href="#" id="related-popup-back-pagotransferencia" class="related-popup-back"
+                                               style="display: inline;">
+                                                <span class="related-popup-back-icon icon-arrow-left"></span>
+                                                <span class="related-popup-back-label">Volver</span>
+                                            </a>
+                                            <span class="icon-refresh loading-indicator" style="display: none;"></span>
+                                            <div class="related-popup2" style="display: block;">
+                
+                                                <fieldset class="module aligned">
+                                                    <!--CAMPOS DEL FORMULARIO PAGO TRANSFERENCIA -->
+                                                        <div class="form-row1 field-nombre">
+                                                            <div>
+                                                                <label class="required" for="id_pagotransferencia_set-0-nombre">Nombre:</label>
+                                                                <input type="number" name="pagotransferencia_set-0-nombre" step="0.01" id="id_pagotransferencia_set-0-nombre" readonly>
+                                                            </div>
+                                                        </div>
+                
+                                                        <div class="form-row1 field-apagar">
+                                                            <div>
+                                                                <label class="required" for="id_id_pagotransferencia_set_set-0-apagar">A pagar:</label>
+                                                                <input type="number" name="id_pagotransferencia_set_set-0-apagar" step="0.01" id="id_id_pagotransferencia_set_set-0-apagar">
+                                                            </div>
+                                                        </div>
+                
+                
+                
+                                                    <!--OBSERVACIONES-->
+                                                       <div class="form-row1 field-observaciones">
+                                                                <div>
+                                                                    <label class="required" for="id_pagoccorriente_set-0-observaciones">Observaciones:</label>
+                                                                    <input type="text" name="pagoccorriente_set-0-observaciones" size="50" id="id_pagoccorriente_set-0-observaciones">
+                                                                </div>
+                                                        </div>
+                                                    <!-- BOTON GUARDAR PAGO CCORRIENTE-->
+                                                    <div class="submit-row">
+                                                        <input type="button" onclick="agregarRegistroTablaCCorriente()" value="Agregar" class="default"
+                                                               name="add">
+                                                    </div>
+                
+                                                </fieldset>
+                                            </div>
+                            </div>
+                
+                        </div>
+
         <div align="center">
         <table class="table-striped" id="id_table_pagos" width="50%">
             <thead>

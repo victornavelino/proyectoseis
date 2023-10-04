@@ -259,3 +259,21 @@ class CuponPagoTarjeta(models.Model):
 
     def __str__(self):
         return f'{self.cliente}'
+    
+class PagoTransferencia(models.Model):
+    class Meta:
+        verbose_name = 'Pago Con Tranferencia'
+        verbose_name_plural = 'Pagos Con Tranferencia'
+        ordering = ['-id']
+
+    nombre = models.CharField(max_length=40, null=True, blank=True, verbose_name='Nombre')
+    apellido = models.CharField(max_length=30, null=True, blank=True, verbose_name='Apellido')
+    documento_identidad = models.CharField(max_length=12, verbose_name='Documento Identidad')
+    banco = models.CharField(max_length=60, null=True, blank=True, verbose_name='Banco')
+    cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, null=True, verbose_name='Cliente')
+    fecha = models.DateTimeField(auto_now=True, verbose_name='Fecha')
+    venta = models.ForeignKey(Venta, on_delete=models.PROTECT, blank=True, null=True, verbose_name='Venta')
+    observaciones = models.CharField(max_length=100, null=True, blank=True, verbose_name='Observaciones')
+    
+    def __str__(self):
+        return "{} {}".format(self.nombre, self.apellido)
