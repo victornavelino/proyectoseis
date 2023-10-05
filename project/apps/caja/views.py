@@ -76,12 +76,14 @@ def cobrar_ticket(request):
                     total_efectivo = 0
                     total_tarjeta = 0
                     total_ccorriente = 0
+                    total_transferencia = 0
                     # pagos = json_data['pagos']
                     # numero_ticket = pagos['nroticket']
                     lista_pagos = pagos['pagos']
                     lista_pagos_efectivo = pagos['pagosEfectivo']
                     lista_pagos_tarjeta = pagos['pagosTarjeta']
                     lista_pagos_ccorriente = pagos['pagosCCorriente']
+                    lista_pagos_transferencia = pagos['pagosTransferencia']
                     data = {'numero_cobro': numero_ticket}
                     for pago in lista_pagos:
                         if pago['tipo_de_pago'] == 'EFECTIVO':
