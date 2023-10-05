@@ -324,15 +324,15 @@
                                                     <!--NOMBRE-->
                                                     <div class="form-row1 field-nombre">
                                                         <div>
-                                                            <label class="required" for="id_pagoccorriente_set-0-nombre">Nombre:</label>
-                                                            <input type="text" name="pagoccorriente_set-0-nombre" size="40" id="id_pagoccorriente_set-0-nombre">
+                                                            <label class="required" for="id_pagotransferencia_set-0-nombre">Nombre:</label>
+                                                            <input type="text" name="pagotransferencia_set-0-nombre" size="40" id="id_pagotransferencia_set-0-nombre">
                                                         </div>
                                                     </div>
                                                     <!--APELLIDO-->
                                                     <div class="form-row1 field-apellido">
                                                         <div>
-                                                            <label class="required" for="id_pagoccorriente_set-0-apellido">Apellido:</label>
-                                                            <input type="text" name="pagoccorriente_set-0-apellido" size="40" id="id_pagoccorriente_set-0-apellido">
+                                                            <label class="required" for="id_pagotransferencia_set-0-apellido">Apellido:</label>
+                                                            <input type="text" name="pagotransferencia_set-0-apellido" size="40" id="id_pagotransferencia_set-0-apellido">
                                                         </div>
                                                     </div>      
                                                     <!--DOCUMENTO-->                                         
@@ -489,6 +489,44 @@
                                 icon: 'error',
                                 title: 'Ups!',
                                 text: 'El valor a pagar debe ser mayor a 0',
+                                button: 'Ok'
+                            });
+                            return false;
+                        }
+                        if(jQuery("#id_pagotransferencia_set-0-nombre").val() <=0){
+                            swal({
+                                icon: 'error',
+                                title: 'Ups!',
+                                text: 'El nombre no debe estar vacio',
+                                button: 'Ok'
+                            });
+                            return false;
+                        }
+                        if(jQuery("#id_pagotransferencia_set-0-apellido").val() <=0){
+                            swal({
+                                icon: 'error',
+                                title: 'Ups!',
+                                text: 'El apellido no debe estar vacio',
+                                button: 'Ok'
+                            });
+                            return false;
+                        }
+                        
+                        if(jQuery("#id_pagotransferencia_set-0-documento").val() <=0){
+                            swal({
+                                icon: 'error',
+                                title: 'Ups!',
+                                text: 'El documento no debe estar vacio',
+                                button: 'Ok'
+                            });
+                            return false;
+                        }
+
+                        if(jQuery("#id_pagotransferencia_set-0-banco").val() <=0){
+                            swal({
+                                icon: 'error',
+                                title: 'Ups!',
+                                text: 'El banco no debe estar vacio',
                                 button: 'Ok'
                             });
                             return false;
@@ -671,8 +709,10 @@
                         }
 
                         const limpiarCamposTransferencia =() => {
-                            jQuery("#id_pagoccorriente_set-0-nombre").val(null)
-                            jQuery("#id_pagoccorriente_set-0-apellido").val(null);
+                            jQuery("#id_pagotransferencia_set-0-saldo").val(null);
+                            jQuery("#id_pagotransferencia_set-0-apagar").val(null);
+                            jQuery("#id_pagotransferencia_set-0-nombre").val(null);
+                            jQuery("#id_pagotransferencia_set-0-apellido").val(null);
                             jQuery("#id_pagotransferencia_set-0-apagar").val(null); 
                             jQuery("#id_pagotransferencia_set-0-documento").val(null);
                             jQuery("#id_pagotransferencia_set-0-banco").val(null);
