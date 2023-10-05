@@ -352,7 +352,7 @@
                                                     <!--OBSERVACIONES-->
                                                     <div class="form-row1 field-observaciones">
                                                         <div>
-                                                            <label class="required" for="id_pagotransferencia_set-0-observaciones">Observaciones:</label>
+                                                            <label for="id_pagotransferencia_set-0-observaciones">Observaciones:</label>
                                                             <input type="text" name="pagotransferencia_set-0-observaciones" size="60" id="id_pagotransferencia_set-0-observaciones">
                                                         </div>
                                                     </div>                                                                      
@@ -411,6 +411,7 @@
                         let pagosEfectivo = [];
                         let pagosTarjeta = [];
                         let pagosCCorriente = [];
+                        let pagosTransferencia = [];
                         django.jQuery = jQuery;
 
                         let saldo = 0;
@@ -482,6 +483,20 @@
                         }
                     }
 
+                    const validarCamposTransferencia = () => {
+                        if(jQuery("#id_pagotransferencia_set-0-apagar").val() <=0){
+                            swal({
+                                icon: 'error',
+                                title: 'Ups!',
+                                text: 'El valor a pagar debe ser mayor a 0',
+                                button: 'Ok'
+                            });
+                            return false;
+                        }
+                        return true;
+                        
+                       
+                    }
 
                         const validarCamposCCorriente = () => {
                             if(jQuery("#id_pagoccorriente_set-0-apagar").val() <=0){
@@ -538,7 +553,7 @@
 
                         }
                         //BOTON FORMULARIO TARJETA
-                        const agregarRegistroTablaTarjeta = () => {
+                        const agregarRegistroTablaTarjeta = () => { 
                             if(validarCamposTarjeta()){
                                 let tipoDePago = "TARJETA";
                                 let planTarjeta = jQuery("#id_plantarjeta").val()
@@ -581,6 +596,48 @@
                             }
 
                         }
+                    
+                        // BOTON FORMULARIO TRANSFERENCIA
+                        const agregarRegistroTablaTransferencia = () => {
+                            if(validarCamposTransferencia()){
+                                let tipoDePago = "TRANSFERENCIA";
+                                let nombre = jQuery("#id_pagoccorriente_set-0-nombre").val()
+                                let apellido = jQuery("#id_pagoccorriente_set-0-apellido").val();
+                                let aPagar = jQuery("#id_pagotransferencia_set-0-apagar").val(); 
+                                let documento = jQuery("#id_pagotransferencia_set-0-documento").val();
+                                let banco = jQuery("#id_pagotransferencia_set-0-banco").val();
+                                let observaciones = jQuery("#id_pagotransferencia_set-0-observaciones").val();
+
+                                //cargamos json
+                                pagosTransferencia.push({
+                                    "nombre":nombre,
+                                    "apellido":apellido,
+                                    "importe":aPagar,
+                                    "documento":documento,
+                                    "banco":banco,
+                                    "observaciones":observaciones,
+
+                                })
+                            
+                                saldo = saldo - aPagar;
+                                pagos.push({
+                                        "tipo_de_pago":tipoDePago,
+                                        "monto": aPagar,
+                                        "monto_total": aPagar,
+                                    });
+                                //cargammos la tabla
+                                jQuery('#id_table_pagos tr:last').after('<tr><td>' +
+                                    tipoDePago + '</td><td>' +
+                                    aPagar + '</td> <td>' +
+                                        aPagar + '</td></tr>');
+                                django.jQuery('#related-popup-container-pagotransferencia').hide();
+                                actualizarSaldo();
+
+                                limpiarCamposTransferencia();
+                            }
+                        }
+
+
                         const actualizarSaldo = () => {
                           jQuery("#id_saldo").val(saldo);
                         }
@@ -614,10 +671,12 @@
                         }
 
                         const limpiarCamposTransferencia =() => {
-                            jQuery("#id_pagoefectivo_set-0-saldo").val(null);
-                            jQuery("#id_pagoefectivo_set-0-apagar").val(null);
-                            jQuery("#id_pagoefectivo_set-0-pagacon").val(null);
-                            jQuery("#id_pagoefectivo_set-0-vuelto").val(null);
+                            jQuery("#id_pagoccorriente_set-0-nombre").val(null)
+                            jQuery("#id_pagoccorriente_set-0-apellido").val(null);
+                            jQuery("#id_pagotransferencia_set-0-apagar").val(null); 
+                            jQuery("#id_pagotransferencia_set-0-documento").val(null);
+                            jQuery("#id_pagotransferencia_set-0-banco").val(null);
+                            jQuery("#id_pagotransferencia_set-0-observaciones").val(null);
                         }
 
                         const validarCamposTarjeta = () => {
@@ -712,6 +771,7 @@
                         limpiarCamposTarjeta();
                         limpiarCamposTransferencia();
                         }
+
                         const validarSaldoYPago = () => {
                             if(saldo > 0){
                                 swal({
@@ -854,11 +914,24 @@
 
                                         });
 
-
-
-
                                     }
 
+                                //F6 TRANSFERENCIA
+                                if(event.keyCode==117){
+                                    event.preventDefault();
+                                    if(saldo > 0){
+                                        inicializarYAbrirDialogTransferencia();
+                                    }else{
+                                        swal({
+                                            icon: 'success',
+                                            title: 'Ups!',
+                                            text: 'No puede agregar mas pagos, el saldo es 0',
+                                            button: 'Aceptar'
+                                            });
+                                        
+                                    }
+
+                                 }
 
                                 // F4 / ENTER Cobrar ticket
                                 if(event.keyCode==115){
