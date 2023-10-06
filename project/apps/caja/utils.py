@@ -79,7 +79,7 @@ def guardar_cupon_tarjeta(pago_tarjeta, numero_ticket, usuario, sucursal):
     cupon_tarjeta.refresh_from_db()
     return cupon_tarjeta
 
-def guardar_cupom_transferencia(pago_transferencia, numero_ticket):
+def guardar_cupon_transferencia(pago_transferencia, numero_ticket):
     
     nombre = pago_transferencia['nombre']
     apellido = pago_transferencia['apellido']
@@ -89,10 +89,10 @@ def guardar_cupom_transferencia(pago_transferencia, numero_ticket):
     observaciones = pago_transferencia['observaciones']
     venta = Venta.objects.get(numero_ticket=numero_ticket)
     # CUPON TRANSFERENCIA
-    pago_transferencia = PagoTransferencia.objects.create(importe=importe, nombre=nombre, apellido=apellido, documento_identidad=documento,
+    transferencia = PagoTransferencia.objects.create(importe=importe, nombre=nombre, apellido=apellido, documento_identidad=documento,
                                                      banco=banco, venta=venta, observaciones=observaciones)
-    pago_transferencia.refresh_from_db()
-    return pago_transferencia
+    transferencia.refresh_from_db()
+    return transferencia
 
 
 

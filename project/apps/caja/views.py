@@ -14,7 +14,7 @@ from django.views import View
 from caja.constants import INGRESO
 # Create your views here.
 from caja.models import PlanTarjetaDeCredito, Caja, MovimientoCaja, CobroVenta, Ingreso
-from caja.utils import guardar_cupom_transferencia, guardar_movimiento_cobro_venta, guardar_cupon_tarjeta, calcular_ingresos_caja, \
+from caja.utils import guardar_cupon_transferencia, guardar_movimiento_cobro_venta, guardar_cupon_tarjeta, calcular_ingresos_caja, \
     calcular_total_ingresos, calcular_egresos_caja, calcular_total_egresos, calcular_total_compras_cc
 from cuentacorriente.constants import CREDITO
 from cuentacorriente.models import MovimientoCuentaCorriente
@@ -133,9 +133,9 @@ def cobrar_ticket(request):
                     if lista_pagos_transferencia:
                         for pago_transferencia in lista_pagos_transferencia:
                             try:
-                                pago_transferencia = guardar_cupom_transferencia(pago_transferencia, numero_ticket)
+                                transferencia = guardar_cupon_transferencia(pago_transferencia, numero_ticket)
                                 print("lista transferencia con datos")
-                                print(pago_transferencia.pk)
+                                print(transferencia.pk)
                             except ValidationError:
                                 data = {'error': 'Datos erroneos'}
                     else:
