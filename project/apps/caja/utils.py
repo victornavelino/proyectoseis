@@ -3,7 +3,7 @@ from decimal import Decimal
 import json
 from django.db.models import Sum
 from caja.constants import INGRESO, EGRESO
-from caja.models import MovimientoCaja, CobroVenta, Caja, PlanTarjetaDeCredito, CuponPagoTarjeta, TipoIngreso, Ingreso, \
+from caja.models import MovimientoCaja, CobroVenta, Caja, PagoTransferencia, PlanTarjetaDeCredito, CuponPagoTarjeta, TipoIngreso, Ingreso, \
     Sueldo, Adelanto, RetiroEfectivo, Gasto
 from cuentacorriente.constants import DEBITO, CREDITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
@@ -78,6 +78,22 @@ def guardar_cupon_tarjeta(pago_tarjeta, numero_ticket, usuario, sucursal):
                                                     observaciones=observaciones)
     cupon_tarjeta.refresh_from_db()
     return cupon_tarjeta
+
+def guardar_cupom_transferencia(pago_transferencia, numero_ticket):
+    
+    nombre = pago_transferencia['nombre']
+    apellido = pago_transferencia['apellido']
+    importe = pago_transferencia['importe']
+    documento = pago_transferencia['documento']
+    banco = pago_transferencia['banco']
+    observaciones = pago_transferencia['observaciones']
+    venta = Venta.objects.get(numero_ticket=numero_ticket)
+    # CUPON TRANSFERENCIA
+    pago_transferencia = PagoTransferencia.objects.create(importe=importe, nombre=nombre, apellido=apellido, documento_identidad=documento,
+                                                     banco=banco, venta=venta, observaciones=observaciones)
+    pago_transferencia.refresh_from_db()
+    return pago_transferencia
+
 
 
 def calcular_ingresos_caja(caja):

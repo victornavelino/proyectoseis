@@ -14,7 +14,7 @@ from django.views import View
 from caja.constants import INGRESO
 # Create your views here.
 from caja.models import PlanTarjetaDeCredito, Caja, MovimientoCaja, CobroVenta, Ingreso
-from caja.utils import guardar_movimiento_cobro_venta, guardar_cupon_tarjeta, calcular_ingresos_caja, \
+from caja.utils import guardar_cupom_transferencia, guardar_movimiento_cobro_venta, guardar_cupon_tarjeta, calcular_ingresos_caja, \
     calcular_total_ingresos, calcular_egresos_caja, calcular_total_egresos, calcular_total_compras_cc
 from cuentacorriente.constants import CREDITO
 from cuentacorriente.models import MovimientoCuentaCorriente
@@ -92,6 +92,8 @@ def cobrar_ticket(request):
                             total_tarjeta += float(pago['monto_total'])
                         if pago['tipo_de_pago'] == 'CCORRIENTE':
                             total_ccorriente += float(pago['monto_total'])
+                        if pago['tipo_de_pago'] == 'TRANSFERENCIA':
+                            total_transferencia += float(pago['monto_total'])
                     # EFECTIVO
                     if lista_pagos_efectivo:
                         for pago_efectivo in lista_pagos_efectivo:
@@ -126,6 +128,19 @@ def cobrar_ticket(request):
                                 data = {'error': 'Datos erroneos'}
                     else:
                         print('lista_pagos_ccorriente vacia')
+
+                    # PAGOS TRANSFERENCIA
+                    if lista_pagos_transferencia:
+                        for pago_transferencia in lista_pagos_transferencia:
+                            try:
+                                pago_transferencia = guardar_cupom_transferencia(pago_transferencia, numero_ticket)
+                                print("lista transferencia con datos")
+                                print(pago_transferencia.pk)
+                            except ValidationError:
+                                data = {'error': 'Datos erroneos'}
+                    else:
+                        print("lista transferencias sin datos")
+
                     # REVISAR BIEN PORQUE LO MISMO LA SETEA COMO COBRADA CUANDO
                     # NO SE LA COBRO POR UN ERROR DE VALIDACION
                     venta = Venta.objects.get(numero_ticket=numero_ticket)
