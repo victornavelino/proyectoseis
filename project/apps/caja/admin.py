@@ -150,6 +150,15 @@ class CajaAdmin(admin.ModelAdmin):
             "importe": str(total_tarjeta)
         }
         results.append(json_valores)
+        #TRANSFERENCIA
+        total_transferencia = \
+            PagoTransferencia.objects.filter(fecha__gte=caja.fecha_inicio).aggregate(Sum('importe'))[
+                'importe__sum'] or 0.00
+        json_valores = {
+            "tipo": "Compras Con Transferencia",
+            "importe": str(total_transferencia)
+        }
+        results.append(json_valores)
         total_comprascc = \
             MovimientoCuentaCorriente.objects.filter(fecha__gte=caja.fecha_inicio, tipo=DEBITO).aggregate(
                 Sum('importe'))[
