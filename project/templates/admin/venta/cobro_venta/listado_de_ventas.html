@@ -50,7 +50,7 @@
     <fieldset class="module aligned">
 <div align="center">
         <h1>Tickets para cobrar (presione F5 para actualizar)</h1>
-        <table width="70%">
+        <table id="tabla_ventas" width="70%" class="table-striped">
             <thead>
                 <tr>
                     <th>Numero Ticket</th>
@@ -91,12 +91,18 @@
     </fieldset>
 
     <script>
-                jQuery(document).ready(function () {
+             //AGREGADO PARA SELECCIONAR FILA Y ELIMINAR ARTICULO
+             let $filas = jQuery('#tabla_ventas tbody tr');
+             let filaSeleccionada = 0; 
+             //FIN        
+            jQuery(document).ready(function () {
                 console.log('inicia el html')
                 cargar_tickets();
             });
             const cargar_tickets = () =>{
             }
+
+
 
     </script>
         <!-- SWEETALERT -->
