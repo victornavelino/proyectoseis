@@ -17,7 +17,7 @@ from psycopg2 import Date
 from caja.constants import EGRESO, INGRESO
 from caja.models import Caja, CobroVenta, PagoTransferencia, Sueldo, Ingreso, TipoIngreso, RetiroEfectivo, TipoGasto, Gasto, \
     Adelanto, TarjetaDeCredito, PlanTarjetaDeCredito, CuponPagoTarjeta, MovimientoCaja
-from caja.utils import calcular_saldo_caja, calcular_caja_final, calcular_ingresos_caja, calcular_total_ingresos, \
+from caja.utils import calcular_saldo_caja, calcular_caja_final, calcular_ingresos_caja, calcular_total_compras_transf, calcular_total_ingresos, \
     calcular_egresos_caja, calcular_total_egresos, calcular_total_compras_cc
 from cuentacorriente.constants import DEBITO, CREDITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
@@ -207,8 +207,9 @@ class CajaAdmin(admin.ModelAdmin):
                                                 'total_ingresos': calcular_total_ingresos(caja),
                                                 'egresos': calcular_egresos_caja(caja),
                                                 'total_egresos': calcular_total_egresos(caja),
-                                                'total_ccorrientes': calcular_total_compras_cc(caja)},
-                                       show_content_in_browser=False,
+                                                'total_ccorrientes': calcular_total_compras_cc(caja),
+                                                'total_transferencias': calcular_total_compras_transf(caja)},
+                                       show_content_in_browser=True,
                                        cmd_options={'margin-top': 50, },
                                        )
         return response

@@ -217,3 +217,16 @@ def calcular_total_compras_cc(caja):
     total = json.loads(total)
     return total
 
+def calcular_total_compras_transf(caja):
+
+    total_compras_transf = PagoTransferencia.objects.filter(
+        fecha__gte=caja.fecha_inicio,
+        fecha__lte=caja.fecha_fin).aggregate(
+        Sum('importe'))['importe__sum'] or 0.00
+    json_valores = {
+        "concepto": "TOTAL TRANSFERENCIA",
+        "importe": str(total_compras_transf)
+    }
+    total = json.dumps(json_valores)
+    total = json.loads(total)
+    return total
