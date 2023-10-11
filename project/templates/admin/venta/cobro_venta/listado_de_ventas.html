@@ -35,6 +35,9 @@
         -webkit-overflow-scrolling: touch;
         overflow-y: scroll;
     }
+        .selected {
+            background-color: #ccc;
+        }
     </style>
 {% endblock %}
 
@@ -93,8 +96,38 @@
     <script>
              //AGREGADO PARA SELECCIONAR FILA Y ELIMINAR ARTICULO
              let $filas = jQuery('#tabla_ventas tbody tr');
-             let filaSeleccionada = 0; 
-             //FIN        
+             let filaSeleccionada = -1; 
+             jQuery('#tabla_ventas').focus;
+             //FIN
+                    // Agregar un evento de escucha para las teclas de flecha hacia arriba y abajo
+                    jQuery(document).on("keydown", function(event){
+                        if (event.keyCode === 38  && filaSeleccionada > 0) {
+                            event.preventDefault();
+                            
+                             $filas.eq(filaSeleccionada).removeClass('selected');
+                                filaSeleccionada--;
+                                $filas.eq(filaSeleccionada).addClass('selected');
+                        } else if (event.keyCode === 40 && filaSeleccionada < $filas.length - 1) {
+                            event.preventDefault();
+                            
+                             $filas.eq(filaSeleccionada).removeClass('selected');
+                            filaSeleccionada++;
+                            $filas.eq(filaSeleccionada).addClass('selected');
+                            } else if (event.key === 'Enter' && filaSeleccionada !== -1) {
+                                // Eliminar la fila seleccionada
+                                var nro_ticket = $filas.eq(filaSeleccionada).find('td:first').text();
+                                window.location.href='{% url 'cobrar_venta' numero_ticket=1234567 %}'.replace(/1234567/, nro_ticket);
+                                console.log('REGISTRO A ELIMINAR');
+                                console.log(nro_ticket)
+                               
+                                //$filas.eq(filaSeleccionada).remove();
+                                //filaSeleccionada = -1; // Reiniciar la selección
+                            }
+                    });
+             
+             
+
+
             jQuery(document).ready(function () {
                 console.log('inicia el html')
                 cargar_tickets();
