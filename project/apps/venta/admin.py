@@ -12,8 +12,9 @@ from venta.forms import VentaAdminForm, CobrarVentaForm
 from venta.models import VentaArticulo, Venta, CierreVentas
 from django.shortcuts import render
 from venta.forms import CobrarVentaForm
-from import_export.admin import ExportMixin, ExportActionMixin
+from import_export.admin import ExportMixin, ExportActionMixin, ExportActionModelAdmin
 from import_export.fields import Field
+
 
 from venta.utils import calcular_importe_eventuales, calcular_importe_descuentos, calcular_importe_asado, \
     calcular_importe_blandos
@@ -50,7 +51,8 @@ class VentaAdmin(ExportMixin, admin.ModelAdmin):
     change_list_template = 'admin/venta/venta/change_list.html'
     inlines = (VentaArticuloInline,)
     actions = ['anular_venta', 'imprimir_ticket']
-    
+
+
     @admin.action(description='Anular Venta')
     def anular_venta(self, request, queryset):
         if len(queryset) != 1:

@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 import sys
 import environ
+from import_export.formats.base_formats import XLSX
+
+EXPORT_FORMATS = [XLSX]
 
 CORS_ORIGIN_ALLOW_ALL = True
 
