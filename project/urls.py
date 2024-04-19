@@ -25,7 +25,7 @@ from cuentacorriente.views import get_cc_cliente
 from inventario.views import recepcionar_movimiento_ingreso
 
 from project.apps.articulo.views import get_precio_articulo, copiar_precios, copiar_precios_proceso,get_listas_precio_sucursal
-from project.apps.venta.views import get_listaprecio, imprimir_ticket
+from project.apps.venta.views import exportar_ventas, get_listaprecio, imprimir_ticket
 from project.router import router
 from promocion.views import copiar_promos, copiar_promociones, get_promociones_sucursal
 from usuario.api import RegistroUsuarioAPIView
@@ -64,6 +64,7 @@ urlpatterns = [
                   path('admin/venta/venta/cobrar_venta/<int:numero_ticket>', cobrar_venta, name='cobrar_venta'),
                   path('admin/venta/venta/cobrar_venta/', cobrar_ticket, name='cobrar_ticket'),
                   path('admin/venta/venta/cobrar_venta/', mostrar_dialog, name='nuevo_pago'),
+                  path('admin/venta/venta/exportar_ventas', exportar_ventas, name='exportar_ventas'),
                   path('admin/venta/venta/<int:numero_ticket>', imprimir_ticket, name='imprimir_ticket'),
                   path('admin/promocion/promocion/copiar_promociones/', copiar_promociones, name='copiar_promociones'),
                   path('admin/articulo/precio/copiar_precios/', copiar_precios, name='copiar_precios'),

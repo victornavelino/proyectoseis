@@ -368,3 +368,10 @@ def get_empleados(request):
         valores = {}
         data = serializers.serialize('json', valores)
     return HttpResponse(data, content_type="application/json")
+
+
+def exportar_ventas(request):
+    ventas = Venta.objects.all()
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="ventas.xlsx"'
+    return response
