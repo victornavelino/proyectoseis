@@ -17,6 +17,7 @@ from articulo.models import Precio, ListaPrecio, Articulo
 from caja.models import TarjetaDeCredito, Caja
 from cliente.models import Cliente
 from empleado.models import Empleado
+from venta.admin import VentaResource
 from venta.models import VentaArticulo
 from promocion.models import Promocion, Descuento
 from venta.forms import CobrarVentaForm, form_dialog_pago
@@ -371,7 +372,16 @@ def get_empleados(request):
 
 
 def exportar_ventas(request):
+    # Obtén los datos que deseas exportar, por ejemplo, todas las ventas
     ventas = Venta.objects.all()
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="ventas.xlsx"'
+
+    # Inicializa el recurso de ventas
+    venta_resource = VentaResource()
+
+    # Crea un conjunto de datos tabulares utilizando el recurso de ventas y los datos obtenidos
+    dataset = venta_resource.export(ventas)
+
+    # Genera la respuesta HTTP con el contenido del dataset en formato Excel
+    response = HttpResponse(dataset.xls, content_type='application/vnd.ms-excel')
+    response['Content-Disposition'] = 'attachment; filename="ventas.xls"'
     return response

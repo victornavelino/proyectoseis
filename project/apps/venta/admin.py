@@ -50,8 +50,11 @@ class VentaAdmin(ExportMixin, admin.ModelAdmin):
     add_form_template = 'admin/venta/venta/add.html'
     change_list_template = 'admin/venta/venta/change_list.html'
     inlines = (VentaArticuloInline,)
-    actions = ['anular_venta', 'imprimir_ticket']
+    actions = ['anular_venta', 'imprimir_ticket', 'exportar_excel']
 
+    @admin.action(description='Exportar a Excel')
+    def exportar_excel(self, request, queryset):
+        return False
 
     @admin.action(description='Anular Venta')
     def anular_venta(self, request, queryset):

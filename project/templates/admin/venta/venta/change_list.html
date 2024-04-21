@@ -1,30 +1,38 @@
 {% extends "admin/change_list.html" %}
 
-
-{% block footer  %}
- 
+{% block footer %}
 
 
-<br/>
-<input type="button" class="btn btn-primary"
-                               onclick="window.location.href='{% url 'exportar_ventas'%}';"
-                               value="Exportar Ventas" /></br>
-                               
-    <h1>  F2 - AÑADIR VENTA </h1>
-    
-    <script type="text/javascript">
-       // django.jQuery = jQuery;
-        jQuery(document).ready(function () {
+<li>
+    <ul>
+        <input type="button" class="btn btn-primary" onclick="window.location.href='{% url 'exportar_ventas'%}';"
+            value="Exportar Ventas" />
+    </ul>
+    <ul>
+        <h1>       </h1>
+    </ul>
+    <ul>
+        <h1> F2 - AÑADIR VENTA </h1>
+    </ul>
+
+</li>
+
+
+
+
+<script type="text/javascript">
+    // django.jQuery = jQuery;
+    jQuery(document).ready(function () {
         //jQuery( function() {
-            jQuery(document).on('keydown', function(event) {
-                //F2 agregar venta
-                if(event.keyCode==113){
-                    event.preventDefault();
-                    window.location.href = "/admin/venta/venta/add/"
-                }
-            });
+        jQuery(document).on('keydown', function (event) {
+            //F2 agregar venta
+            if (event.keyCode == 113) {
+                event.preventDefault();
+                window.location.href = "/admin/venta/venta/add/"
+            }
         });
-    </script>
+    });
+</script>
 
 
 {% endblock %}
