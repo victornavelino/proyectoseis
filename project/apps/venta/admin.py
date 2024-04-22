@@ -4,6 +4,7 @@ from django.contrib import admin, messages
 # Register your models here.
 from django.db.models import Sum
 from django.forms import forms
+from django.http import HttpResponse
 from import_export import resources
 from wkhtmltopdf.views import PDFTemplateResponse
 from caja.models import Caja
@@ -14,13 +15,14 @@ from django.shortcuts import render
 from venta.forms import CobrarVentaForm
 from import_export.admin import ExportMixin, ExportActionMixin, ExportActionModelAdmin
 from import_export.fields import Field
-
+from rangefilter.filters import DateRangeFilter, DateTimeRangeFilter
+from openpyxl import Workbook
 
 from venta.utils import calcular_importe_eventuales, calcular_importe_descuentos, calcular_importe_asado, \
     calcular_importe_blandos
 
 
-class VentaArticuloInline(admin.StackedInline):
+class VentaArticuloInline(admin.TabularInline):
     model = VentaArticulo
     extra = 0
     verbose_name = "Artículo"
@@ -41,20 +43,40 @@ class VentaResource(resources.ModelResource):
 @admin.register(Venta)
 class VentaAdmin(ExportMixin, admin.ModelAdmin):
     resource_class = VentaResource
-    list_display = ('cliente', 'monto', 'numero_ticket', 'fecha', 'anulado', 'cobrada', 'sucursal', 'cierreventa', 'usuario',)
+    list_display = ('cliente', 'numero_ticket', 'fecha','detalle', 'monto', 'sucursal', 'usuario', 'anulado', 'cobrada')
     search_fields = ('numero_ticket',)
     exclude = ('es_persona', 'monto', 'descuento')
-    list_filter = ['sucursal']
+    list_filter = ['sucursal', ('fecha', DateRangeFilter)]
     readonly_fields = ('usuario',)
     list_per_page = 30
     add_form_template = 'admin/venta/venta/add.html'
     change_list_template = 'admin/venta/venta/change_list.html'
-    inlines = (VentaArticuloInline,)
+    inlines = [VentaArticuloInline,]
     actions = ['anular_venta', 'imprimir_ticket', 'exportar_excel']
+
+    def detalle(self, obj):
+        detalles = VentaArticulo.objects.filter(venta=obj)
+        return ", ".join([str(detalle)+" $ "+str(detalle.total_articulo) for detalle in detalles])
 
     @admin.action(description='Exportar a Excel')
     def exportar_excel(self, request, queryset):
-        return False
+        wb = Workbook()
+        ws = wb.active
+        ws.append(['cliente', 'numero_ticket', 'fecha','detalle', 'monto', 'sucursal'])  # Encabezados de columna
+        
+        # Agrega los datos de las ventas seleccionadas al archivo Excel
+        for venta in queryset:
+            venta_articulo = VentaArticulo.objects.filter(venta=venta)
+            detalle = ""
+            for articulo in venta_articulo:
+                detalle = detalle.join(str(articulo)+" $ "+str(articulo.total_articulo))
+            ws.append([str(venta.cliente), venta.numero_ticket, str(venta.fecha), detalle, venta.monto,str(venta.sucursal)])
+
+        # Configura la respuesta HTTP con el contenido del archivo Excel
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="ventas_seleccionadas.xls"'
+        wb.save(response)
+        return response
 
     @admin.action(description='Anular Venta')
     def anular_venta(self, request, queryset):

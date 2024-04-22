@@ -68,6 +68,7 @@ THIRD_PARTY_APPS = [
     'dal_select2',
     'import_export',
     'softdelete',
+    'rangefilter',
 ]
 
 PROJECT_APPS = [
