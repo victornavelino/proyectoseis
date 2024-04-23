@@ -21,6 +21,9 @@ from openpyxl import Workbook
 from venta.utils import calcular_importe_eventuales, calcular_importe_descuentos, calcular_importe_asado, \
     calcular_importe_blandos
 
+@admin.register(VentaArticulo)
+class VentaArticuloAdmin(ExportMixin, admin.ModelAdmin):
+     list_display = ('nombre_articulo', 'precio_unitario','cantidad_peso','total_articulo')
 
 class VentaArticuloInline(admin.TabularInline):
     model = VentaArticulo
