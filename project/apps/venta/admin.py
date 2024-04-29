@@ -21,9 +21,47 @@ from openpyxl import Workbook
 from venta.utils import calcular_importe_eventuales, calcular_importe_descuentos, calcular_importe_asado, \
     calcular_importe_blandos
 
+
+class VentaArticuloResource(resources.ModelResource):
+
+    usuario = Field(attribute='usuario__username', column_name='Usuario')
+    sucursal = Field(attribute='sucursal__nombre', column_name='Sucursal')
+    cliente = Field(attribute='cliente__persona__obtener_nombre_completo', column_name='Cliente')
+
+    class Meta:
+        model = Venta
+        fields = ('numero_ticket', 'cliente', 'fecha', 'monto', 'descuento', 'anulado', 'sucursal', 'usuario',)
+        export_order = ('nro_ticket','cliente', 'fecha','nombre_articulo','precio_unitario','cantidad_peso','total_articulo','total_articulo',)
+
+
 @admin.register(VentaArticulo)
 class VentaArticuloAdmin(ExportMixin, admin.ModelAdmin):
-     list_display = ('nombre_articulo', 'precio_unitario','cantidad_peso','total_articulo')
+     list_display = ('nro_ticket', 'fecha','nombre_articulo', 'precio_unitario','cantidad_peso','total_articulo','total_general')
+     resource_class = VentaArticuloResource
+
+     def has_add_permission(self, request):
+        return False
+
+     def has_change_permission(self, request, obj=None):
+        return True
+    
+     def has_delete_permission(self, request, obj=None):
+        return False 
+     
+     def nro_ticket(self, obj):
+        venta = Venta.objects.get(pk=obj.venta.pk)
+        return venta.numero_ticket
+     
+     def fecha(self, obj):
+        venta = Venta.objects.get(pk=obj.venta.pk)
+        return venta.fecha
+     
+     def total_general(self, obj):
+        venta = Venta.objects.get(pk=obj.venta.pk)
+        return venta.monto
+
+
+
 
 class VentaArticuloInline(admin.TabularInline):
     model = VentaArticulo

@@ -49,8 +49,8 @@ class Venta(models.Model):
 
 class VentaArticulo(models.Model):
     class Meta:
-        verbose_name = 'VentaArticulo'
-        verbose_name_plural = 'Ventas Articulos'
+        verbose_name = 'Reporte Venta'
+        verbose_name_plural = 'Reportes Ventas'
         ordering = ['-id']
 
     total_articulo = models.DecimalField(max_digits=12, decimal_places=2)
