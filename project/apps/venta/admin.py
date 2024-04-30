@@ -24,20 +24,24 @@ from venta.utils import calcular_importe_eventuales, calcular_importe_descuentos
 
 class VentaArticuloResource(resources.ModelResource):
 
-    usuario = Field(attribute='usuario__username', column_name='Usuario')
-    sucursal = Field(attribute='sucursal__nombre', column_name='Sucursal')
-    cliente = Field(attribute='cliente__persona__obtener_nombre_completo', column_name='Cliente')
+    
+    numero_ticket = Field(attribute='venta__numero_ticket', column_name='Nro de Ticket')
+    fecha = Field(attribute='venta__fecha', column_name='Fecha de Venta')
+    monto = Field(attribute='venta__monto', column_name='Total')
+    cliente = Field(attribute='venta__cliente__persona__obtener_nombre_completo', column_name='Cliente')
 
     class Meta:
-        model = Venta
-        fields = ('numero_ticket', 'cliente', 'fecha', 'monto', 'descuento', 'anulado', 'sucursal', 'usuario',)
-        export_order = ('nro_ticket','cliente', 'fecha','nombre_articulo','precio_unitario','cantidad_peso','total_articulo','total_articulo',)
+        model = VentaArticulo
+        fields = ('numero_ticket','cliente', 'fecha','nombre_articulo','precio_unitario','cantidad_peso','total_articulo','monto')
+        export_order = ('numero_ticket','cliente', 'fecha','nombre_articulo','precio_unitario','cantidad_peso','total_articulo','monto')
 
 
 @admin.register(VentaArticulo)
 class VentaArticuloAdmin(ExportMixin, admin.ModelAdmin):
-     list_display = ('nro_ticket', 'fecha','nombre_articulo', 'precio_unitario','cantidad_peso','total_articulo','total_general')
+     list_display = ('nro_ticket', 'cliente','fecha','nombre_articulo', 'precio_unitario','cantidad_peso','total_articulo','total_general')
      resource_class = VentaArticuloResource
+     list_filter = ['venta__cliente',('venta__fecha', DateRangeFilter)]
+     search_fields = ('venta__numero_ticket',)
 
      def has_add_permission(self, request):
         return False
@@ -59,6 +63,10 @@ class VentaArticuloAdmin(ExportMixin, admin.ModelAdmin):
      def total_general(self, obj):
         venta = Venta.objects.get(pk=obj.venta.pk)
         return venta.monto
+     
+     def cliente(self, obj):
+        venta = Venta.objects.get(pk=obj.venta.pk)
+        return venta.cliente
 
 
 
