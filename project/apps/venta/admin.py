@@ -17,6 +17,7 @@ from import_export.admin import ExportMixin, ExportActionMixin, ExportActionMode
 from import_export.fields import Field
 from rangefilter.filters import DateRangeFilter, DateTimeRangeFilter
 from openpyxl import Workbook
+from import_export.formats import base_formats
 
 from venta.utils import calcular_importe_eventuales, calcular_importe_descuentos, calcular_importe_asado, \
     calcular_importe_blandos
@@ -41,7 +42,12 @@ class VentaArticuloAdmin(ExportMixin, admin.ModelAdmin):
      list_display = ('nro_ticket', 'cliente','fecha','nombre_articulo', 'precio_unitario','cantidad_peso','total_articulo','total_general')
      resource_class = VentaArticuloResource
      list_filter = ['venta__cliente',('venta__fecha', DateRangeFilter)]
-     search_fields = ('venta__numero_ticket',)
+     search_fields = ('venta__numero_ticket','venta__cliente__persona__documento_identidad','venta__cliente__persona__apellido')
+
+     def get_export_formats(self):
+         formats = (base_formats.XLSX,base_formats.XLS)
+         #return format.can_export()
+         return [f for f in formats if f().can_export()]
 
      def has_add_permission(self, request):
         return False
@@ -101,31 +107,31 @@ class VentaAdmin(ExportMixin, admin.ModelAdmin):
     add_form_template = 'admin/venta/venta/add.html'
     change_list_template = 'admin/venta/venta/change_list.html'
     inlines = [VentaArticuloInline,]
-    actions = ['anular_venta', 'imprimir_ticket', 'exportar_excel']
+    actions = ['anular_venta', 'imprimir_ticket',]
 
     def detalle(self, obj):
         detalles = VentaArticulo.objects.filter(venta=obj)
         return ", ".join([str(detalle)+" $ "+str(detalle.total_articulo) for detalle in detalles])
 
-    @admin.action(description='Exportar a Excel')
-    def exportar_excel(self, request, queryset):
-        wb = Workbook()
-        ws = wb.active
-        ws.append(['cliente', 'numero_ticket', 'fecha','detalle', 'monto', 'sucursal'])  # Encabezados de columna
+    # @admin.action(description='Exportar a Excel')
+    # def exportar_excel(self, request, queryset):
+    #     wb = Workbook()
+    #     ws = wb.active
+    #     ws.append(['cliente', 'numero_ticket', 'fecha','detalle', 'monto', 'sucursal'])  # Encabezados de columna
         
-        # Agrega los datos de las ventas seleccionadas al archivo Excel
-        for venta in queryset:
-            venta_articulo = VentaArticulo.objects.filter(venta=venta)
-            detalle = ""
-            for articulo in venta_articulo:
-                detalle = detalle.join(str(articulo)+" $ "+str(articulo.total_articulo))
-            ws.append([str(venta.cliente), venta.numero_ticket, str(venta.fecha), detalle, venta.monto,str(venta.sucursal)])
+    #     # Agrega los datos de las ventas seleccionadas al archivo Excel
+    #     for venta in queryset:
+    #         venta_articulo = VentaArticulo.objects.filter(venta=venta)
+    #         detalle = ""
+    #         for articulo in venta_articulo:
+    #             detalle = detalle.join(str(articulo)+" $ "+str(articulo.total_articulo))
+    #         ws.append([str(venta.cliente), venta.numero_ticket, str(venta.fecha), detalle, venta.monto,str(venta.sucursal)])
 
-        # Configura la respuesta HTTP con el contenido del archivo Excel
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename="ventas_seleccionadas.xls"'
-        wb.save(response)
-        return response
+    #     # Configura la respuesta HTTP con el contenido del archivo Excel
+    #     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    #     response['Content-Disposition'] = 'attachment; filename="ventas_seleccionadas.xls"'
+    #     wb.save(response)
+    #     return response
 
     @admin.action(description='Anular Venta')
     def anular_venta(self, request, queryset):
