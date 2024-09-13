@@ -550,6 +550,10 @@
                             jQuery("#id_cliente").val(null).trigger("change");
                             clear();
                             calcularTotal();
+
+                            $filas = jQuery('#id_table tbody tr');
+                            filaSeleccionada = 1; 
+                            id_fila = 1;
                         }
 
                         function cargar() {
@@ -751,6 +755,7 @@
 
                     // Agregar un evento de escucha para las teclas de flecha hacia arriba y abajo
                     jQuery(document).on("keydown", function(event){
+                        console.log("entro evento flecha abajo - "+ filaSeleccionada+" - "+id_fila)
                         if (event.keyCode === 38  && filaSeleccionada > 0) {
                             event.preventDefault();
                             
