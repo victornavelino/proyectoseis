@@ -328,7 +328,7 @@
                       
                             //AGREGADO PARA SELECCIONAR FILA Y ELIMINAR ARTICULO
                             let $filas = jQuery('#id_table tbody tr');
-                            let filaSeleccionada = -1; 
+                            let filaSeleccionada = 0; 
                             //FIN
                         
 
@@ -550,8 +550,9 @@
                             jQuery("#id_cliente").val(null).trigger("change");
                             clear();
                             calcularTotal();
-
-                            filaSeleccionada = 1; 
+                            $filas = 0
+                            //jQuery('#id_table tbody tr');
+                            filaSeleccionada = 0; 
   
                         }
 
@@ -754,7 +755,7 @@
 
                     // Agregar un evento de escucha para las teclas de flecha hacia arriba y abajo
                     jQuery(document).on("keydown", function(event){
-                        console.log("entro evento flecha  - "+ filaSeleccionada+" - "+$filas)
+                        console.log("entro evento flecha  - "+ filaSeleccionada+" - "+   $filas.eq(filaSeleccionada).val())
                         if (event.keyCode === 38  && filaSeleccionada > 0) {
                             event.preventDefault();
                             
