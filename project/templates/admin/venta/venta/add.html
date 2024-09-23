@@ -324,12 +324,10 @@
                         var cliente;
                         let id_empleado;
                         let id_fila = 1;
-
-                      
-                            //AGREGADO PARA SELECCIONAR FILA Y ELIMINAR ARTICULO
-                            let $filas = jQuery('#id_table tbody tr');
-                            let filaSeleccionada = 0; 
-                            //FIN
+                        //AGREGADO PARA SELECCIONAR FILA Y ELIMINAR ARTICULO
+                        let $filas = jQuery('#id_table tbody tr');
+                        let filaSeleccionada = 0; 
+                        //FIN
                         
 
                         
@@ -513,7 +511,7 @@
                                                             document.getElementById('iframeTicket').contentWindow.print();
                                                          });
                                                       //  window.location.href = "{% url 'imprimir_ticket' numero_ticket=1234567 %}".replace(/1234567/, result.numero_ticket);
-                                                                                                       limpiarTodo();
+                                                       limpiarTodo();
                                                 } else {
                                                     if (result.caja = "cerrada") {
                                                         limpiarTodo();
@@ -550,8 +548,7 @@
                             jQuery("#id_cliente").val(null).trigger("change");
                             clear();
                             calcularTotal();
-                            $filas = 0
-                            //jQuery('#id_table tbody tr');
+                            $filas = jQuery('#id_table tbody tr');
                             filaSeleccionada = 0; 
   
                         }
@@ -646,6 +643,7 @@
                             cargar_clientes();
                             jQuery("#id_empleado").focus();
                             //jQuery("#id_cliente").focus();
+                            $filas = jQuery('#id_table tbody tr');
 
                             jQuery('#add_id_articulo').click(function (e) {
                                 e.preventDefault();
@@ -742,6 +740,7 @@
                                 if (event.keyCode ===115){
                                     //event.preventDefault();
                                     guardar_venta(event);
+                                    $filas = jQuery('#id_table tbody tr');
                                 }
                             })
 
@@ -755,21 +754,23 @@
 
                     // Agregar un evento de escucha para las teclas de flecha hacia arriba y abajo
                     jQuery(document).on("keydown", function(event){
-                        console.log("entro evento flecha  - "+ filaSeleccionada+" - "+   $filas.eq(filaSeleccionada).val())
+                        
+                        console.log("entro evento flecha  - "+ filaSeleccionada+" - "+   $filas.length)
                         if (event.keyCode === 38  && filaSeleccionada > 0) {
                             event.preventDefault();
-                            
+                            $filas = jQuery('#id_table tbody tr');
                              $filas.eq(filaSeleccionada).removeClass('selected');
                                 filaSeleccionada--;
                                 $filas.eq(filaSeleccionada).addClass('selected');
                         } else if (event.keyCode === 40 && filaSeleccionada < $filas.length - 1) {
                             event.preventDefault();
-                            
+                            $filas = jQuery('#id_table tbody tr');
                              $filas.eq(filaSeleccionada).removeClass('selected');
                             filaSeleccionada++;
                             $filas.eq(filaSeleccionada).addClass('selected');
                             } else if (event.key === 'Delete' && filaSeleccionada !== -1) {
                                 // Eliminar la fila seleccionada
+                                $filas = jQuery('#id_table tbody tr');
                                 var registroAEliminar = $filas.eq(filaSeleccionada).find('td:first').text();
                                 console.log('REGISTRO A ELIMINAR');
                                 console.log(registroAEliminar)
