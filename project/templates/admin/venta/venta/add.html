@@ -515,6 +515,7 @@
                                                 } else {
                                                     if (result.caja = "cerrada") {
                                                         limpiarTodo();
+                                                        
                                                         swal({
                                                             icon: 'error',
                                                             title: 'Ups!',
@@ -741,6 +742,9 @@
                                     //event.preventDefault();
                                     guardar_venta(event);
                                     $filas = jQuery('#id_table tbody tr');
+                                    window.location.reload(true);
+
+
                                 }
                             })
 
