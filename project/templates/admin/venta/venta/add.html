@@ -319,14 +319,13 @@
                     </div>
 
                     <script>
-
-                        var articulos = [];
-                        var cliente;
+                        //// variables
+                        let cliente;
+                        let articulos = [];
                         let id_empleado;
                         let id_fila = 1;
-                        //AGREGADO PARA SELECCIONAR FILA Y ELIMINAR ARTICULO
-                        let $filas = jQuery('#id_table tbody tr');
                         let filaSeleccionada = 0; 
+                        let $filas = jQuery('#id_table tbody tr');
                         //FIN
                         
 
@@ -511,13 +510,7 @@
                                                             button: 'Ok',                                              
                                                         }).then((value) => {
                                                             document.getElementById('iframeTicket').contentWindow.print();
-                                                            //reload despues de impresion
-                                                            window.addEventListener("afterprint", (event) => {
-                                                            console.log("AFTEEEEEEEEER PRINTTTTTTTTTTT");
-                                                            window.location.href="";
-                                                            });
-
-                                                           });
+                                                        });
                                                       //  window.location.href = "{% url 'imprimir_ticket' numero_ticket=1234567 %}".replace(/1234567/, result.numero_ticket);
                                                        limpiarTodo();
                                                        
@@ -646,6 +639,15 @@
 
                             jQuery(document).ready(function () {
 
+                            //cambiados de lugar
+                            
+                            
+                            
+                            //AGREGADO PARA SELECCIONAR FILA Y ELIMINAR ARTICULO
+                            
+                            
+                            /// fin cambiados de lugar
+
                             jQuery('#id_articulo').select2();
                             jQuery('#id_articulo').select2("enable", false)
                             jQuery('#id_cliente').select2();
@@ -706,6 +708,7 @@
                                 if (event.keyCode ===112){
                                     console.log("entro F1")
                                     event.preventDefault();
+                                    $filas = jQuery('#id_table tbody tr');
                                     jQuery('#id_cliente').select2("open"); 
                                 }
                             })
@@ -752,7 +755,7 @@
                                 if (event.keyCode ===115){
                                     //event.preventDefault();
                                     guardar_venta(event);
-                                    $filas = jQuery('#id_table tbody tr');
+                                    //$filas = jQuery('#id_table tbody tr');
                                     
 
 
