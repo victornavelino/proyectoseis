@@ -555,6 +555,8 @@
                             calcularTotal();
                             $filas = jQuery('#id_table tbody tr');
                             filaSeleccionada = 0; 
+                            //AGREGAMOS EVENTO NUEVAMENTE
+                            
   
                         }
 
@@ -639,14 +641,7 @@
 
                             jQuery(document).ready(function () {
 
-                            //cambiados de lugar
-                            
-                            
-                            
-                            //AGREGADO PARA SELECCIONAR FILA Y ELIMINAR ARTICULO
-                            
-                            
-                            /// fin cambiados de lugar
+  
 
                             jQuery('#id_articulo').select2();
                             jQuery('#id_articulo').select2("enable", false)
@@ -755,10 +750,6 @@
                                 if (event.keyCode ===115){
                                     //event.preventDefault();
                                     guardar_venta(event);
-                                    //$filas = jQuery('#id_table tbody tr');
-                                    
-
-
                                 }
                             })
 
@@ -795,7 +786,7 @@
                                 eliminarArticuloTabla(registroAEliminar);
                                 $filas.eq(filaSeleccionada).remove();
                                 filaSeleccionada = -1; // Reiniciar la selección
-                                //asdasdasdasds
+                                
                                 swal({
                                         icon: 'success',
                                         title: 'Producto Eliminado!',
