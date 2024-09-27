@@ -325,6 +325,7 @@
                         let id_empleado;
                         let id_fila = 1;
                         let filaSeleccionada = 0; 
+                        let selectedRow = null;
                         let $filas = jQuery('#id_table tbody tr');
                         //FIN
                         
@@ -639,6 +640,76 @@
                             calcularTotal();
                         }
 
+                   // Detectar cuando se presionan las teclas de flecha o "Delete"
+                   jQuery(document).on('keydown', function(e) {
+                    // Obtener todas las filas visibles de la tabla, excluyendo el encabezado
+                    const rows = jQuery('#id_table tbody tr');
+            
+                    if (rows.length === 0) return; // Si no hay filas, salir
+            
+                    // Flecha hacia abajo (keyCode 40)
+                    if (e.keyCode === 40) {
+                        e.preventDefault(); // Evitar el scroll de la página con la tecla
+                        if (selectedRow === null) {
+                            // Si no hay fila seleccionada, seleccionamos la primera
+                            selectedRow = 0;
+                            jQuery(rows[selectedRow]).addClass('selected');
+                        } else {
+                            // Si ya hay una fila seleccionada, deseleccionar la actual
+                            jQuery(rows[selectedRow]).removeClass('selected');
+                            // Mover a la siguiente fila (si no es la última)
+                            if (selectedRow < rows.length - 1) {
+                                selectedRow++;
+                            }
+                            // Seleccionar la nueva fila
+                            jQuery(rows[selectedRow]).addClass('selected');
+                        }
+                    }
+            
+                    // Flecha hacia arriba (keyCode 38)
+                    if (e.keyCode === 38) {
+                        e.preventDefault(); // Evitar el scroll de la página con la tecla
+                        if (selectedRow === null) {
+                            // Si no hay fila seleccionada, seleccionamos la última
+                            selectedRow = rows.length - 1;
+                            jQuery(rows[selectedRow]).addClass('selected');
+                        } else {
+                            // Si ya hay una fila seleccionada, deseleccionar la actual
+                            jQuery(rows[selectedRow]).removeClass('selected');
+                            // Mover a la fila anterior (si no es la primera)
+                            if (selectedRow > 0) {
+                                selectedRow--;
+                            }
+                            // Seleccionar la nueva fila
+                            jQuery(rows[selectedRow]).addClass('selected');
+                        }
+                    }
+            
+                    // Tecla "Delete" (keyCode 46)
+                    if (e.keyCode === 46) {
+                        e.preventDefault(); // Prevenir comportamiento por defecto si es necesario
+                        if (selectedRow !== null) {
+                            // Eliminar la fila seleccionada
+                            jQuery(rows[selectedRow]).remove();
+            
+                            // Después de eliminar, actualizar el índice de selectedRow
+                            if (selectedRow >= rows.length - 1) {
+                                selectedRow = rows.length - 2; // Seleccionar la fila anterior si es la última
+                            }
+                            
+                            // Volver a seleccionar la fila (si queda alguna fila)
+                            if (selectedRow >= 0 && rows.length > 1) {
+                                jQuery(rows[selectedRow]).addClass('selected');
+                            } else {
+                                selectedRow = null; // Si no quedan filas
+                            }
+                        }
+                    }
+                });
+            
+            
+
+
                             jQuery(document).ready(function () {
 
   
@@ -761,41 +832,7 @@
                                 }
                             })
 
-                    // Agregar un evento de escucha para las teclas de flecha hacia arriba y abajo
-                    jQuery(document).on("keydown", function(event){
-                        
-                        console.log("entro evento flecha  - "+ filaSeleccionada+" - "+   $filas.length)
-                        if (event.keyCode === 38  && filaSeleccionada > 0) {
-                            event.preventDefault();
-                            $filas = jQuery('#id_table tbody tr');
-                             $filas.eq(filaSeleccionada).removeClass('selected');
-                                filaSeleccionada--;
-                                $filas.eq(filaSeleccionada).addClass('selected');
-                        } else if (event.keyCode === 40 && filaSeleccionada < $filas.length - 1) {
-                            event.preventDefault();
-                            $filas = jQuery('#id_table tbody tr');
-                             $filas.eq(filaSeleccionada).removeClass('selected');
-                            filaSeleccionada++;
-                            $filas.eq(filaSeleccionada).addClass('selected');
-                            } else if (event.key === 'Delete' && filaSeleccionada !== -1) {
-                                // Eliminar la fila seleccionada
-                                $filas = jQuery('#id_table tbody tr');
-                                var registroAEliminar = $filas.eq(filaSeleccionada).find('td:first').text();
-                                console.log('REGISTRO A ELIMINAR');
-                                console.log(registroAEliminar)
-                                eliminarArticuloTabla(registroAEliminar);
-                                $filas.eq(filaSeleccionada).remove();
-                                filaSeleccionada = -1; // Reiniciar la selección
-                                
-                                swal({
-                                        icon: 'success',
-                                        title: 'Producto Eliminado!',
-                                        button: 'Ok'
-                                    });
-                            }
-                    });
-
-
+ 
                             
 
                             
