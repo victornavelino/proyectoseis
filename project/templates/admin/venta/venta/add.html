@@ -383,7 +383,7 @@
                                     cantidad_peso + '</td> <td>' +
                                     precio_unitario + '</td><td>' +
                                     precio_total + '</td><td>' + 
-                                    '<button class="btn-eliminar" onclick="quitar_item(this)"><i class="fa fa-trash"></i></button></td></tr>');
+                                    '<button class="btn-eliminar" aria-label="Quitar" onclick="quitar_item(this)"><i class="fa fa-trash"></i><span class="sr-only">Quitar</span></button></td></tr>');
                                     $filas = jQuery('#id_table tbody tr');
                                     filaSeleccionada++;
                                 jQuery('#related-popup-container-articulo').hide();
