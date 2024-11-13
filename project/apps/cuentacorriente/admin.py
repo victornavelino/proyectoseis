@@ -36,19 +36,21 @@ class CuentaCorrienteAdmin(admin.ModelAdmin):
             return 0
 
     def save_formset(self, request, form, formset, change):
-        instances = formset.save()
+        instances = formset.save(commit=False)
         caja_abierta = Caja.objects.filter(sucursal=request.user.sucursal, fecha_fin__isnull=True,
                                            fecha_inicio__isnull=False).last()
         for instance in instances:
             # Do something with `instance`
             if not instance.usuario_id:
+                print("usuario del sistema cc")
+                print(request.user)
                 instance.usuario = request.user
                 if caja_abierta is None and instance.tipo == CREDITO:
                     messages.error(request, 'La caja esta Cerrada')
                     return False
         
             instance.save()
-        #formset.save_m2m()
+        formset.save_m2m()
 
 
 
