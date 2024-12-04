@@ -19,12 +19,17 @@ class MovimientoCuentaCorrienteInline(admin.TabularInline):
 
 @admin.register(CuentaCorriente)
 class CuentaCorrienteAdmin(admin.ModelAdmin):
-    list_display = ('cliente', 'fecha', 'activa', 'saldo')
+    list_display = ('cliente', 'get_dni', 'fecha', 'activa', 'saldo')
     list_display_links = ('cliente', 'saldo',)
     list_filter = (('cliente', RelatedFieldAjaxListFilter), 'cliente__persona__documento_identidad')
     list_per_page = 30
+    search_fields = ('cliente__persona__documento_identidad', 'cliente__persona__apellido')
     inlines = (MovimientoCuentaCorrienteInline,)
-
+    
+    @admin.display(ordering='dni', description='DNI')
+    def get_dni(self, obj):
+        return obj.cliente.persona.documento_identidad
+    
     def saldo(self, obj):
         debito = MovimientoCuentaCorriente.objects.filter(cuenta=obj, tipo=DEBITO).aggregate(Sum('importe'))[
             'importe__sum'] or Decimal(0.0)
