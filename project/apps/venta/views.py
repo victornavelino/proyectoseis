@@ -17,6 +17,8 @@ from articulo.models import Precio, ListaPrecio, Articulo
 from caja.models import TarjetaDeCredito, Caja
 from cliente.models import Cliente
 from empleado.models import Empleado
+from cuentacorriente.models import CuentaCorriente
+from cuentacorriente.utils import calcular_saldo_cc
 from venta.admin import VentaResource
 from venta.models import VentaArticulo
 from promocion.models import Promocion, Descuento
@@ -332,6 +334,11 @@ def imprimir_ticket(request, numero_ticket):
         nombre_archivo = "venta-" + str(venta.numero_ticket)+"-" + str(venta.fecha) + ".pdf"
         vendedor = venta.empleado
         articulos_venta = VentaArticulo.objects.filter(venta=venta)
+        try:
+            cuenta_corriente = CuentaCorriente.objects.get(cliente_id=venta.cliente, activa=True)
+            saldo_cc=calcular_saldo_cc(cuenta_corriente)
+        except:
+            saldo_cc ='No posee CC'
         monto_descuento = 0
         for articulo in articulos_venta:
             descuento_individual = articulo.precio_unitario - articulo.precio_promocion
@@ -343,7 +350,8 @@ def imprimir_ticket(request, numero_ticket):
                                        context={'venta': venta,
                                                 'vendedor': vendedor,
                                                 'articulos': articulos_venta,
-                                                'monto_descuento': monto_descuento},
+                                                'monto_descuento': monto_descuento,
+                                                'saldo_cc': saldo_cc},
                                        show_content_in_browser=True,
                                        cmd_options={'margin-top': 3,
                                                     'margin-left': 0},
