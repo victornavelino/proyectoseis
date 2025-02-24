@@ -9,6 +9,8 @@ from import_export import resources
 from wkhtmltopdf.views import PDFTemplateResponse
 from caja.models import Caja
 from caja.models import CobroVenta, CuponPagoTarjeta
+from cuentacorriente.models import CuentaCorriente
+from cuentacorriente.utils import calcular_saldo_cc
 from venta.forms import VentaAdminForm, CobrarVentaForm
 from venta.models import VentaArticulo, Venta, CierreVentas
 from django.shortcuts import render
@@ -167,6 +169,11 @@ class VentaAdmin(ExportMixin, admin.ModelAdmin):
         vendedor = venta.empleado
         articulos_venta = VentaArticulo.objects.filter(venta=venta)
         monto_descuento = 0
+        try:
+            cuenta_corriente = CuentaCorriente.objects.get(cliente_id=venta.cliente, activa=True)
+            saldo_cc=calcular_saldo_cc(cuenta_corriente)
+        except:
+            saldo_cc ='No posee CC'
         for articulo in articulos_venta:
             descuento_individual = articulo.precio_unitario - articulo.precio_promocion
             monto_descuento = monto_descuento + descuento_individual
@@ -176,7 +183,8 @@ class VentaAdmin(ExportMixin, admin.ModelAdmin):
                                        context={'venta': venta,
                                                 'vendedor': vendedor,
                                                 'articulos': articulos_venta,
-                                                'monto_descuento': monto_descuento},
+                                                'monto_descuento': monto_descuento,
+                                                'saldo_cc': saldo_cc},
                                        show_content_in_browser=True,
                                        cmd_options={'margin-top': 3,
                                                     'margin-left': 0},
