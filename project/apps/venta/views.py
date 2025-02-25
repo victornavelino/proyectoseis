@@ -338,7 +338,7 @@ def imprimir_ticket(request, numero_ticket):
             cuenta_corriente = CuentaCorriente.objects.get(cliente_id=venta.cliente, activa=True)
             saldo_cc=calcular_saldo_cc(cuenta_corriente)
         except:
-            saldo_cc ='No posee CC'
+            saldo_cc ='--'
         monto_descuento = 0
         for articulo in articulos_venta:
             descuento_individual = articulo.precio_unitario - articulo.precio_promocion
