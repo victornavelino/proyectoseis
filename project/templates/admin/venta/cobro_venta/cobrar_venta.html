@@ -769,9 +769,24 @@
                                                     swal({
                                                         icon: 'success',
                                                         title: 'Cobro Realizado',
-                                                        button: 'Ok',
+                                                        buttons: {        
+                                                            imprimir: {
+                                                                text: "Imprimir Ticket",
+                                                                value: "imprimir",
+                                                                                    },
+                                                            ok: {
+                                                                text: "Ok",
+                                                                value: "ok",
+                                                                }
+                                                                    }
+                                                        
                                                         }).then((value) => {
-                                                            window.location.href = "{% url 'listar_ventas' %}"
+                                                            if (value === "imprimir") {
+                                                                console.log("imprimir ticket")
+                                                            }else{
+                                                                window.location.href = "{% url 'listar_ventas' %}"
+                                                            }
+                                                            
                                                             });
                                                 }
                                                 if (result.error){

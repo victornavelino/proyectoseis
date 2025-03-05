@@ -279,7 +279,7 @@ def nuevo_pago_efectivo(request):
 def listar_ventas(request):
     if request.user.is_authenticated:
         print("Entro a vista listar_ventas")
-        ventas = Venta.objects.filter(sucursal=request.user.sucursal, cobrada=False)
+        ventas = Venta.objects.filter(sucursal=request.user.sucursal, cobrada=False).order_by('-numero_ticket')[:100]
         # ventas = Venta.objects.all()
         return render(request,
                       'admin/venta/cobro_venta/listado_de_ventas.html',
