@@ -10,6 +10,7 @@
     <li>Cliente: {{venta.cliente}}</li>
     <li>____________________________</li>
     {% for articulo in articulos %}
+    &nbsp
     <li>{{articulo.nombre_articulo}} x {{articulo.cantidad_peso}} = {{articulo.precio}} </li>
     <li>Precio Unit.: ${{articulo.precio_unitario}} </li>
     <li>Importe: ${{articulo.total_articulo}} </li>

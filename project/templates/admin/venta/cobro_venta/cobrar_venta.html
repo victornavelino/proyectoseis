@@ -765,10 +765,18 @@
                                         success:
                                             function (result) {
                                                 if (result.numero_cobro > 0) {
+                                                    //IFRAME IMPRIMIR TICKET
+                                                    let url = "{% url 'imprimir_ticket' numero_ticket=1234567 %}".replace(/1234567/, result.numero_cobro);
+                                                    var iframe = document.createElement('iframe');
+                                                    iframe.setAttribute("id", "iframeTicket");
+                                                    iframe.src = url;    
+                                                    iframe.height = 0; //alto 0
+                                                    iframe.style.display = "none";
                                                     console.log('entrooo cobro realizado')
                                                     swal({
                                                         icon: 'success',
                                                         title: 'Cobro Realizado',
+                                                        content: iframe,
                                                         buttons: {        
                                                             imprimir: {
                                                                 text: "Imprimir Ticket",
@@ -781,13 +789,20 @@
                                                                     }
                                                         
                                                         }).then((value) => {
-                                                            if (value === "imprimir") {
-                                                                console.log("imprimir ticket")
-                                                            }else{
+                                                            if (value === "ok") {
+                                                                
                                                                 window.location.href = "{% url 'listar_ventas' %}"
+                                                            }else{
+                                                                
+                                                                let nuevaVentana = window.open(url, '_blank');
+
+                                                                setTimeout(() => {
+                                                                    window.location.href = "{% url 'listar_ventas' %}";
+                                                                }, 2000); // Espera 2 segundos antes de redirigir
+                                                                                                                                
                                                             }
-                                                            
                                                             });
+                                                            
                                                 }
                                                 if (result.error){
                                                     swal({
