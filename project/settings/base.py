@@ -83,7 +83,8 @@ PROJECT_APPS = [
     'venta',
     'caja',
     'inventario',
-    'cuentacorriente'
+    'cuentacorriente',
+    'stock'
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PROJECT_APPS

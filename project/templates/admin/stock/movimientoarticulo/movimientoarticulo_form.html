@@ -1,0 +1,106 @@
+{% extends 'admin/change_form.html' %}
+{% load i18n admin_urls static admin_modify %}
+{% block footer  %}
+<script type="text/javascript">
+    // django.jQuery = jQuery;
+     jQuery(document).ready(function () {
+        var id_articulo = "";
+        var id_deposito = "";
+        console.log('funciona')
+        validar_id_origen();
+        // al seleccionar origen seteamos su ID
+        jQuery('#id_origen').on('change', function () {
+            let id_deposito;
+            console.log("entroooooooooooooooooo")
+            jQuery("#id_origen option:selected").each(function () {
+                id_deposito = jQuery(this).val();
+                });
+            console.log(id_deposito)
+            if (id_deposito) {
+                //CARGAMOS LOS ARTICULOS DEL DEPOSITO
+                cargar_articulos_deposito(id_deposito);
+
+                            }
+                else{
+                    // CARGAMOS TODOS LOS ARTICULOS
+                    cargar_articulos();
+                }
+
+
+        });
+
+        function cargar_articulos() {
+            jQuery("#id_articulo_foraneo").empty();
+            jQuery("#id_articulo_foraneo").val(null).trigger("change");
+            let url_mask = "{% url 'get_articulos_todos_id_nombre' %}";
+
+            jQuery.ajax({
+                type: 'GET',
+                url: url_mask,
+                success: function (data) {
+                    jQuery.each(data, function (key, registro) {
+                        jQuery("#id_articulo_foraneo").append('<option value=' + registro.id + '>' + registro.articulo + '</option>');
+                    });
+                },
+                error: function (response) {
+                    console.log(response);
+                }
+
+            });
+        }
+
+        function validar_id_origen(){
+            jQuery("#id_origen option:selected").each(function () {
+                id_deposito = jQuery(this).val();
+                });
+                if (id_deposito) {
+                    //CARGAMOS LOS ARTICULOS DEL DEPOSITO
+                    cargar_articulos_deposito(id_deposito);
+                                }
+                    else{
+                        // CARGAMOS TODOS LOS ARTICULOS
+                        //cargar_articulos();
+                    }
+            
+            
+        }
+
+        function cargar_articulos_deposito(id_deposito){
+            console.log('entro metodo con el siguiente id_deposito')
+            console.log(id_deposito)
+            //hacer aqui la consulta
+            let url_mask = "{% url 'get_articulos_deposito' id_deposito=1234567 %}".replace(/1234567/, id_deposito);
+
+            jQuery.ajax({
+                type: 'GET',
+                url: url_mask,
+                success: function (data) {
+                    console.log('entro en la respuesta del backend')
+                    console.log(data.error)
+                    console.log(data)
+                    if (data.id_articulo !="") {
+                        console.log('entro id_articulo')
+                        console.log(data.id_articulo)
+                        jQuery("#id_articulo_foraneo").empty();
+                        jQuery("#id_articulo_foraneo").val(null).trigger("change");
+                           jQuery.each(data, function (key, registro) {
+                            console.log('entro al each')
+                            console.log(registro.id_articulo)
+                                jQuery('#id_articulo_foraneo').append('<option value=' + registro.id_articulo + '>' + registro.articulo+' - Disp: '+ registro.cantidad + '</option>');
+                            });
+
+                    }
+
+                },
+                error: function (response) {
+                    console.log(response);
+                }
+
+            });
+        }
+
+     });
+ </script>
+ <!-- SWEETALERT -->
+    <script type="text/javascript" src="{% static 'js/sweetalert.min.js' %}"></script>
+ {% endblock %}

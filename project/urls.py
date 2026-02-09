@@ -25,6 +25,7 @@ from cuentacorriente.views import get_cc_cliente
 from inventario.views import recepcionar_movimiento_ingreso
 
 from project.apps.articulo.views import get_precio_articulo, copiar_precios, copiar_precios_proceso,get_listas_precio_sucursal
+from project.apps.stock.views import get_articulos_deposito
 from project.apps.venta.views import exportar_ventas, get_listaprecio, imprimir_ticket
 from project.router import router
 from promocion.views import copiar_promos, copiar_promociones, get_promociones_sucursal
@@ -80,6 +81,7 @@ urlpatterns = [
                   path('admin/caja/imprimir_cierre_caja/<int:id_caja>', imprimir_cierre_caja,
                        name='imprimir_cierre_caja'),
                   path('admin/caja/imprimir/<int:id_caja>', imprimir_cierre_caja_pdf, name='imprimir_cierre_caja_pdf'),
+                  path('admin/stock/movimientoarticulo/add/get_articulos_deposito/<str:id_deposito>', get_articulos_deposito, name='get_articulos_deposito'),
                   path('admin/', admin.site.urls),
                   path('oauth2/', include((base_urlpatterns, 'oauth2_provider'), namespace='oauth2_provider')),
                   path('auth/', include('rest_framework_social_oauth2.urls')),
