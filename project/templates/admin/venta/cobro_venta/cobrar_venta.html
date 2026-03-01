@@ -602,6 +602,10 @@
                                 let nroCupon = jQuery("#id_pagotarjeta_set-0-cupon").val();
                                 let nroLote = jQuery("#id_pagotarjeta_set-0-lote").val();
                                 let observaciones = jQuery("#id_pagotarjeta_set-0-observaciones").val();
+                                console.log("TARJETA CON ERRORES")
+                                console.log(aPagar)
+                                console.log(recargo)
+                                console.log(totalConRecargo)
                                 //cargamos json para generar el cupontarjeta
 
                                 pagosTarjeta.push({
@@ -724,10 +728,10 @@
                                 swal('El valor a pagar debe ser mayor a 0');
                                 return false;
                             }
-                            if(jQuery("#id_plantarjeta").val()<=0){
-                                swal('Debe seleccionar un Plan de cuotas de Tarjeta');
-                                return false;
-                            }
+                            //if(jQuery("#id_plantarjeta").val()<=0){
+                            //    swal('Debe seleccionar un Plan de cuotas de Tarjeta');
+                            //    return false;
+                            //}
                             if(jQuery("#id_pagotarjeta_set-0-total").val()<=0){
                                 swal('El total a pagar debe ser mayor a 0');
                                 return false;
@@ -910,6 +914,7 @@
                             django.jQuery("#id_pagotarjeta_set-0-saldo").val(saldo);
                             django.jQuery("#id_pagotarjeta_set-0-apagar").val(saldo);
                             django.jQuery('#related-popup-container-pagotarjeta').show();
+                            django.jQuery("#id_pagotarjeta_set-0-apagar").focus();
                         }
                         const inicializarYAbrirDialogEfectivo = () => {
                             django.jQuery("#id_pagoefectivo_set-0-saldo").val(saldo);
@@ -1242,12 +1247,35 @@
                                     }
 
                             }
+                            const calcularMontoTarjeta = ()=>{
+                                    let apagar = jQuery("#id_pagotarjeta_set-0-apagar").val();
+                                    let recargo = 0
+                                    if(apagar > 0){
+                                    jQuery("#id_pagotarjeta_set-0-interes").val(recargo);
+                                    jQuery("#id_pagotarjeta_set-0-total").val(apagar);
+                                    }
 
-                            //al seleccionar plan tarjeta carga intereses
-                            jQuery("#id_plantarjeta")
+                            }
+
+                            //al seleccionar plan tarjeta carga intereses 
+                            //(COMENTADO PORQUE AL CLIENTE SELE HACE ENGORROSO)
+                            //jQuery("#id_plantarjeta")
+                            //    .change(function (e) {
+                            //        e.preventDefault();
+                            //        calcularInteres();
+                            //    });
+
+                            //al seleccionar A pagar Carga el el total automaticamente
+                            jQuery("#id_pagotarjeta_set-0-apagar")
                                 .change(function (e) {
                                     e.preventDefault();
-                                    calcularInteres();
+                                    calcularMontoTarjeta();                                 
+                                });
+
+                            jQuery("#id_pagotarjeta_set-0-apagar")
+                                .focusout(function(e){
+                                    e.preventDefault();
+                                    calcularMontoTarjeta();
                                 });
 
                         });

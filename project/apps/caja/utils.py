@@ -63,11 +63,20 @@ def guardar_cupon_tarjeta(pago_tarjeta, numero_ticket, usuario, sucursal):
 
     importe = pago_tarjeta['importe']
     recargo = pago_tarjeta['recargo']
+    
+    #Validamos recargo que puede venir nulo
+    if recargo is None or recargo == '':
+        recargo = 0.0
     importe_con_recargo = pago_tarjeta['importe_con_recargo']
     nro_cupon = pago_tarjeta['nro_cupon']
     nro_lote = pago_tarjeta['nro_lote']
     observaciones = pago_tarjeta['observaciones']
-    plan_tarjeta = PlanTarjetaDeCredito.objects.get(pk=id_plan_tarjeta)
+    #plan_tarjeta = PlanTarjetaDeCredito.objects.get(pk=id_plan_tarjeta)
+    # validamos porque ya no es obligatorio el plan ni la tarjeta
+    if id_plan_tarjeta and id_plan_tarjeta.strip():
+        plan_tarjeta = PlanTarjetaDeCredito.objects.get(pk=id_plan_tarjeta)
+    else:
+        plan_tarjeta = PlanTarjetaDeCredito.objects.get(pk=1)
     venta = Venta.objects.get(numero_ticket=numero_ticket)
     # CREAMOS EL REGISTRO EN LA BASE
     cupon_tarjeta = CuponPagoTarjeta.objects.create(cliente=venta.cliente, plan_tarjeta=plan_tarjeta,
