@@ -9,6 +9,9 @@ services:
     #command: python manage.py runserver 0.0.0.0:8000
     command: /bin/sh -c "/entrypoint.sh"
     restart: always
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     volumes:
       - .:/opt/carniceriavv
     environment: []
