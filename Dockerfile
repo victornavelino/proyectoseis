@@ -1,6 +1,6 @@
 # pull the official base image
 #FROM python:3.9-slim
-FROM python:3.9-bullseye
+FROM python:3.9-slim-bullseye
 #Seteamos directorio de trabajo dentro de la nueva imagen
 WORKDIR /opt/carniceriavv
 # set environment variables
@@ -11,7 +11,16 @@ RUN echo "deb http://ftp.us.debian.org/debian bullseye main" > /etc/apt/sources.
     echo "deb http://ftp.us.debian.org/debian bullseye-updates main" >> /etc/apt/sources.list && \
     echo "deb http://security.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list
 
-RUN apt-get update && apt-get install libpq-dev python-dev-is-python3 wkhtmltopdf -y --no-install-recommends
+#RUN apt-get update && apt-get install libpq-dev python-dev-is-python3 wkhtmltopdf -y --no-install-recommends
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev \
+    python3-dev \
+    build-essential \
+    wget \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY . .
 RUN pip install -r requirements/base.txt
 COPY entrypoint.sh /entrypoint.sh
