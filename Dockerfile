@@ -11,15 +11,7 @@ ENV PYTHONUNBUFFERED 1
 #    echo "deb http://ftp.us.debian.org/debian bullseye-updates main" >> /etc/apt/sources.list && \
 #    echo "deb http://security.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list
 
-#RUN apt-get update && apt-get install libpq-dev python-dev-is-python3 wkhtmltopdf -y --no-install-recommends
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq-dev \
-    python3-dev \
-    build-essential \
-    wget \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install libpq-dev python-dev-is-python3 wkhtmltopdf -y --no-install-recommends
 
 COPY . .
 RUN pip install -r requirements/base.txt
