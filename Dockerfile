@@ -1,5 +1,6 @@
 # pull the official base image
-FROM python:3.9-slim
+#FROM python:3.9-slim
+FROM python:3.9-bullseye
 #Seteamos directorio de trabajo dentro de la nueva imagen
 WORKDIR /opt/carniceriavv
 # set environment variables
