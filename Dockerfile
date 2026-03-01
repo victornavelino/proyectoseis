@@ -1,5 +1,5 @@
 # pull the official base image
-FROM python:3.9
+FROM python:3.9-slim
 #Seteamos directorio de trabajo dentro de la nueva imagen
 WORKDIR /opt/carniceriavv
 # set environment variables
@@ -11,10 +11,5 @@ RUN pip install -r requirements/base.txt
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT "/entrypoint.sh"
-#COPY ./entrypoint.sh /opt/carniceriavv/entrypoint.sh
-#RUN chmod -R 755 /opt/carniceriavv/entrypoint.sh 
-#CMD ["/bin/sh","-c","/opt/carniceriavv/entrypoint.sh"]
-
-
 EXPOSE 8000
 
