@@ -6,10 +6,10 @@ WORKDIR /opt/carniceriavv
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# Actualizar repositorios a bullseye (estable)
-RUN echo "deb http://deb.debian.org/debian bullseye main" > /etc/apt/sources.list && \
-    echo "deb http://deb.debian.org/debian bullseye-updates main" >> /etc/apt/sources.list && \
-    echo "deb http://security.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list
+# Configurar repositorios directamente con IPs para evitar DNS
+RUN echo "deb http://151.101.130.132/debian bullseye main" > /etc/apt/sources.list && \
+    echo "deb http://151.101.130.132/debian bullseye-updates main" >> /etc/apt/sources.list && \
+    echo "deb http://151.101.194.132/debian-security bullseye-security main" >> /etc/apt/sources.list
 
 RUN apt-get update && apt-get install libpq-dev python-dev-is-python3 wkhtmltopdf -y --no-install-recommends
 COPY . .
