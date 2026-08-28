@@ -1,22 +1,33 @@
 # pull the official base image
-#FROM python:3.9-slim
 FROM python:3.9-bullseye
-#Seteamos directorio de trabajo dentro de la nueva imagen
+
+# Seteamos directorio de trabajo dentro de la nueva imagen
 WORKDIR /opt/carniceriavv
+
 # set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-#RUN echo "deb http://ftp.us.debian.org/debian bullseye main" > /etc/apt/sources.list && \
-#    echo "deb http://ftp.us.debian.org/debian bullseye-updates main" >> /etc/apt/sources.list && \
-#    echo "deb http://security.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libpq-dev \
+        python-dev-is-python3 \
+        wkhtmltopdf \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install libpq-dev python-dev-is-python3 wkhtmltopdf -y --no-install-recommends
+# Instalamos dependencias primero para aprovechar la cache de capas de Docker
+COPY requirements/ requirements/
+RUN pip install --no-cache-dir -r requirements/production.txt
 
 COPY . .
-RUN pip install -r requirements/base.txt
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-ENTRYPOINT "/entrypoint.sh"
+
+RUN chmod +x entrypoint.sh \
+    && addgroup --system app \
+    && adduser --system --ingroup app app \
+    && chown -R app:app /opt/carniceriavv
+
+USER app
+
 EXPOSE 8000
 
+ENTRYPOINT ["./entrypoint.sh"]

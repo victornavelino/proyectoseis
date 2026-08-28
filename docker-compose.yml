@@ -1,69 +1,11 @@
 version: '3.9'
 
 services:
-  # aplicacion django
-  app_container:
+  app:
     container_name: carniceriavv_app
     build: .
-    working_dir: /opt/carniceriavv
-    #command: python manage.py runserver 0.0.0.0:8000
-    command: /bin/sh -c "/entrypoint.sh"
-    restart: always
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-      - 1.1.1.1
-    volumes:
-      - .:/opt/carniceriavv
-    environment: []
-      #- POSTGRES_NAME=vvalle
-      #- POSTGRES_USER=postgres
-      #- POSTGRES_PASSWORD=postgres
+    restart: unless-stopped
+    env_file:
+      - .env
     ports:
-      - '80:8000'
-    depends_on:
-      - db_container
-  # postgres database
-  db_container:
-    container_name: carniceriavv_db
-    image: postgres:13
-    ports:
-      - '5454:5432'
-    volumes:
-      - /home/vvalle/proyectovvalle/postgres_data:/var/lib/postgresql/data/
-    restart: always
-    environment: []
-      #- "POSTGRES_HOST_AUTH_METHOD=trust"
-      #- POSTGRES_DB=DATABASE_NAME
-      #- POSTGRES_USER=postgres
-      #- POSTGRES_PASSWORD=postgres
-      
-  # PGadmin 
-  pgadmin4_container:
-    image: dpage/pgadmin4
-    container_name: pgadmin4_container
-    restart: always
-    ports:
-      - "5050:80"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: victornavelino@gmail.com
-      PGADMIN_DEFAULT_PASSWORD: vallE.159
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
-  # PORTAINER CE
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: portainer
-    restart: always
-    security_opt:
-      - no-new-privileges:true
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /home/vvalle/proyectovvalle/portainer-data:/data
-    ports:
-      - 9000:9000
-
-volumes:
-  pgadmin-data:
-
+      - '8000:8000'

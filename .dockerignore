@@ -1,0 +1,31 @@
+.git
+.gitignore
+.dockerignore
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# Secretos / config local (se inyectan por variables de entorno en runtime)
+.env
+
+# Artefactos de Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# Archivos generados (se regeneran en el build/arranque del contenedor)
+static/
+media/
+
+# Docs y scripts que no hacen falta dentro de la imagen
+README.md
+LICENSE
+fix-docker.sh
+backup_db.sh
