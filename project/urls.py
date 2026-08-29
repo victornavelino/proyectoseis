@@ -13,7 +13,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.conf.urls import url
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.views.generic import RedirectView
@@ -46,7 +45,6 @@ urlpatterns = [
                           url=f'{settings.FORCE_SCRIPT_NAME}/admin/' if settings.FORCE_SCRIPT_NAME else '/admin/'
                       )
                   ),
-                  url(r'^jet/', include('jet.urls', 'jet')),  # Django JET URLS
                   path('admin/venta/guardar_venta/', guardar_venta, name='guardar_venta'),
                   path('admin/venta/articulo/<str:articulo_codigo>/<int:cliente_pk>', get_valores, name='get_valores'),
                   path('admin/venta/articulos/<str:articulo>', get_articulos, name='articulos'),
@@ -82,7 +80,7 @@ urlpatterns = [
                   path('admin/caja/imprimir/<int:id_caja>', imprimir_cierre_caja_pdf, name='imprimir_cierre_caja_pdf'),
                   path('admin/', admin.site.urls),
                   path('oauth2/', include((base_urlpatterns, 'oauth2_provider'), namespace='oauth2_provider')),
-                  path('auth/', include('rest_framework_social_oauth2.urls')),
+                  path('auth/', include('drf_social_oauth2.urls')),
                   path('api/v1/usuario/registro/', RegistroUsuarioAPIView.as_view(), name='registro_usuario'),
                   path('api/v1/', include(router.urls)),
 

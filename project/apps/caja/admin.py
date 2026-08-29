@@ -6,8 +6,7 @@ from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.db.models import Sum, F
-from jet.filters import RelatedFieldAjaxListFilter
-from wkhtmltopdf.views import PDFTemplateResponse
+from util.pdf import render_pdf_response
 
 
 # Register your models here.
@@ -199,7 +198,7 @@ class CajaAdmin(admin.ModelAdmin):
             messages.error(request, 'Debe seleccionar una Caja Cerrada para imprimir el ticket de cierre')
             return False
         nombre_archivo = "caja-" + str(caja.fecha_fin) + ".pdf"
-        response = PDFTemplateResponse(request=request,
+        response = render_pdf_response(request=request,
                                        template='admin/caja/ticket_cierre_caja.html',
                                        filename=nombre_archivo,
                                        context={'caja': caja,
@@ -210,7 +209,6 @@ class CajaAdmin(admin.ModelAdmin):
                                                 'total_ccorrientes': calcular_total_compras_cc(caja),
                                                 'total_transferencias': calcular_total_compras_transf(caja)},
                                        show_content_in_browser=True,
-                                       cmd_options={'margin-top': 50, },
                                        )
         return response
     

@@ -24,7 +24,6 @@ class UsuarioSerializer(serializers.ModelSerializer):
             'email',
             'first_name',
             'last_name',
-            'persona',
             'groups'
         )
 

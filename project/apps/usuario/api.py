@@ -28,16 +28,18 @@ class RegistroUsuarioAPIView(generics.CreateAPIView):
         try:
             persona = Persona.objects.get(documento_identidad=datos_persona['documento_identidad'])
         except Persona.DoesNotExist:
-            telefono = datos_persona.pop('telefonos', None)
-            telefono_serializer = TelefonoSerializer(data=telefono)
-            telefono_serializer.is_valid(raise_exception=True)
+            telefonos_data = datos_persona.pop('telefonos', None) or []
+            telefono_serializers = [TelefonoSerializer(data=telefono) for telefono in telefonos_data]
+            for telefono_serializer in telefono_serializers:
+                telefono_serializer.is_valid(raise_exception=True)
             persona_serializer = PersonaSerializer(data=datos_persona)
             persona_serializer.is_valid(raise_exception=True)
             persona_serializer.save()
             persona = persona_serializer.instance
-            # Guardamos el teléfono en persona.
-            if not persona.telefonos.filter(**telefono_serializer.validated_data).exists():
-                telefono_serializer.save(persona=persona)
+            # Guardamos los teléfonos en persona.
+            for telefono_serializer in telefono_serializers:
+                if not persona.telefonos.filter(**telefono_serializer.validated_data).exists():
+                    telefono_serializer.save(content_object=persona)
         return persona
 
     def perform_create(self, serializer):

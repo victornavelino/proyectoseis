@@ -15,7 +15,7 @@ from import_export.formats.base_formats import XLSX
 
 EXPORT_FORMATS = [XLSX]
 
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_DIR = environ.Path(__file__) - 3
 PROJECT_DIR = ROOT_DIR.path('project')
@@ -43,11 +43,9 @@ PROJECT_NAME_HEADER = env('PROJECT_NAME_HEADER', default='SISTEMA DE GESTION CAR
 PROJECT_NAME_TITLE = env('PROJECT_NAME_TITLE', default='CARNICERIA VIRGEN DEL VALLE')
 
 ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default='*')  # noqa
-WKHTMLTOPDF_CMD = env.str('WKHTMLTOPDF_CMD', default='wkhtmltopdf')
 # Application definition
 
 DJANGO_APPS = [
-    'jet',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -57,15 +55,12 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
-    'rest_framework_social_oauth2',
+    'drf_social_oauth2',
     'mptt',
     'oauth2_provider',
     'rest_framework',
     'corsheaders',
     'django_filters',
-    'dal',
-    'dal_queryset_sequence',
-    'dal_select2',
     'import_export',
     'softdelete',
     'rangefilter',
@@ -102,8 +97,6 @@ MIDDLEWARE = [
 ]
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
-
-JET_SIDE_MENU_COMPACT = True
 
 ROOT_URLCONF = 'project.urls'
 
@@ -173,10 +166,9 @@ STATICFILES_DIRS = [str(PROJECT_DIR.path('assets')), ]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 AUTHENTICATION_BACKENDS = (
-    'rest_framework_social_oauth2.backends.DjangoOAuth2',
+    'drf_social_oauth2.backends.DjangoOAuth2',
     'django.contrib.auth.backends.ModelBackend',
 )
-JET_DEFAULT_THEME = env.str('DJANGO_JET_DEFAULT_THEME', default='default')
 
 REST_FRAMEWORK = {
     'PAGE_SIZE': 50,
@@ -189,7 +181,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-        'rest_framework_social_oauth2.authentication.SocialAuthentication',
+        'drf_social_oauth2.authentication.SocialAuthentication',
     ),
     'DEFAULT_RENDERER_CLASSES': ('rest_framework_json_api.renderers.JSONRenderer',),
     'DEFAULT_METADATA_CLASS': 'rest_framework_json_api.metadata.JSONAPIMetadata',

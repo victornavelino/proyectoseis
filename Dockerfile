@@ -1,18 +1,25 @@
 # pull the official base image
-FROM python:3.9-bullseye
+FROM python:3.13-slim-trixie
 
 # Seteamos directorio de trabajo dentro de la nueva imagen
 WORKDIR /opt/carniceriavv
 
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    HOME=/opt/carniceriavv
 
+# libpango/libcairo/libgdk-pixbuf/libharfbuzz: requeridos en runtime por WeasyPrint
+# (reemplaza a wkhtmltopdf, dado de baja y ya no disponible como paquete apt).
+# fonts-dejavu-core: fuente por defecto para que los PDF rendericen tildes/símbolos correctamente.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        libpq-dev \
-        python-dev-is-python3 \
-        wkhtmltopdf \
+        libpango-1.0-0 \
+        libpangoft2-1.0-0 \
+        libharfbuzz-subset0 \
+        libgdk-pixbuf-2.0-0 \
+        libcairo2 \
+        fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 # Instalamos dependencias primero para aprovechar la cache de capas de Docker

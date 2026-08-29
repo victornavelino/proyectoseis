@@ -15,8 +15,6 @@ class PersonaSerializer(serializers.ModelSerializer):
             'domicilio',
             'correo_electronico',
             'telefonos',
-            'referente'
-
         )
         extra_kwargs = {
             'usuario': {'read_only': True}

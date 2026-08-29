@@ -1,4 +1,3 @@
-from IPython.utils.sysinfo import pkg_info
 from django.contrib import admin, messages
 
 # Register your models here.
@@ -6,7 +5,7 @@ from django.db.models import Sum
 from django.forms import forms
 from django.http import HttpResponse
 from import_export import resources
-from wkhtmltopdf.views import PDFTemplateResponse
+from util.pdf import render_pdf_response
 from caja.models import Caja
 from caja.models import CobroVenta, CuponPagoTarjeta
 from cuentacorriente.models import CuentaCorriente
@@ -177,7 +176,7 @@ class VentaAdmin(ExportMixin, admin.ModelAdmin):
         for articulo in articulos_venta:
             descuento_individual = articulo.precio_unitario - articulo.precio_promocion
             monto_descuento = monto_descuento + descuento_individual
-        response = PDFTemplateResponse(request=request,
+        response = render_pdf_response(request=request,
                                        template='admin/venta/ticket_venta.html',
                                        filename=nombre_archivo,
                                        context={'venta': venta,
@@ -186,8 +185,6 @@ class VentaAdmin(ExportMixin, admin.ModelAdmin):
                                                 'monto_descuento': monto_descuento,
                                                 'saldo_cc': saldo_cc},
                                        show_content_in_browser=True,
-                                       cmd_options={'margin-top': 3,
-                                                    'margin-left': 0},
                                        )
         return response
 
