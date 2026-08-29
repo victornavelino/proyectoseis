@@ -43,6 +43,18 @@ PROJECT_NAME_HEADER = env('PROJECT_NAME_HEADER', default='SISTEMA DE GESTION CAR
 PROJECT_NAME_TITLE = env('PROJECT_NAME_TITLE', default='CARNICERIA VIRGEN DEL VALLE')
 
 ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=['*'])  # noqa
+
+# Dokploy corre detrás de un reverse proxy (Traefik) que termina TLS y reenvía
+# por HTTP plano al contenedor. Sin esto, Django cree que la conexión es HTTP
+# y rechaza el Origin/Referer https:// del navegador (CSRF 403) y no marca
+# las cookies como secure aunque el sitio se sirva por HTTPS.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = env.bool('DJANGO_SECURE_SSL_REDIRECT', default=False)
+
+# Orígenes https:// confiables para el chequeo de CSRF (Django >=4.0 lo exige
+# explícito, no alcanza con ALLOWED_HOSTS). Setear en Dokploy, ej:
+# DJANGO_CSRF_TRUSTED_ORIGINS=https://carniceria.carniceriavirgendelvalle.online
+CSRF_TRUSTED_ORIGINS = env.list('DJANGO_CSRF_TRUSTED_ORIGINS', default=[])
 # Application definition
 
 DJANGO_APPS = [
