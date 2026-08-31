@@ -23,6 +23,8 @@ __pycache__/
 # Archivos generados (se regeneran en el build/arranque del contenedor)
 static/
 media/
+frontend/node_modules/
+frontend/dist/
 
 # Docs y scripts que no hacen falta dentro de la imagen
 README.md

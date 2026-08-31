@@ -13,12 +13,14 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from pathlib import Path
+
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.views.generic import RedirectView
+from django.http import HttpResponse
 from oauth2_provider.urls import base_urlpatterns
-from django.urls import path, include
+from django.urls import path, include, re_path
 
 from caja.views import planes_tarjeta, cobrar_ticket, cerrar_caja, imprimir_cierre_caja, plan_tarjeta, imprimir_cierre_caja_pdf
 from cuentacorriente.views import get_cc_cliente
@@ -39,13 +41,29 @@ from venta.views import get_valores, get_articulos, get_articulos_todos, get_cli
 admin.site.site_header = getattr(settings, 'PROJECT_NAME_HEADER')
 admin.site.site_title = getattr(settings, 'PROJECT_NAME_TITLE')
 
+# Build de producción del frontend React (DEC-009: mismo dominio que la API — ver
+# docs/modernizacion/DECISIONES.md). El Dockerfile lo copia a project/assets/frontend/ en un
+# stage de Node antes de collectstatic, así que WhiteNoise ya sirve sus JS/CSS con hash bajo
+# /static/frontend/ (ver STATICFILES_DIRS en settings/base.py y `base` en frontend/vite.config.ts).
+# El index.html en sí no es un asset con hash: se lee y devuelve tal cual en `frontend_index`.
+FRONTEND_INDEX_HTML = Path(__file__).resolve().parent / 'assets' / 'frontend' / 'index.html'
+
+
+def frontend_index(request, *args, **kwargs):
+    try:
+        contenido = FRONTEND_INDEX_HTML.read_text(encoding='utf-8')
+    except FileNotFoundError:
+        # En desarrollo local no se corre el build (se usa `npm run dev` en :5173) — este mensaje
+        # sólo debería verse si faltó el build en un despliegue de producción.
+        return HttpResponse(
+            'Frontend no compilado. Corré el build de frontend/ (ver Dockerfile) o usá '
+            '`npm run dev` en desarrollo.',
+            status=501,
+        )
+    return HttpResponse(contenido)
+
+
 urlpatterns = [
-                  path(
-                      '',
-                      RedirectView.as_view(
-                          url=f'{settings.FORCE_SCRIPT_NAME}/admin/' if settings.FORCE_SCRIPT_NAME else '/admin/'
-                      )
-                  ),
                   path('admin/venta/guardar_venta/', guardar_venta, name='guardar_venta'),
                   path('admin/venta/articulo/<str:articulo_codigo>/<int:cliente_pk>', get_valores, name='get_valores'),
                   path('admin/venta/articulos/<str:articulo>', get_articulos, name='articulos'),
@@ -89,6 +107,18 @@ urlpatterns = [
                   path('auth/', include('drf_social_oauth2.urls')),
                   path('api/v1/usuario/registro/', RegistroUsuarioAPIView.as_view(), name='registro_usuario'),
                   path('api/v1/', include(router.urls)),
+
+                  # Catch-all del frontend React (DEC-009): sirve el mismo index.html para "/" y
+                  # para cualquier ruta de React Router (ej. /articulos, /ventas/nueva) — así un
+                  # refresh de página no da 404, el ruteo lo resuelve el cliente. Va al final y
+                  # excluye explícitamente los prefijos de Django para no taparle un 404 real a
+                  # la API/admin (Django reintenta el siguiente patrón top-level cuando un
+                  # include() no matchea nada adentro).
+                  re_path(
+                      r'^(?!admin/|api/|oauth2/|auth/|login/|logout/|media/|static/).*$',
+                      frontend_index,
+                      name='frontend_index',
+                  ),
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

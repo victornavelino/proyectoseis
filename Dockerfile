@@ -1,3 +1,25 @@
+# Stage 1: build del frontend React (DEC-009: se sirve desde el mismo dominio que Django,
+# ver docs/modernizacion/DECISIONES.md y project/urls.py § frontend_index).
+FROM node:22-slim AS frontend-build
+WORKDIR /frontend
+
+# Vite las hornea en el JS al momento del build (no son variables de entorno del contenedor en
+# runtime) — hay que pasarlas como build args. En Dokploy: docker-compose.yml las toma de
+# ${VITE_...} vía `build.args`, así que definilas como variables de entorno del proyecto en
+# Dokploy (no en el .env que se inyecta al contenedor — ver docker-compose.yml).
+ARG VITE_API_BASE_URL=""
+ARG VITE_OAUTH_CLIENT_ID
+ARG VITE_OAUTH_REDIRECT_URI
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
+    VITE_OAUTH_CLIENT_ID=$VITE_OAUTH_CLIENT_ID \
+    VITE_OAUTH_REDIRECT_URI=$VITE_OAUTH_REDIRECT_URI
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2: backend Django + build del frontend servido como estático
 # pull the official base image
 FROM python:3.13-slim-trixie
 
@@ -27,6 +49,11 @@ COPY requirements/ requirements/
 RUN pip install --no-cache-dir -r requirements/production.txt
 
 COPY . .
+
+# Build del frontend (stage 1) servido por WhiteNoise bajo /static/frontend/ — ver
+# STATICFILES_DIRS (settings/base.py), `base` en frontend/vite.config.ts y
+# project/urls.py § frontend_index. entrypoint.sh corre collectstatic al arrancar.
+COPY --from=frontend-build /frontend/dist project/assets/frontend
 
 RUN chmod +x entrypoint.sh \
     && addgroup --system app \

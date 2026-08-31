@@ -31,7 +31,7 @@ sin haber resuelto PEND-A/PEND-B de `DECISIONES.md`**.
 | 17 | Permisos finos en React | PENDIENTE | 7 | Traducir los chequeos ad-hoc de sucursal/superuser (§7, §11) a un modelo consistente expuesto por la API |
 | 18 | Testing | PENDIENTE | continuo | Resolver primero que `pytest.ini` apunta a una carpeta `tests/` inexistente (§13); definir estrategia (pytest-django para backend, algo tipo Vitest/RTL para frontend) |
 | 19 | Limpieza progresiva de código legacy | PENDIENTE | cada etapa de React equivalente completada | Sólo retirar templates/JS/vistas de un dominio cuando su reemplazo en React esté validado en uso real |
-| 20 | Despliegue | PENDIENTE | continuo | Ya hay Dockerfile/Dokploy funcionando para Django; sumar build/despliegue de React (mismo dominio o subdominio, definir CORS/CSRF en consecuencia) |
+| 20 | Despliegue | EN CURSO | continuo | Dockerfile multi-stage (build de React + Django, mismo dominio, DEC-009) y catch-all en `project/urls.py` ya hechos — falta correrlo en el servidor real (crear la `Application` OAuth2 de prod, setear las variables en Dokploy, verificar en el dominio) |
 
 ## Próxima etapa concreta
 

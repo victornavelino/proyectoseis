@@ -3,7 +3,15 @@ version: '3.9'
 services:
   app:
     container_name: carniceriavv_app
-    build: .
+    build:
+      context: .
+      args:
+        # Build args del frontend (Vite las hornea en el JS en build time, ver Dockerfile) —
+        # Dokploy las interpola acá desde las "Environment Variables" del proyecto, distinto
+        # del .env que se inyecta al contenedor en runtime (env_file de abajo).
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        VITE_OAUTH_CLIENT_ID: ${VITE_OAUTH_CLIENT_ID:?falta VITE_OAUTH_CLIENT_ID}
+        VITE_OAUTH_REDIRECT_URI: ${VITE_OAUTH_REDIRECT_URI:?falta VITE_OAUTH_REDIRECT_URI}
     restart: unless-stopped
     env_file:
       - .env
