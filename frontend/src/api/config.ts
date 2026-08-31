@@ -1,0 +1,12 @@
+// Sin barra final — api/client.ts arma las URLs relativas a esto.
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+export const OAUTH_CONFIG = {
+  clientId: import.meta.env.VITE_OAUTH_CLIENT_ID,
+  redirectUri: import.meta.env.VITE_OAUTH_REDIRECT_URI,
+  authorizeUrl: `${API_BASE_URL}/oauth2/authorize/`,
+  tokenUrl: `${API_BASE_URL}/oauth2/token/`,
+  revokeUrl: `${API_BASE_URL}/oauth2/revoke_token/`,
+  // Coincide con OAUTH2_PROVIDER['SCOPES'] del backend (project/settings/base.py).
+  scope: 'read write',
+}
