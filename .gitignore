@@ -128,3 +128,5 @@ database_backups
 project/test_media/
 /static/
 .idea
+
+especificaciones.md

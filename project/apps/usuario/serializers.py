@@ -1,11 +1,8 @@
 from django.contrib.auth import get_user_model, password_validation
 from django.contrib.auth.password_validation import validate_password
-from rest_framework.validators import UniqueValidator
-from rest_framework_json_api import serializers
-from rest_framework.serializers import Serializer as DRFSerializer
 from django.contrib.auth.models import Group
-
-from persona.serializers import PersonaSerializer
+from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 Usuario = get_user_model()
 
@@ -13,24 +10,30 @@ Usuario = get_user_model()
 class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
-        fields = ('name',)
+        fields = ('id', 'name')
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
+    groups = GroupSerializer(many=True, read_only=True)
+    sucursal_nombre = serializers.CharField(source='sucursal.nombre', read_only=True, default=None)
+
     class Meta:
         model = Usuario
         fields = (
+            'id',
             'username',
             'email',
             'first_name',
             'last_name',
-            'groups'
+            'is_staff',
+            'sucursal',
+            'sucursal_nombre',
+            'groups',
         )
-
-    included_serializers = {
-        'groups': GroupSerializer
-
-    }
+        # is_staff/sucursal de sólo lectura: este endpoint también acepta PATCH del propio
+        # usuario autenticado (UsuarioViewSet.get_object() siempre devuelve request.user) — sin
+        # esto, cualquier usuario podría auto-otorgarse is_staff o cambiarse de sucursal.
+        read_only_fields = ('is_staff', 'sucursal')
 
 
 class RegistroUsuarioSerializer(serializers.ModelSerializer):
@@ -44,7 +47,7 @@ class RegistroUsuarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Usuario
-        fields = ('username', 'password', 'password_2', 'email', 'first_name', 'last_name')
+        fields = ('id', 'username', 'password', 'password_2', 'email', 'first_name', 'last_name')
         extra_kwargs = {
             'first_name': {'required': True},
             'last_name': {'required': True},
@@ -79,7 +82,7 @@ class RegistroUsuarioSerializer(serializers.ModelSerializer):
         return usuario
 
 
-class CambiarClaveSecretaSerializer(DRFSerializer):
+class CambiarClaveSecretaSerializer(serializers.Serializer):
     clave = serializers.CharField(max_length=128, write_only=True, required=True)
     clave_nueva = serializers.CharField(max_length=128, write_only=True, required=True)
     clave_nueva_2 = serializers.CharField(max_length=128, write_only=True, required=True)

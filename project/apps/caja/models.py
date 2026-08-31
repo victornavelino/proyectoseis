@@ -49,7 +49,15 @@ class MovimientoCaja(models.Model):
         if self.importe <= 0.0:
             raise ValidationError("El importe del movimiento tiene que ser mayor que Cero")
         try:
-            first = Caja.objects.latest('id')
+            # Antes: `Caja.objects.latest('id')` tomaba la última caja creada en TODO el
+            # sistema, sin filtrar por sucursal. Con más de una sucursal operando cajas
+            # simultáneamente eso podía atar el movimiento a la caja de OTRA sucursal, o
+            # directamente bloquear el cobro en todas si la última caja creada
+            # globalmente estaba cerrada aunque la de esta sucursal siguiera abierta.
+            # Corregido para tomar la última caja DE LA SUCURSAL del movimiento — ver
+            # docs/modernizacion/SISTEMA_ACTUAL.md §15.8 y DECISIONES.md.
+            cajas = Caja.objects.filter(sucursal=self.sucursal) if self.sucursal_id else Caja.objects.all()
+            first = cajas.latest('id')
             self.caja = first
             if self.caja.fecha_fin:
                 raise ValidationError("La Caja se encuentra Cerrada")

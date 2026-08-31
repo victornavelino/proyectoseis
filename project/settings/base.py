@@ -15,8 +15,6 @@ from import_export.formats.base_formats import XLSX
 
 EXPORT_FORMATS = [XLSX]
 
-CORS_ALLOW_ALL_ORIGINS = True
-
 ROOT_DIR = environ.Path(__file__) - 3
 PROJECT_DIR = ROOT_DIR.path('project')
 APPS_DIR = PROJECT_DIR.path('apps')
@@ -55,6 +53,19 @@ SECURE_SSL_REDIRECT = env.bool('DJANGO_SECURE_SSL_REDIRECT', default=False)
 # explícito, no alcanza con ALLOWED_HOSTS). Setear en Dokploy, ej:
 # DJANGO_CSRF_TRUSTED_ORIGINS=https://carniceria.carniceriavirgendelvalle.online
 CSRF_TRUSTED_ORIGINS = env.list('DJANGO_CSRF_TRUSTED_ORIGINS', default=[])
+
+# CORS — el frontend React vive en el mismo dominio que esta API en producción (DEC-009, ver
+# docs/modernizacion/DECISIONES.md), así que ahí las requests son same-origin y no necesitan
+# CORS. La lista sólo hace falta para desarrollo, donde el servidor de Vite corre en otro puerto
+# (localhost:5173 por defecto) y el navegador lo trata como otro origen. Antes era
+# `CORS_ALLOW_ALL_ORIGINS = True` (abierto a cualquier origen) — se acota explícitamente.
+CORS_ALLOWED_ORIGINS = env.list(
+    'DJANGO_CORS_ALLOWED_ORIGINS', default=['http://localhost:5173', 'http://127.0.0.1:5173']
+)
+# Necesario para que el navegador mande la cookie httpOnly del refresh_token en las requests
+# cross-origin del Vite de desarrollo (en producción, same-origin, esto no aplica).
+CORS_ALLOW_CREDENTIALS = True
+
 # Application definition
 
 DJANGO_APPS = [
@@ -113,6 +124,19 @@ X_FRAME_OPTIONS = 'SAMEORIGIN'
 ROOT_URLCONF = 'project.urls'
 
 AUTH_USER_MODEL = 'usuario.Usuario'
+
+# El default de Django (`/accounts/login/`) no existe en este proyecto — nunca se armó una
+# vista de login "de sitio". La vista de autorización de OAuth2 (`/oauth2/authorize/`,
+# oauth2_provider.views.AuthorizationView) exige sesión iniciada vía `LoginRequiredMixin` y
+# redirige a LOGIN_URL si no la hay — sin esto, esa redirección caía en un 404. Detectado al
+# probar el flujo PKCE de la etapa 5/6 contra un navegador real.
+#
+# OJO: no usar `/admin/login/` acá — ese login exige `is_staff` (es el de Django Admin a
+# propósito) y hubiera dejado afuera a cualquier empleado de mostrador no-staff, que sí necesita
+# poder loguearse en el frontend SPA. `/login/` (project/urls.py, `django.contrib.auth.views.
+# LoginView`) acepta cualquier Usuario activo.
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/admin/'
 
 DATABASES = {'default': env.db('DATABASE_URL')}
 
@@ -184,10 +208,9 @@ AUTHENTICATION_BACKENDS = (
 
 REST_FRAMEWORK = {
     'PAGE_SIZE': 50,
-    'EXCEPTION_HANDLER': 'rest_framework_json_api.exceptions.exception_handler',
     'DEFAULT_PAGINATION_CLASS': 'util.paginations.LargePagination',
     'DEFAULT_PARSER_CLASSES': (
-        'rest_framework_json_api.parsers.JSONParser',
+        'rest_framework.parsers.JSONParser',
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser'
     ),
@@ -195,10 +218,37 @@ REST_FRAMEWORK = {
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
         'drf_social_oauth2.authentication.SocialAuthentication',
     ),
-    'DEFAULT_RENDERER_CLASSES': ('rest_framework_json_api.renderers.JSONRenderer',),
-    'DEFAULT_METADATA_CLASS': 'rest_framework_json_api.metadata.JSONAPIMetadata',
+    'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
     'NON_FIELD_ERRORS_KEY': 'error_messages'
 }
+
+# OAuth2 (django-oauth-toolkit) — Authorization Code + PKCE para el cliente SPA (DEC-002, ver
+# docs/modernizacion/DECISIONES.md). PKCE_REQUIRED y ROTATE_REFRESH_TOKEN ya son True por
+# default en esta versión de la librería; se dejan explícitos acá para que la intención quede
+# documentada en el propio settings, no sólo en el default de un paquete externo.
+OAUTH2_PROVIDER = {
+    'SCOPES': {
+        'read': 'Leer información',
+        'write': 'Modificar información',
+    },
+    # Access token de vida corta (pensado para guardarse en memoria del frontend, no en
+    # localStorage — ver docs/modernizacion/ARQUITECTURA.md § Autenticación) + refresh token de
+    # vida más larga para no forzar un re-login constante.
+    'ACCESS_TOKEN_EXPIRE_SECONDS': env.int('OAUTH2_ACCESS_TOKEN_EXPIRE_SECONDS', default=60 * 30),  # 30 min
+    'REFRESH_TOKEN_EXPIRE_SECONDS': env.int(
+        'OAUTH2_REFRESH_TOKEN_EXPIRE_SECONDS', default=60 * 60 * 24 * 30
+    ),  # 30 días
+    'ROTATE_REFRESH_TOKEN': True,
+    'PKCE_REQUIRED': True,
+}
+
+# Redirect URI(s) del frontend SPA para el flujo Authorization Code + PKCE, usada por el
+# management command `crear_aplicacion_oauth_spa` (usuario app). Setear
+# OAUTH2_SPA_REDIRECT_URIS en producción; en desarrollo por defecto apunta al puerto por defecto
+# de Vite.
+OAUTH2_SPA_REDIRECT_URIS = env.list(
+    'OAUTH2_SPA_REDIRECT_URIS', default=['http://localhost:5173/auth/callback']
+)
 
 ACTIVAR_HERRAMIENTAS_DEBUGGING = env.bool('ACTIVAR_HERRAMIENTAS_DEBUGGING', default=False)
 if ACTIVAR_HERRAMIENTAS_DEBUGGING:

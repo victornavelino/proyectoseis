@@ -236,3 +236,46 @@ def get_precio_articulo(articulo, lista_precio, sucursal):
                                    lista_precio=lista_precio,
                                    sucursal=sucursal).last()
     return precio
+
+
+def calcular_precio_venta_articulo(cliente, articulo, sucursal):
+    """Precio unitario a aplicar para (cliente, articulo, sucursal), calculado ENTERAMENTE en
+    servidor.
+
+    A diferencia de `get_precio_promocion()`/`calcular_total_con_descuento()` (usadas por el
+    flujo legacy `guardar_venta_cliente_articulos`, que sigue intacto para Admin/JS), esta
+    función nunca acepta un precio ya calculado por el frontend, ni siquiera en la rama de
+    descuento por cumpleaños/empleado — corrige el riesgo señalado en SISTEMA_ACTUAL.md §15.4.
+    Reutiliza (no duplica) `cumpleanio`, `es_empleado`, `get_precio_articulo`,
+    `get_promociones_activas` y `buscar_precio_articulo_en_promo`, ya existentes en este mismo
+    módulo.
+
+    Pensada para `venta/services.py` (endpoint transaccional nuevo de alta de venta).
+
+    Devuelve (precio_lista: Decimal, precio_final: Decimal). Lanza
+    `venta.exceptions.ArticuloSinPrecioError` si el artículo no tiene precio cargado para la
+    lista de precios del cliente en esa sucursal.
+    """
+    from venta.exceptions import ArticuloSinPrecioError
+
+    precio = get_precio_articulo(articulo, cliente.lista_precio, sucursal)
+    if precio is None:
+        raise ArticuloSinPrecioError(articulo)
+
+    descuento = None
+    if cumpleanio(cliente.pk):
+        descuento = Descuento.objects.filter(nombre='CUMPLEAÑOS').first()
+    if descuento is None and es_empleado(cliente.persona):
+        descuento = Descuento.objects.filter(nombre='EMPLEADOS').first()
+
+    if descuento is not None and descuento.valor > 0:
+        monto_a_descontar = precio.precio * descuento.valor / 100
+        precio_final = round(precio.precio - monto_a_descontar, 2)
+    elif cliente.lista_precio and 'COMUN' in cliente.lista_precio.nombre:
+        promos_activas = get_promociones_activas(sucursal)
+        precio_promo = buscar_precio_articulo_en_promo(cliente, articulo, promos_activas, sucursal)
+        precio_final = precio_promo if precio_promo else precio.precio
+    else:
+        precio_final = precio.precio
+
+    return precio.precio, precio_final

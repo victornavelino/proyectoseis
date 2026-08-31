@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar sesión — {{ request.get_host }}</title>
+</head>
+<body>
+  <h1>Iniciar sesión</h1>
+
+  {# Login genérico para CUALQUIER Usuario activo (no sólo staff, a diferencia de
+     /admin/login/) — pantalla intermedia que ve el navegador durante el flujo OAuth2
+     Authorization Code + PKCE del frontend (redirige acá, y de acá vuelve a
+     /oauth2/authorize/ vía `next`). Ver docs/modernizacion/DECISIONES.md DEC-002. #}
+
+  {% if form.errors %}
+    <p>Usuario o contraseña incorrectos.</p>
+  {% endif %}
+
+  <form method="post" action="{% url 'login' %}">
+    {% csrf_token %}
+    <p>
+      <label for="id_username">Usuario</label><br>
+      <input type="text" name="username" id="id_username" autofocus required>
+    </p>
+    <p>
+      <label for="id_password">Contraseña</label><br>
+      <input type="password" name="password" id="id_password" required>
+    </p>
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit">Ingresar</button>
+  </form>
+</body>
+</html>

@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.auth import views as auth_views
 from django.views.generic import RedirectView
 from oauth2_provider.urls import base_urlpatterns
 from django.urls import path, include
@@ -79,6 +80,11 @@ urlpatterns = [
                        name='imprimir_cierre_caja'),
                   path('admin/caja/imprimir/<int:id_caja>', imprimir_cierre_caja_pdf, name='imprimir_cierre_caja_pdf'),
                   path('admin/', admin.site.urls),
+                  # Login genérico (cualquier Usuario activo, no sólo staff — a diferencia de
+                  # /admin/login/) usado como LOGIN_URL por el flujo OAuth2 del frontend SPA.
+                  # Ver docs/modernizacion/DECISIONES.md DEC-002.
+                  path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+                  path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
                   path('oauth2/', include((base_urlpatterns, 'oauth2_provider'), namespace='oauth2_provider')),
                   path('auth/', include('drf_social_oauth2.urls')),
                   path('api/v1/usuario/registro/', RegistroUsuarioAPIView.as_view(), name='registro_usuario'),
