@@ -1,6 +1,11 @@
 node_modules
 dist
 dist-ssr
+
+# vite.config.js/.d.ts compilados: la fuente real es vite.config.ts. Si estos quedan trackeados,
+# Vite los prioriza sobre el .ts y el build ignora cambios en la config (ver base: '/static/frontend/').
+vite.config.js
+vite.config.d.ts
 .env
 .env.local
 *.local
