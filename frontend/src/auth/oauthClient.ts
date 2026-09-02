@@ -108,7 +108,16 @@ async function intercambiarPorTokens(body: URLSearchParams): Promise<void> {
   })
 }
 
-/** Revoca el refresh_token en el backend (si hay sesión) y limpia el estado local. */
+/** Revoca el refresh_token y cierra la sesión de Django subyacente (ver OAUTH_CONFIG.logoutUrl).
+ *
+ * La revocación es un fetch normal (no depende de cookies). El logout de Django, en cambio, se
+ * hace con una navegación real de página completa (`window.location.assign`), NO con
+ * `fetch(..., {credentials: 'include'})`: la cookie de sesión usa SameSite=Lax (default de
+ * Django), que sólo viaja en navegaciones de nivel superior cross-site, no en un fetch/XHR — en
+ * desarrollo front (:5173) y back (:8000) son orígenes distintos, así que un fetch nunca
+ * mandaría la cookie y el logout no haría nada del lado de Django (quedaría la sesión viva,
+ * que es justamente el bug que esto arregla). `?next=/` hace que LogoutView redirija de vuelta
+ * a la SPA en vez de a `/login/` (su destino por defecto, ver next_page en project/urls.py). */
 export async function cerrarSesion(): Promise<void> {
   const tokens = getTokens()
   if (tokens) {
@@ -119,9 +128,10 @@ export async function cerrarSesion(): Promise<void> {
         body: new URLSearchParams({ token: tokens.refreshToken, client_id: OAUTH_CONFIG.clientId }),
       })
     } catch {
-      // Si falla la revocación remota (ej. sin conexión), igual limpiamos la sesión local: el
-      // usuario ve el efecto de "cerrar sesión" de inmediato.
+      // Si falla la revocación remota (ej. sin conexión), igual seguimos: mejor terminar el
+      // logout local y de sesión que dejar al usuario tildado en esta pantalla.
     }
   }
   clearTokens()
+  window.location.assign(`${OAUTH_CONFIG.logoutUrl}?next=/`)
 }

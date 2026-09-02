@@ -82,6 +82,55 @@ class RegistroUsuarioSerializer(serializers.ModelSerializer):
         return usuario
 
 
+class UsuarioSucursalSerializer(serializers.ModelSerializer):
+    """Alta/gestión de usuarios operativos de una sucursal (ver util.permissions.
+    EsEncargadoDeSucursal). Deliberadamente no expone `is_staff`, `is_superuser`, `groups` ni
+    `user_permissions`: quien crea desde acá nunca puede otorgarse ni otorgarle a otro más
+    privilegio que "cuenta operativa de mi sucursal" — eso sigue siendo exclusivo del /admin.
+    """
+
+    password = serializers.CharField(write_only=True, required=False, validators=[validate_password])
+    sucursal_nombre = serializers.CharField(source='sucursal.nombre', read_only=True, default=None)
+
+    class Meta:
+        model = Usuario
+        fields = (
+            'id',
+            'username',
+            'password',
+            'email',
+            'first_name',
+            'last_name',
+            'is_active',
+            'sucursal',
+            'sucursal_nombre',
+        )
+        read_only_fields = ('sucursal',)
+
+    def validate(self, attrs):
+        # La contraseña es obligatoria al crear, pero no se edita desde acá (no hay pantalla de
+        # "resetear contraseña de otro usuario" todavía).
+        if self.instance is None and not attrs.get('password'):
+            raise serializers.ValidationError({'password': 'Este campo es requerido.'})
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.pop('sucursal', None)
+        password = validated_data.pop('password')
+        request = self.context['request']
+        return Usuario.objects.create_user(
+            password=password,
+            sucursal=request.user.sucursal,
+            is_staff=False,
+            **validated_data,
+        )
+
+    def update(self, instance, validated_data):
+        validated_data.pop('password', None)
+        validated_data.pop('sucursal', None)
+        return super().update(instance, validated_data)
+
+
 class CambiarClaveSecretaSerializer(serializers.Serializer):
     clave = serializers.CharField(max_length=128, write_only=True, required=True)
     clave_nueva = serializers.CharField(max_length=128, write_only=True, required=True)

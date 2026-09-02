@@ -35,6 +35,7 @@ import {
   IconShoppingCart,
   IconTags,
   IconUser,
+  IconUserPlus,
   IconUsers,
   IconWallet,
   type Icon,
@@ -80,6 +81,7 @@ const NAV: { titulo: string; items: ItemNav[] }[] = [
     items: [
       { to: '/empleados', label: 'Empleados', icon: IconId, seccion: 'Personal' },
       { to: '/empleados/sucursales', label: 'Sucursales', icon: IconMapPin, seccion: 'Personal' },
+      { to: '/empleados/usuarios', label: 'Usuarios', icon: IconUserPlus, seccion: 'Personal' },
     ],
   },
   {
@@ -100,6 +102,8 @@ const NAV: { titulo: string; items: ItemNav[] }[] = [
 ]
 
 const TODOS_LOS_ITEMS = NAV.flatMap((grupo) => grupo.items)
+
+const NOMBRE_NEGOCIO = import.meta.env.VITE_BUSINESS_NAME || 'Sistema de Gestión'
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const [opened, { toggle }] = useDisclosure()
@@ -177,14 +181,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <AppShell.Section p="md">
           <Group gap="xs" wrap="nowrap">
             <IconBuildingStore size={28} />
-            <div style={{ lineHeight: 1.15 }}>
-              <Text fw={700} size="sm">
-                Carnicería
-              </Text>
-              <Text fw={700} size="sm" mt={-2}>
-                Virgen del Valle
-              </Text>
-            </div>
+            {/* Nombre del negocio configurable por variable de entorno (VITE_BUSINESS_NAME, ver
+             * frontend/.env.example) — así este sistema se puede reutilizar para otro negocio
+             * sin tocar código. */}
+            <Text fw={700} size="sm" style={{ lineHeight: 1.15 }}>
+              {NOMBRE_NEGOCIO}
+            </Text>
           </Group>
         </AppShell.Section>
         <AppShell.Section grow component={ScrollArea} px="sm">

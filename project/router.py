@@ -15,6 +15,7 @@ router = DefaultRouter()
 
 router.register('persona', api_persona.PersonaViewSet, basename='persona')
 router.register('usuario', api_usuario.UsuarioViewSet, basename='usuario')
+router.register('usuario-sucursal', api_usuario.UsuarioSucursalViewSet, basename='usuario-sucursal')
 router.register('cliente', api_cliente.ClienteViewSet, basename='cliente')
 router.register('diassemana', api_promocion.DiasSemanaViewSet, basename='diassemana')
 router.register('promocion', api_promocion.PromocionViewSet, basename='promocion')

@@ -1,12 +1,18 @@
 from django.contrib.auth import get_user_model
-from rest_framework import permissions, generics, viewsets, mixins, status
+from rest_framework import filters, permissions, generics, viewsets, mixins, status
 from rest_framework.decorators import action
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 
 from persona.models import Persona
 from persona.serializers import PersonaSerializer
-from usuario.serializers import RegistroUsuarioSerializer, UsuarioSerializer, CambiarClaveSecretaSerializer
+from usuario.serializers import (
+    RegistroUsuarioSerializer,
+    UsuarioSerializer,
+    UsuarioSucursalSerializer,
+    CambiarClaveSecretaSerializer,
+)
+from util.permissions import EsEncargadoDeSucursal
 from util.serializers import TelefonoSerializer
 
 Usuario = get_user_model()
@@ -71,3 +77,31 @@ class UsuarioViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewset
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(status=status.HTTP_200_OK)
+
+
+class UsuarioSucursalViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    # Alta de usuarios operativos por el encargado de sucursal — ver util.permissions.
+    # EsEncargadoDeSucursal y UsuarioSucursalSerializer para las restricciones de seguridad.
+    #
+    # Sin destroy() a propósito, mismo criterio que Cliente/Empleado: se desactiva
+    # (is_active=False vía PATCH), nunca se borra una cuenta con historial de ventas asociado.
+    #
+    # `is_staff=False` en el queryset: este endpoint es sólo para las cuentas operativas que el
+    # encargado da de alta, no para administrar cuentas de staff (eso sigue siendo /admin).
+    serializer_class = UsuarioSucursalSerializer
+    permission_classes = (EsEncargadoDeSucursal,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username', 'first_name', 'last_name', 'email')
+
+    def get_queryset(self):
+        queryset = Usuario.objects.filter(is_staff=False).order_by('username')
+        user = self.request.user
+        if user.is_superuser:
+            return queryset
+        return queryset.filter(sucursal=user.sucursal)

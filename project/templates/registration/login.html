@@ -3,32 +3,110 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iniciar sesión — {{ request.get_host }}</title>
+  <title>Iniciar sesión — {{ PROJECT_NAME_TITLE }}</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8f4f2;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #2b2320;
+    }
+    .tarjeta {
+      width: 100%;
+      max-width: 360px;
+      margin: 16px;
+      padding: 32px 28px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06);
+    }
+    h1 {
+      margin: 0 0 4px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+    .subtitulo {
+      margin: 0 0 24px;
+      font-size: 0.85rem;
+      text-align: center;
+      color: #8a7d75;
+    }
+    .error {
+      margin: 0 0 16px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #fdecea;
+      color: #a33025;
+      font-size: 0.85rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #5c5148;
+    }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 16px;
+      border: 1px solid #ddd3cc;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    input:focus {
+      outline: none;
+      border-color: #b5443a;
+      box-shadow: 0 0 0 3px rgba(181, 68, 58, 0.15);
+    }
+    button {
+      width: 100%;
+      padding: 11px;
+      border: none;
+      border-radius: 8px;
+      background: #b5443a;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #9c3a31; }
+  </style>
 </head>
 <body>
-  <h1>Iniciar sesión</h1>
+  <div class="tarjeta">
+    <h1>{{ PROJECT_NAME_TITLE }}</h1>
+    <p class="subtitulo">Ingresá con tu usuario para continuar</p>
 
-  {# Login genérico para CUALQUIER Usuario activo (no sólo staff, a diferencia de
-     /admin/login/) — pantalla intermedia que ve el navegador durante el flujo OAuth2
-     Authorization Code + PKCE del frontend (redirige acá, y de acá vuelve a
-     /oauth2/authorize/ vía `next`). Ver docs/modernizacion/DECISIONES.md DEC-002. #}
+    {# Login genérico para CUALQUIER Usuario activo (no sólo staff, a diferencia de
+       /admin/login/) — pantalla intermedia que ve el navegador durante el flujo OAuth2
+       Authorization Code + PKCE del frontend (redirige acá, y de acá vuelve a
+       /oauth2/authorize/ vía `next`). Ver docs/modernizacion/DECISIONES.md DEC-002. #}
 
-  {% if form.errors %}
-    <p>Usuario o contraseña incorrectos.</p>
-  {% endif %}
+    {% if form.errors %}
+      <p class="error">Usuario o contraseña incorrectos.</p>
+    {% endif %}
 
-  <form method="post" action="{% url 'login' %}">
-    {% csrf_token %}
-    <p>
-      <label for="id_username">Usuario</label><br>
-      <input type="text" name="username" id="id_username" autofocus required>
-    </p>
-    <p>
-      <label for="id_password">Contraseña</label><br>
-      <input type="password" name="password" id="id_password" required>
-    </p>
-    <input type="hidden" name="next" value="{{ next }}">
-    <button type="submit">Ingresar</button>
-  </form>
+    <form method="post" action="{% url 'login' %}">
+      {% csrf_token %}
+      <label for="id_username">Usuario</label>
+      <input type="text" name="username" id="id_username" autofocus required autocomplete="username">
+
+      <label for="id_password">Contraseña</label>
+      <input type="password" name="password" id="id_password" required autocomplete="current-password">
+
+      <input type="hidden" name="next" value="{{ next }}">
+      <button type="submit">Ingresar</button>
+    </form>
+  </div>
 </body>
 </html>

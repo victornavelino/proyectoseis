@@ -41,9 +41,12 @@ class Command(BaseCommand):
                 'client_type': Application.CLIENT_PUBLIC,
                 'authorization_grant_type': Application.GRANT_AUTHORIZATION_CODE,
                 'redirect_uris': ' '.join(redirect_uris),
-                # False: el usuario ve la pantalla de "¿Autorizar a Frontend SPA?" la primera
-                # vez (comportamiento estándar de OAuth2). Ponerlo en True la saltearía.
-                'skip_authorization': False,
+                # True: esta Application ES el propio frontend del sistema (primera parte, no
+                # una app de terceros) — no tiene sentido pedirle "autorización" al usuario para
+                # sí mismo, así que se salta la pantalla de "¿Autorizar a Frontend SPA?". Si
+                # algún día se agrega una integración de un tercero real, esa sí debería llevar
+                # 'skip_authorization': False.
+                'skip_authorization': True,
             },
         )
         accion = 'creada' if created else 'actualizada'
@@ -52,3 +55,4 @@ class Command(BaseCommand):
         self.stdout.write("client_secret: (ninguno — client_type=public, no lleva secret; el flujo usa PKCE)")
         self.stdout.write(f"redirect_uris: {app.redirect_uris}")
         self.stdout.write(f"authorization_grant_type: {app.authorization_grant_type}")
+        self.stdout.write(f"skip_authorization: {app.skip_authorization}")

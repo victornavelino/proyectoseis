@@ -20,6 +20,7 @@ import SucursalesPage from './features/empleados/SucursalesPage'
 import InicioPage from './features/inicio/InicioPage'
 import DescuentosPage from './features/promociones/DescuentosPage'
 import PromocionesPage from './features/promociones/PromocionesPage'
+import UsuariosPage from './features/usuarios/UsuariosPage'
 import CobroVentaPage from './features/ventas/CobroVentaPage'
 import VentaNuevaPage from './features/ventas/VentaNuevaPage'
 import VentasListPage from './features/ventas/VentasListPage'
@@ -47,6 +48,7 @@ const RUTAS: { path: string; element: ReactNode }[] = [
   { path: '/clientes/cuentas-corrientes', element: <CuentasCorrientesPage /> },
   { path: '/empleados', element: <EmpleadosPage /> },
   { path: '/empleados/sucursales', element: <SucursalesPage /> },
+  { path: '/empleados/usuarios', element: <UsuariosPage /> },
   { path: '/promociones', element: <PromocionesPage /> },
   { path: '/promociones/descuentos', element: <DescuentosPage /> },
   { path: '/caja', element: <CajaPage /> },
