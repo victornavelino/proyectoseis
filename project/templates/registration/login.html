@@ -87,11 +87,6 @@
     <h1>{{ PROJECT_NAME_TITLE }}</h1>
     <p class="subtitulo">Ingresá con tu usuario para continuar</p>
 
-    {# Login genérico para CUALQUIER Usuario activo (no sólo staff, a diferencia de
-       /admin/login/) — pantalla intermedia que ve el navegador durante el flujo OAuth2
-       Authorization Code + PKCE del frontend (redirige acá, y de acá vuelve a
-       /oauth2/authorize/ vía `next`). Ver docs/modernizacion/DECISIONES.md DEC-002. #}
-
     {% if form.errors %}
       <p class="error">Usuario o contraseña incorrectos.</p>
     {% endif %}
