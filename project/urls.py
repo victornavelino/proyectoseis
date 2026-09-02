@@ -104,6 +104,16 @@ urlpatterns = [
                   path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
                   path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
                   path('oauth2/', include((base_urlpatterns, 'oauth2_provider'), namespace='oauth2_provider')),
+                  # /auth/callback es la redirect_uri del flujo Authorization Code + PKCE del
+                  # frontend SPA (VITE_OAUTH_REDIRECT_URI / OAUTH2_SPA_REDIRECT_URIS) — la procesa
+                  # React Router del lado del cliente, no Django. Cae bajo el mismo prefijo
+                  # `auth/` que reserva drf_social_oauth2 (línea de abajo), así que hay que
+                  # explicitarla ANTES de ese include para que sirva el index.html del SPA en vez
+                  # de intentar resolverla como una URL de drf_social_oauth2/social_django (donde
+                  # no existe, y sin esto termina cayendo en el catch-all de static() al final de
+                  # este archivo devolviendo un 404 crudo de archivo no encontrado).
+                  path('auth/callback', frontend_index, name='oauth_callback'),
+                  path('auth/callback/', frontend_index),
                   path('auth/', include('drf_social_oauth2.urls')),
                   path('api/v1/usuario/registro/', RegistroUsuarioAPIView.as_view(), name='registro_usuario'),
                   path('api/v1/', include(router.urls)),

@@ -199,6 +199,15 @@ STATIC_ROOT = env('DJANGO_STATIC_ROOT', default='./static/')
 
 STATICFILES_DIRS = [str(PROJECT_DIR.path('assets')), ]
 
+# Sin esto, MEDIA_URL queda en '' y `static(settings.MEDIA_URL, ...)` en project/urls.py genera
+# un patrón `^(?P<path>.*)$` que matchea CUALQUIER URL no reconocida antes (ver `frontend_index`
+# y su catch-all, que sí excluye explícitamente varios prefijos) — cualquier ruta que no matchee
+# en otro lado termina en django.views.static.serve devolviendo un 404 crudo de "archivo no
+# encontrado" en vez del 404 esperado. Detectado por el 404 de /auth/callback en producción.
+MEDIA_URL = env('DJANGO_MEDIA_URL', default='/media/')
+
+MEDIA_ROOT = env('DJANGO_MEDIA_ROOT', default=str(ROOT_DIR.path('media')))
+
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 AUTHENTICATION_BACKENDS = (
