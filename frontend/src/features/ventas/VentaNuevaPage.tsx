@@ -21,13 +21,14 @@ import { listarArticulos } from '../../api/articulo'
 import { ApiError } from '../../api/client'
 import { listarClientes } from '../../api/cliente'
 import { listarEmpleadosActivos } from '../../api/empleado'
-import { crearVenta, previsualizarVenta } from '../../api/venta'
+import { crearVenta, imprimirTicket, previsualizarVenta } from '../../api/venta'
 import BuscadorLista from '../../components/BuscadorLista'
 import type { Articulo } from '../../types/articulo'
 import type { Cliente } from '../../types/cliente'
 import type { Empleado } from '../../types/empleado'
 import type { ItemCarrito, VentaPrevisualizada } from '../../types/venta'
 import { formatearMonto } from './dinero'
+import TicketPreviewModal from './TicketPreviewModal'
 
 function nuevaClave() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -43,6 +44,7 @@ export default function VentaNuevaPage() {
   const [previsualizacion, setPrevisualizacion] = useState<VentaPrevisualizada | null>(null)
   const [errorPreview, setErrorPreview] = useState<string | null>(null)
   const [confirmando, setConfirmando] = useState(false)
+  const [ticketPreview, setTicketPreview] = useState<{ numeroTicket: number; url: string } | null>(null)
 
   useEffect(() => {
     listarEmpleadosActivos()
@@ -120,13 +122,29 @@ export default function VentaNuevaPage() {
         articulos: items.map((i) => ({ articulo: i.articuloId, cantidad_peso: i.cantidadPeso })),
       })
       notifications.show({ message: `Venta #${venta.numero_ticket} registrada.`, color: 'green' })
-      navigate(`/ventas/${venta.numero_ticket}/cobrar`)
+      // La venta ya quedó registrada en este punto — si falla sólo el PDF, no bloqueamos el
+      // flujo de cobro por eso, vamos directo a /cobrar con un aviso.
+      try {
+        const blob = await imprimirTicket(venta.numero_ticket)
+        setTicketPreview({ numeroTicket: venta.numero_ticket, url: URL.createObjectURL(blob) })
+      } catch {
+        notifications.show({ message: 'La venta se registró pero no se pudo generar el ticket para imprimir.', color: 'yellow' })
+        navigate(`/ventas/${venta.numero_ticket}/cobrar`)
+      }
     } catch (err) {
       const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
       notifications.show({ title: 'No se pudo registrar la venta', message: detalle, color: 'red' })
     } finally {
       setConfirmando(false)
     }
+  }
+
+  const cerrarPreviewYContinuar = () => {
+    if (!ticketPreview) return
+    URL.revokeObjectURL(ticketPreview.url)
+    const numeroTicket = ticketPreview.numeroTicket
+    setTicketPreview(null)
+    navigate(`/ventas/${numeroTicket}/cobrar`)
   }
 
   const precioDe = (articuloId: number) => previsualizacion?.articulos.find((a) => a.articulo === articuloId)
@@ -255,6 +273,13 @@ export default function VentaNuevaPage() {
           Confirmar venta
         </Button>
       </Group>
+
+      <TicketPreviewModal
+        opened={!!ticketPreview}
+        numeroTicket={ticketPreview?.numeroTicket ?? null}
+        url={ticketPreview?.url ?? null}
+        onClose={cerrarPreviewYContinuar}
+      />
     </Container>
   )
 }
