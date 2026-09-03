@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ActionIcon,
   Alert,
@@ -45,6 +45,7 @@ export default function VentaNuevaPage() {
   const [errorPreview, setErrorPreview] = useState<string | null>(null)
   const [confirmando, setConfirmando] = useState(false)
   const [ticketPreview, setTicketPreview] = useState<{ numeroTicket: number; url: string } | null>(null)
+  const empleadoInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     listarEmpleadosActivos()
@@ -178,6 +179,7 @@ export default function VentaNuevaPage() {
                 placeholder="Buscar cliente por nombre o documento…"
                 buscar={(q) => listarClientes({ search: q }).then((r) => r.results)}
                 onSeleccionar={setCliente}
+                enfocarSiguienteRef={empleadoInputRef}
                 clave={(c) => c.id}
                 renderItem={(c) => (
                   <Text size="sm">
@@ -189,6 +191,7 @@ export default function VentaNuevaPage() {
           </div>
 
           <Select
+            ref={empleadoInputRef}
             label="Empleado que atiende"
             placeholder="Elegir…"
             data={empleados.map((e) => ({ value: String(e.id), label: e.persona_nombre }))}
