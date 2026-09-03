@@ -27,7 +27,7 @@ sin haber resuelto PEND-A/PEND-B de `DECISIONES.md`**.
 | 14d | Promociones en React | **COMPLETADO** (nuevo) | 9 | Promociones (días de vigencia, artículos con precio fijo anidados) y Descuentos |
 | 14 | Stock/Inventario | PENDIENTE | 2 (PEND-C, PEND-D) | Depende 100% de la decisión: reactivar Admin legacy, rediseñar, o dejar fuera de alcance |
 | 15 | Reportes/exportaciones en React | PENDIENTE | 10–13 | Los que hoy son exports de Excel (`django-import-export`) y no se resuelvan mejor quedándose en Admin |
-| 16 | Impresión de tickets/comprobantes | PENDIENTE | 11, 13 | Definir si sigue siendo `window.print()` sobre HTML o se genera PDF vía la API existente (`util/pdf.py`) |
+| 16 | Impresión de tickets/comprobantes | **COMPLETADO** | 11, 13 | Se optó por PDF vía la API existente (`util/pdf.py`, WeasyPrint) en vez de `window.print()` sobre HTML: `VentaViewSet.imprimir` (nuevo, `GET /api/v1/venta/<numero_ticket>/imprimir/`, mismo template `ticket_venta.html`) autenticado con el Bearer token de la API — la vista legacy (`venta.views.imprimir_ticket`) exigía sesión de Django, no alcanzable desde el SPA, por eso no imprimía nada. Frontend: botón "Imprimir" en `VentasListPage`/`CobroVentaPage` que pide el PDF y lo abre en una pestaña nueva (el visor del navegador da el diálogo de impresión) |
 | 17 | Permisos finos en React | PENDIENTE | 7 | Traducir los chequeos ad-hoc de sucursal/superuser (§7, §11) a un modelo consistente expuesto por la API |
 | 18 | Testing | PENDIENTE | continuo | Resolver primero que `pytest.ini` apunta a una carpeta `tests/` inexistente (§13); definir estrategia (pytest-django para backend, algo tipo Vitest/RTL para frontend) |
 | 19 | Limpieza progresiva de código legacy | PENDIENTE | cada etapa de React equivalente completada | Sólo retirar templates/JS/vistas de un dominio cuando su reemplazo en React esté validado en uso real |
@@ -64,9 +64,9 @@ parte):
 Después de eso, lo que queda del roadmap original:
 - Etapa 14 (Stock/Inventario) — sigue bloqueada por DEC-004 (`inventario` desactivado a
   propósito, PEND-C/D).
-- Etapa 15 (Reportes/exportaciones), 16 (Impresión de tickets), 17 (Permisos finos), 18
-  (Testing — falta resolver que `pytest.ini` apunta a una carpeta `tests/` inexistente), 19
-  (Limpieza de código legacy), 20 (Despliegue) — ninguna arrancada todavía.
+- Etapa 15 (Reportes/exportaciones), 17 (Permisos finos), 18 (Testing — falta resolver que
+  `pytest.ini` apunta a una carpeta `tests/` inexistente), 19 (Limpieza de código legacy), 20
+  (Despliegue) — ninguna arrancada todavía. Etapa 16 (Impresión de tickets) ya completada.
 - PEND-J (anular venta cobrada) sigue pendiente, ahora con `caja`/`cuentacorriente` ya
   construidos en el frontend además del backend, por si se quiere retomar.
 

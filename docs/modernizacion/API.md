@@ -298,6 +298,7 @@ transaccional controlada por el backend, no CRUD sobre varios modelos).
 | Listar / detalle | `GET /api/v1/venta/`, `GET /api/v1/venta/<numero_ticket>/` | `IsAuthenticated` | Filtros `sucursal`, `cliente`, `cobrada`, `anulado`; incluye `articulos` anidados (`VentaArticuloSerializer`) y nombres legibles de cliente/empleado/usuario/sucursal |
 | Crear venta | `POST /api/v1/venta/crear/` | `IsAuthenticated` | Alta transaccional (`venta.services.crear_venta`, `transaction.atomic()`). Body: `{"empleado": <id>, "cliente": <id>, "articulos": [{"articulo": <id>, "cantidad_peso": "2.00"}, ...]}` |
 | Anular venta | `POST /api/v1/venta/<numero_ticket>/anular/` | `IsAdminUser` (staff, igual criterio que hoy tiene Django Admin) | Sólo ventas **no cobradas** (ver PEND-J en `DECISIONES.md`); responde 400 si ya está anulada o si está cobrada |
+| Ticket en PDF | `GET /api/v1/venta/<numero_ticket>/imprimir/` | `IsAuthenticated` | Etapa 16 (`ROADMAP.md`), nuevo. Devuelve `application/pdf` (WeasyPrint, `util/pdf.py`, mismo template `admin/venta/ticket_venta.html` que la vista legacy `venta.views.imprimir_ticket`). Reemplaza a esa vista para el frontend nuevo: la legacy exige sesión de Django (`request.user.is_authenticated` vía cookie), no el Bearer token de la API, así que no era alcanzable desde el SPA |
 
 ### El precio nunca se recibe del frontend
 

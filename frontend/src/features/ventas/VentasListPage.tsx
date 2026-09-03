@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Badge, Button, Container, Group, Paper, Table, Text, Title } from '@mantine/core'
+import { ActionIcon, Badge, Button, Container, Group, Paper, Table, Text, Title } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconPlus } from '@tabler/icons-react'
+import { IconPlus, IconPrinter } from '@tabler/icons-react'
 import { Link } from 'react-router-dom'
 import { VENTAS_POR_PAGINA, listarVentas } from '../../api/venta'
 import { ApiError } from '../../api/client'
@@ -9,6 +9,7 @@ import EstadoVacio from '../../components/EstadoVacio'
 import Paginador from '../../components/Paginador'
 import type { Venta } from '../../types/venta'
 import { formatearMonto } from './dinero'
+import { abrirTicketParaImprimir } from './imprimirTicket'
 
 export default function VentasListPage() {
   const [ventas, setVentas] = useState<Venta[]>([])
@@ -68,11 +69,20 @@ export default function VentasListPage() {
                   {!venta.anulado && !venta.cobrada && <Badge color="orange">Pendiente de cobro</Badge>}
                 </Table.Td>
                 <Table.Td>
-                  {!venta.anulado && !venta.cobrada && (
-                    <Button component={Link} to={`/ventas/${venta.numero_ticket}/cobrar`} size="xs" variant="light">
-                      Cobrar
-                    </Button>
-                  )}
+                  <Group gap="xs" wrap="nowrap">
+                    {!venta.anulado && !venta.cobrada && (
+                      <Button component={Link} to={`/ventas/${venta.numero_ticket}/cobrar`} size="xs" variant="light">
+                        Cobrar
+                      </Button>
+                    )}
+                    <ActionIcon
+                      variant="subtle"
+                      aria-label="Imprimir ticket"
+                      onClick={() => void abrirTicketParaImprimir(venta.numero_ticket)}
+                    >
+                      <IconPrinter size={16} />
+                    </ActionIcon>
+                  </Group>
                 </Table.Td>
               </Table.Tr>
             ))}

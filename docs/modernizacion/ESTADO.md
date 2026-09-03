@@ -34,8 +34,9 @@ artículos/clientes/venta/cobro, que sí ya se probó y confirmó "quedó perfec
    no — el patrón de esta sesión (2 bugs reales encontrados así: `LOGIN_URL` y campos
    nullable-pero-no-blank) sugiere que vale la pena antes de dar esto por terminado del todo.
 2. Después de eso, el roadmap original sigue en: Stock/Inventario (bloqueado, DEC-004),
-   Reportes, Impresión de tickets, Permisos finos, Testing, Limpieza de legacy, Despliegue —
-   ninguna arrancada todavía.
+   Reportes, Permisos finos, Testing, Limpieza de legacy, Despliegue — ninguna arrancada
+   todavía. Impresión de tickets (etapa 16) ya se completó (ver `ROADMAP.md`): PDF vía API
+   (`VentaViewSet.imprimir`, WeasyPrint) con botón "Imprimir" en `VentasListPage`/`CobroVentaPage`.
 3. Decisiones pendientes sin urgencia: PEND-E (compras/proveedores), PEND-I
    (`drf-social-oauth2` roto, evidencia ya encontrada), PEND-J (anular venta cobrada).
 

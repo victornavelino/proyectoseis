@@ -74,3 +74,28 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
 
   return payload as T
 }
+
+/** Como apiFetch, pero para respuestas binarias (ej. el PDF del ticket de venta, ver
+ * api/venta.ts § imprimirTicket) — no intenta parsear JSON, devuelve el Blob tal cual. */
+export async function apiFetchBlob(path: string, options: ApiFetchOptions = {}): Promise<Blob> {
+  const url = new URL(path.replace(/^\//, ''), `${API_BASE_URL}/`)
+  if (options.params) {
+    for (const [key, value] of Object.entries(options.params)) {
+      if (value !== undefined) url.searchParams.set(key, String(value))
+    }
+  }
+
+  const accessToken = await asegurarTokenValido()
+  const headers: Record<string, string> = {}
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`
+
+  const response = await fetch(url.toString(), { method: options.method ?? 'GET', headers })
+
+  if (!response.ok) {
+    const esJson = response.headers.get('Content-Type')?.includes('application/json') ?? false
+    const payload = esJson ? await response.json().catch(() => null) : null
+    throw new ApiError(response.status, payload ?? response.statusText)
+  }
+
+  return response.blob()
+}

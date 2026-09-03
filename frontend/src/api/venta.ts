@@ -1,4 +1,4 @@
-import { apiFetch } from './client'
+import { apiFetch, apiFetchBlob } from './client'
 import type { PaginatedResponse } from '../types/api'
 import type { CrearVentaInput, ItemVentaInput, Venta, VentaPrevisualizada } from '../types/venta'
 
@@ -26,4 +26,9 @@ export function previsualizarVenta(cliente: number, articulos: ItemVentaInput[])
 
 export function crearVenta(datos: CrearVentaInput) {
   return apiFetch<Venta>('api/v1/venta/crear/', { method: 'POST', body: datos })
+}
+
+/** Ticket de venta en PDF (WeasyPrint, ver venta.api.VentaViewSet.imprimir en el backend). */
+export function imprimirTicket(numeroTicket: number) {
+  return apiFetchBlob(`api/v1/venta/${numeroTicket}/imprimir/`)
 }

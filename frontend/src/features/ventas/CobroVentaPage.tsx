@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
+  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -16,6 +17,7 @@ import {
   Title,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { IconPrinter } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { cobrarVenta, listarPlanesTarjeta } from '../../api/caja'
 import { ApiError } from '../../api/client'
@@ -23,6 +25,7 @@ import { obtenerVenta } from '../../api/venta'
 import type { PlanTarjetaDeCredito } from '../../types/caja'
 import type { Venta } from '../../types/venta'
 import { formatearMonto } from './dinero'
+import { abrirTicketParaImprimir } from './imprimirTicket'
 
 interface PagoEfectivo {
   clave: string
@@ -125,10 +128,22 @@ export default function CobroVentaPage() {
 
   return (
     <Container size="md" py="md">
-      <Title order={2}>Cobrar venta #{venta.numero_ticket}</Title>
-      <Text c="dimmed" size="sm" mb="lg">
-        {venta.cliente_nombre} — Total {formatearMonto(venta.monto)}
-      </Text>
+      <Group justify="space-between" align="flex-start">
+        <div>
+          <Title order={2}>Cobrar venta #{venta.numero_ticket}</Title>
+          <Text c="dimmed" size="sm" mb="lg">
+            {venta.cliente_nombre} — Total {formatearMonto(venta.monto)}
+          </Text>
+        </div>
+        <ActionIcon
+          variant="subtle"
+          size="lg"
+          aria-label="Imprimir ticket"
+          onClick={() => void abrirTicketParaImprimir(venta.numero_ticket)}
+        >
+          <IconPrinter size={20} />
+        </ActionIcon>
+      </Group>
 
       {venta.anulado && <Alert color="red">Esta venta está anulada.</Alert>}
       {venta.cobrada && !venta.anulado && <Alert color="green">Esta venta ya fue cobrada.</Alert>}

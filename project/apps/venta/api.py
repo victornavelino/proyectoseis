@@ -6,6 +6,9 @@ from rest_framework.response import Response
 
 from decimal import Decimal, ROUND_HALF_UP
 
+from cuentacorriente.models import CuentaCorriente
+from cuentacorriente.utils import calcular_saldo_cc
+from util.pdf import render_pdf_response
 from venta.exceptions import (
     ArticuloSinPrecioError,
     CajaCerradaError,
@@ -13,7 +16,7 @@ from venta.exceptions import (
     VentaYaAnuladaError,
     VentaYaCobradaError,
 )
-from venta.models import Venta
+from venta.models import Venta, VentaArticulo
 from venta.serializers import (
     CrearVentaInputSerializer,
     PrevisualizarVentaInputSerializer,
@@ -118,3 +121,34 @@ class VentaViewSet(viewsets.ReadOnlyModelViewSet):
         except VentaYaCobradaError as exc:
             raise DRFValidationError({'cobrada': str(exc)})
         return Response(VentaSerializer(venta).data)
+
+    @action(detail=True, methods=['get'])
+    def imprimir(self, request, pk=None):
+        """Ticket de venta en PDF (WeasyPrint, ver util/pdf.py). Mismo template y cálculo que la
+        vista legacy `venta.views.imprimir_ticket`/la acción de admin equivalente — ver
+        ROADMAP.md etapa 16: ninguna de esas dos era alcanzable desde el frontend nuevo (una
+        exige sesión de Django, no el Bearer token de la API), así que quedaba huérfana."""
+        venta = self.get_object()
+        articulos_venta = VentaArticulo.objects.filter(venta=venta)
+        try:
+            cuenta_corriente = CuentaCorriente.objects.get(cliente_id=venta.cliente_id, activa=True)
+            saldo_cc = calcular_saldo_cc(cuenta_corriente)
+        except CuentaCorriente.DoesNotExist:
+            saldo_cc = '--'
+        monto_descuento = sum(
+            (articulo.precio_unitario - articulo.precio_promocion for articulo in articulos_venta),
+            Decimal('0'),
+        )
+        return render_pdf_response(
+            request=request._request,
+            template='admin/venta/ticket_venta.html',
+            filename=f'venta-{venta.numero_ticket}-{venta.fecha}.pdf',
+            context={
+                'venta': venta,
+                'vendedor': venta.empleado,
+                'articulos': articulos_venta,
+                'monto_descuento': monto_descuento,
+                'saldo_cc': saldo_cc,
+            },
+            show_content_in_browser=True,
+        )
