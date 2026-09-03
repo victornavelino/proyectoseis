@@ -4,9 +4,10 @@ FROM node:22-slim AS frontend-build
 WORKDIR /frontend
 
 # Vite las hornea en el JS al momento del build (no son variables de entorno del contenedor en
-# runtime) — hay que pasarlas como build args. En Dokploy: docker-compose.yml las toma de
-# ${VITE_...} vía `build.args`, así que definilas como variables de entorno del proyecto en
-# Dokploy (no en el .env que se inyecta al contenedor — ver docker-compose.yml).
+# runtime) — hay que pasarlas como build args. La app en Dokploy está configurada en modo
+# "Dockerfile" (build directo de este archivo, sin pasar por docker-compose.yml pese a que el
+# repo tenga uno), así que hay que cargarlas en la sección "Build Args" de Dokploy — NO en
+# "Environment Variables" (esa es runtime/.env, no llega a `docker build --build-arg`).
 ARG VITE_API_BASE_URL=""
 ARG VITE_OAUTH_CLIENT_ID
 ARG VITE_OAUTH_REDIRECT_URI

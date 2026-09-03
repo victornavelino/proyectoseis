@@ -6,9 +6,13 @@ services:
     build:
       context: .
       args:
-        # Build args del frontend (Vite las hornea en el JS en build time, ver Dockerfile) —
-        # Dokploy las interpola acá desde las "Environment Variables" del proyecto, distinto
-        # del .env que se inyecta al contenedor en runtime (env_file de abajo).
+        # Build args del frontend (Vite las hornea en el JS en build time, ver Dockerfile).
+        # OJO: la app en Dokploy está configurada en modo "Dockerfile", no "Docker Compose" —
+        # este archivo NO se usa para el deploy actual, así que esta interpolación ${VITE_...}
+        # nunca corre ahí. En Dokploy las build args se cargan en su sección "Build Args" del
+        # build tipo Dockerfile, distinta de "Environment Variables" (esa es runtime/.env, ver
+        # env_file de abajo) y del Dockerfile propiamente dicho. Este compose queda como
+        # referencia/alternativa si algún día se migra el build a modo Docker Compose.
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
         VITE_OAUTH_CLIENT_ID: ${VITE_OAUTH_CLIENT_ID:?falta VITE_OAUTH_CLIENT_ID}
         VITE_OAUTH_REDIRECT_URI: ${VITE_OAUTH_REDIRECT_URI:?falta VITE_OAUTH_REDIRECT_URI}
