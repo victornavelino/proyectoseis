@@ -28,12 +28,16 @@ class UsuarioSerializer(serializers.ModelSerializer):
             'is_staff',
             'sucursal',
             'sucursal_nombre',
+            'empleado',
             'groups',
         )
-        # is_staff/sucursal de sólo lectura: este endpoint también acepta PATCH del propio
-        # usuario autenticado (UsuarioViewSet.get_object() siempre devuelve request.user) — sin
-        # esto, cualquier usuario podría auto-otorgarse is_staff o cambiarse de sucursal.
-        read_only_fields = ('is_staff', 'sucursal')
+        # is_staff/sucursal/empleado de sólo lectura: este endpoint también acepta PATCH del
+        # propio usuario autenticado (UsuarioViewSet.get_object() siempre devuelve request.user)
+        # — sin esto, cualquier usuario podría auto-otorgarse is_staff, cambiarse de sucursal o
+        # vincularse a otro Empleado. `empleado` se expone para que el frontend preseleccione al
+        # vendedor logueado en el punto de venta (VentaNuevaPage) — la asignación en sí sigue
+        # siendo sólo por /admin.
+        read_only_fields = ('is_staff', 'sucursal', 'empleado')
 
 
 class RegistroUsuarioSerializer(serializers.ModelSerializer):

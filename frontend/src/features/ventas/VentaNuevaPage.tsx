@@ -16,6 +16,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../auth/AuthContext'
 import { leerPesoBalanza } from '../../api/balanza'
 import { listarArticulos } from '../../api/articulo'
 import { ApiError } from '../../api/client'
@@ -36,6 +37,7 @@ function nuevaClave() {
 
 export default function VentaNuevaPage() {
   const navigate = useNavigate()
+  const { perfil } = useAuth()
 
   const [cliente, setCliente] = useState<Cliente | null>(null)
   const [empleados, setEmpleados] = useState<Empleado[]>([])
@@ -52,6 +54,17 @@ export default function VentaNuevaPage() {
       .then((r) => setEmpleados(r.results))
       .catch(() => notifications.show({ message: 'No se pudieron cargar los empleados.', color: 'red' }))
   }, [])
+
+  // Preselecciona al vendedor logueado (perfil.empleado, ver usuario.UsuarioSerializer) apenas
+  // están disponibles tanto el perfil como la lista de empleados — no pisa una selección manual
+  // posterior (el guard de empleadoId===null) ni pasa nada si el usuario no tiene Empleado
+  // vinculado o no está en la lista de activos.
+  useEffect(() => {
+    if (empleadoId !== null || !perfil?.empleado) return
+    if (empleados.some((e) => e.id === perfil.empleado)) {
+      setEmpleadoId(String(perfil.empleado))
+    }
+  }, [empleados, perfil, empleadoId])
 
   const [carritoDebounced] = useDebouncedValue(carrito, 400)
 

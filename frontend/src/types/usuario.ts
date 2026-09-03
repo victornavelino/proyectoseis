@@ -7,6 +7,9 @@ export interface Perfil {
   is_staff: boolean
   sucursal: number | null
   sucursal_nombre: string | null
+  /** Empleado vinculado a este usuario (asignado por /admin) — VentaNuevaPage lo usa para
+   * preseleccionar al vendedor logueado. null si el usuario no tiene un Empleado asociado. */
+  empleado: number | null
   groups: { id: number; name: string }[]
 }
 
