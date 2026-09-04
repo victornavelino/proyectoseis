@@ -1,4 +1,4 @@
-import { apiFetch } from './client'
+import { apiFetch, apiFetchBlob } from './client'
 import type { PaginatedResponse } from '../types/api'
 import type {
   Caja,
@@ -62,6 +62,11 @@ export function abrirCaja() {
 }
 export function cerrarCaja(id: number) {
   return apiFetch<ResumenCierreCaja>(`api/v1/caja/${id}/cerrar/`, { method: 'POST' })
+}
+
+/** Resumen de cierre de caja en PDF (WeasyPrint, ver caja.api.CajaViewSet.imprimir en el backend). */
+export function imprimirCaja(id: number) {
+  return apiFetchBlob(`api/v1/caja/${id}/imprimir/`)
 }
 
 export function cobrarVenta(datos: CobrarVentaInput) {

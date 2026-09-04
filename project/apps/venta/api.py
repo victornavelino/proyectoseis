@@ -1,4 +1,5 @@
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Q
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError as DRFValidationError
@@ -39,6 +40,22 @@ class VentaViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     filterset_fields = ('sucursal', 'cliente', 'cobrada', 'anulado')
     ordering_fields = ('numero_ticket', 'fecha')
+
+    def get_queryset(self):
+        # Búsqueda libre por ?search=: nro de ticket, apellido o DNI del cliente. No se usa
+        # filters.SearchFilter porque numero_ticket es un IntegerField -> un icontains ahí
+        # rompe en Postgres (LIKE no admite comparar contra integer sin cast); por eso el
+        # numero_ticket sólo entra en el filtro cuando el término buscado es numérico.
+        queryset = super().get_queryset()
+        busqueda = self.request.query_params.get('search', '').strip().lstrip('#')
+        if busqueda:
+            filtro = Q(cliente__persona__apellido__icontains=busqueda) | Q(
+                cliente__persona__documento_identidad__icontains=busqueda
+            )
+            if busqueda.isdigit():
+                filtro |= Q(numero_ticket=int(busqueda))
+            queryset = queryset.filter(filtro)
+        return queryset
 
     def get_permissions(self):
         if self.action == 'anular':

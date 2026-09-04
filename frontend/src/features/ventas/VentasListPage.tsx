@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { ActionIcon, Badge, Button, Container, Group, Paper, Table, Text, Title } from '@mantine/core'
+import { ActionIcon, Badge, Button, Container, Group, Paper, Table, Text, TextInput, Title } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { IconPlus, IconPrinter } from '@tabler/icons-react'
+import { IconPlus, IconPrinter, IconSearch, IconX } from '@tabler/icons-react'
 import { Link } from 'react-router-dom'
 import { VENTAS_POR_PAGINA, listarVentas } from '../../api/venta'
 import { ApiError } from '../../api/client'
@@ -15,18 +16,24 @@ export default function VentasListPage() {
   const [ventas, setVentas] = useState<Venta[]>([])
   const [total, setTotal] = useState(0)
   const [pagina, setPagina] = useState(1)
+  const [busqueda, setBusqueda] = useState('')
+  const [busquedaDebounced] = useDebouncedValue(busqueda, 300)
   const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
+    setPagina(1)
+  }, [busquedaDebounced])
+
+  useEffect(() => {
     setCargando(true)
-    listarVentas({ pagina })
+    listarVentas({ search: busquedaDebounced || undefined, pagina })
       .then((r) => {
         setVentas(r.results)
         setTotal(r.count)
       })
       .catch((err: ApiError) => notifications.show({ title: 'Error', message: err.message, color: 'red' }))
       .finally(() => setCargando(false))
-  }, [pagina])
+  }, [busquedaDebounced, pagina])
 
   return (
     <Container size="lg" py="md">
@@ -42,6 +49,23 @@ export default function VentasListPage() {
         </Button>
       </Group>
 
+      <Paper withBorder p="md" mb="md">
+        <Group>
+          <TextInput
+            placeholder="Buscar por nro. de ticket, apellido o DNI del cliente…"
+            leftSection={<IconSearch size={16} />}
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.currentTarget.value)}
+            style={{ flex: 1 }}
+          />
+          {busqueda && (
+            <Button variant="subtle" color="gray" leftSection={<IconX size={14} />} onClick={() => setBusqueda('')}>
+              Limpiar
+            </Button>
+          )}
+        </Group>
+      </Paper>
+
       <Paper withBorder p="md">
         <Text size="sm" c="dimmed" mb="sm">
           {total} registro{total === 1 ? '' : 's'}
@@ -51,6 +75,7 @@ export default function VentasListPage() {
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Ticket</Table.Th>
+              <Table.Th>Fecha</Table.Th>
               <Table.Th>Cliente</Table.Th>
               <Table.Th>Monto</Table.Th>
               <Table.Th>Estado</Table.Th>
@@ -61,6 +86,7 @@ export default function VentasListPage() {
             {ventas.map((venta) => (
               <Table.Tr key={venta.numero_ticket}>
                 <Table.Td>#{venta.numero_ticket}</Table.Td>
+                <Table.Td>{new Date(venta.fecha).toLocaleString('es-AR')}</Table.Td>
                 <Table.Td>{venta.cliente_nombre}</Table.Td>
                 <Table.Td>{formatearMonto(venta.monto)}</Table.Td>
                 <Table.Td>
@@ -89,7 +115,12 @@ export default function VentasListPage() {
           </Table.Tbody>
         </Table>
 
-        {!cargando && ventas.length === 0 && <EstadoVacio titulo="Sin ventas todavía" />}
+        {!cargando && ventas.length === 0 && (
+          <EstadoVacio
+            titulo={busquedaDebounced ? 'Sin resultados' : 'Sin ventas todavía'}
+            descripcion={busquedaDebounced ? 'No se encontraron ventas para la búsqueda.' : undefined}
+          />
+        )}
 
         {total > VENTAS_POR_PAGINA && (
           <Paginador pagina={pagina} porPagina={VENTAS_POR_PAGINA} total={total} onCambiarPagina={setPagina} />

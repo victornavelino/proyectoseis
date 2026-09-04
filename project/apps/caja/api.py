@@ -20,9 +20,11 @@ from caja.utils import (
     calcular_egresos_caja,
     calcular_ingresos_caja,
     calcular_total_compras_cc,
+    calcular_total_compras_transf,
     calcular_total_egresos,
     calcular_total_ingresos,
 )
+from util.pdf import render_pdf_response
 from util.permissions import IsStaffOrReadOnly
 
 
@@ -66,7 +68,16 @@ class CajaViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CajaSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('sucursal', 'fecha_fin')
+    # 'fecha_fin' necesita el lookup 'isnull' explícito: el frontend usa
+    # ?fecha_fin__isnull=true para pedir la caja abierta de la sucursal
+    # (api/caja.ts cajaAbiertaActual). Con filterset_fields como tupla plana,
+    # django-filter sólo genera el lookup 'exact' -> ese query param no matcheaba
+    # ningún filtro y se ignoraba en silencio, así que "caja abierta" devolvía
+    # simplemente la última caja de la sucursal (esté abierta o cerrada).
+    filterset_fields = {
+        'sucursal': ['exact'],
+        'fecha_fin': ['exact', 'isnull'],
+    }
 
     @action(detail=False, methods=['post'])
     def abrir(self, request):
@@ -91,6 +102,36 @@ class CajaViewSet(viewsets.ReadOnlyModelViewSet):
         data['total_egresos'] = calcular_total_egresos(caja)
         data['total_cuenta_corriente'] = calcular_total_compras_cc(caja)
         return Response(data)
+
+    @action(detail=True, methods=['get'])
+    def imprimir(self, request, pk=None):
+        """Resumen de cierre de caja en PDF (ticket imprimible). Mismo template y misma
+        construcción de contexto que la acción de admin equivalente
+        (`CajaAdmin.imprimir_cierre_caja`/la vista legacy `caja.views.imprimir_cierre_caja_pdf`)
+        — ver ROADMAP.md etapa 16: ninguna de esas dos era alcanzable desde el frontend nuevo (una
+        exige sesión de Django, no el Bearer token de la API), así que quedaba huérfana.
+        Sólo para cajas ya cerradas: los totales de cta. cte./transferencias del período
+        (`caja/utils.py`) filtran por `fecha__lte=caja.fecha_fin`, que es None mientras la caja
+        sigue abierta.
+        """
+        caja = self.get_object()
+        if caja.fecha_fin is None:
+            raise DRFValidationError({'caja': 'La caja está abierta: cerrala primero para poder imprimir el resumen.'})
+        return render_pdf_response(
+            request=request._request,
+            template='admin/caja/ticket_cierre_caja.html',
+            filename=f'caja-{caja.fecha_fin}.pdf',
+            context={
+                'caja': caja,
+                'ingresos': calcular_ingresos_caja(caja),
+                'total_ingresos': calcular_total_ingresos(caja),
+                'egresos': calcular_egresos_caja(caja),
+                'total_egresos': calcular_total_egresos(caja),
+                'total_ccorrientes': calcular_total_compras_cc(caja),
+                'total_transferencias': calcular_total_compras_transf(caja),
+            },
+            show_content_in_browser=True,
+        )
 
     @action(detail=False, methods=['post'], url_path='cobrar-venta')
     def cobrar_venta(self, request):

@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Alert, Button, Container, Divider, Group, Modal, Paper, Table, Text, Title } from '@mantine/core'
+import { ActionIcon, Alert, Button, Container, Divider, Group, Modal, Paper, Table, Text, Title } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { IconPrinter } from '@tabler/icons-react'
 import { abrirCaja, cajaAbiertaActual, cerrarCaja, listarCajas } from '../../api/caja'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import EstadoVacio from '../../components/EstadoVacio'
 import type { Caja, ResumenCierreCaja } from '../../types/caja'
 import { formatearMonto } from '../ventas/dinero'
+import { abrirResumenCajaParaImprimir } from './imprimirTicketCaja'
 
 export default function CajaPage() {
   const { perfil } = useAuth()
@@ -115,6 +117,7 @@ export default function CajaPage() {
               <Table.Th>Caja inicial</Table.Th>
               <Table.Th>Caja final</Table.Th>
               <Table.Th>Usuario</Table.Th>
+              <Table.Th />
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -125,6 +128,17 @@ export default function CajaPage() {
                 <Table.Td>{formatearMonto(c.caja_inicial)}</Table.Td>
                 <Table.Td>{c.fecha_fin ? formatearMonto(c.caja_final) : '—'}</Table.Td>
                 <Table.Td>{c.usuario_username}</Table.Td>
+                <Table.Td>
+                  {c.fecha_fin && (
+                    <ActionIcon
+                      variant="subtle"
+                      aria-label="Imprimir resumen de caja"
+                      onClick={() => void abrirResumenCajaParaImprimir(c.id)}
+                    >
+                      <IconPrinter size={16} />
+                    </ActionIcon>
+                  )}
+                </Table.Td>
               </Table.Tr>
             ))}
           </Table.Tbody>

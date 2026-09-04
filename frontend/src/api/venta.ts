@@ -6,7 +6,9 @@ const POR_PAGINA = 10
 
 export { POR_PAGINA as VENTAS_POR_PAGINA }
 
-export function listarVentas(params: { cobrada?: boolean; anulado?: boolean; pagina?: number } = {}) {
+export function listarVentas(
+  params: { cobrada?: boolean; anulado?: boolean; search?: string; pagina?: number } = {},
+) {
   const { pagina, ...resto } = params
   return apiFetch<PaginatedResponse<Venta>>('api/v1/venta/', {
     params: { page_size: POR_PAGINA, page: pagina ?? 1, ...resto },
