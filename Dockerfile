@@ -9,9 +9,11 @@ WORKDIR /frontend
 # repo tenga uno), así que hay que cargarlas en la sección "Build Args" de Dokploy — NO en
 # "Environment Variables" (esa es runtime/.env, no llega a `docker build --build-arg`).
 ARG VITE_API_BASE_URL=""
+ARG VITE_BUSINESS_NAME
 ARG VITE_OAUTH_CLIENT_ID
 ARG VITE_OAUTH_REDIRECT_URI
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
+    VITE_BUSINESS_NAME=$VITE_BUSINESS_NAME \
     VITE_OAUTH_CLIENT_ID=$VITE_OAUTH_CLIENT_ID \
     VITE_OAUTH_REDIRECT_URI=$VITE_OAUTH_REDIRECT_URI
 

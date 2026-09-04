@@ -14,6 +14,7 @@ services:
         # env_file de abajo) y del Dockerfile propiamente dicho. Este compose queda como
         # referencia/alternativa si algún día se migra el build a modo Docker Compose.
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        VITE_BUSINESS_NAME: ${VITE_BUSINESS_NAME:-}
         VITE_OAUTH_CLIENT_ID: ${VITE_OAUTH_CLIENT_ID:?falta VITE_OAUTH_CLIENT_ID}
         VITE_OAUTH_REDIRECT_URI: ${VITE_OAUTH_REDIRECT_URI:?falta VITE_OAUTH_REDIRECT_URI}
     restart: unless-stopped
