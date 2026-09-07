@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import {
   ActionIcon,
   Alert,
@@ -69,6 +69,11 @@ export default function CobroVentaPage() {
   const [tarjeta, setTarjeta] = useState<PagoTarjeta[]>([])
   const [cc, setCc] = useState<PagoCC[]>([])
   const [transferencia, setTransferencia] = useState<PagoTransferencia[]>([])
+  const [claveAEnfocar, setClaveAEnfocar] = useState<string | null>(null)
+  const efectivoAgregarRef = useRef<HTMLButtonElement>(null)
+  // Compartido entre las cuatro secciones de pago — las claves salen todas de clave(), así que
+  // son únicas sin importar el método.
+  const importeRefs = useRef(new Map<string, HTMLInputElement>())
 
   useEffect(() => {
     if (!numeroTicket) return
@@ -80,6 +85,32 @@ export default function CobroVentaPage() {
       .then((r) => setPlanes(r.results))
       .catch(() => notifications.show({ message: 'No se pudieron cargar los planes de tarjeta.', color: 'red' }))
   }, [numeroTicket])
+
+  // Apenas carga una venta cobrable, el foco arranca en "+ Agregar" de Efectivo — el método más
+  // común, para no tener que ir a buscarlo con el mouse.
+  useEffect(() => {
+    if (!cargando && venta && !venta.anulado && !venta.cobrada) {
+      efectivoAgregarRef.current?.focus()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cargando, venta?.numero_ticket])
+
+  // Al agregar un pago, el foco salta a su campo Importe (la fila recién se crea en este
+  // render, así que hace falta esperar a que el ref del input exista).
+  useEffect(() => {
+    if (!claveAEnfocar) return
+    const input = importeRefs.current.get(claveAEnfocar)
+    if (input) {
+      input.focus()
+      input.select()
+    }
+    setClaveAEnfocar(null)
+  }, [claveAEnfocar])
+
+  const registrarImporteRef = (itemClave: string) => (el: HTMLInputElement | null) => {
+    if (el) importeRefs.current.set(itemClave, el)
+    else importeRefs.current.delete(itemClave)
+  }
 
   const totalIngresado = useMemo(() => {
     const suma = (lista: { importe: string }[]) => lista.reduce((acc, p) => acc + (Number(p.importe) || 0), 0)
@@ -161,11 +192,17 @@ export default function CobroVentaPage() {
           <Stack gap="md" style={{ flex: 1, minWidth: 320 }}>
             <SeccionPagos
               titulo="Efectivo"
-              onAgregar={() => setEfectivo((a) => [...a, { clave: clave(), importe: '' }])}
+              agregarRef={efectivoAgregarRef}
+              onAgregar={() => {
+                const nueva = clave()
+                setEfectivo((a) => [...a, { clave: nueva, importe: '' }])
+                setClaveAEnfocar(nueva)
+              }}
             >
               {efectivo.map((p) => (
                 <Group key={p.clave}>
                   <NumberInput
+                    ref={registrarImporteRef(p.clave)}
                     label="Importe"
                     value={p.importe}
                     onChange={(v) => setEfectivo((a) => a.map((x) => (x.clave === p.clave ? { ...x, importe: String(v) } : x)))}
@@ -181,9 +218,11 @@ export default function CobroVentaPage() {
 
             <SeccionPagos
               titulo="Tarjeta"
-              onAgregar={() =>
-                setTarjeta((a) => [...a, { clave: clave(), planTarjetaId: null, numeroTarjeta: '', importe: '', numeroCupon: '', lote: '' }])
-              }
+              onAgregar={() => {
+                const nueva = clave()
+                setTarjeta((a) => [...a, { clave: nueva, planTarjetaId: null, numeroTarjeta: '', importe: '', numeroCupon: '', lote: '' }])
+                setClaveAEnfocar(nueva)
+              }}
             >
               {tarjeta.map((p) => (
                 <Paper key={p.clave} withBorder p="sm">
@@ -195,6 +234,7 @@ export default function CobroVentaPage() {
                       onChange={(v) => setTarjeta((a) => a.map((x) => (x.clave === p.clave ? { ...x, planTarjetaId: v } : x)))}
                     />
                     <NumberInput
+                      ref={registrarImporteRef(p.clave)}
                       label="Importe"
                       value={p.importe}
                       onChange={(v) => setTarjeta((a) => a.map((x) => (x.clave === p.clave ? { ...x, importe: String(v) } : x)))}
@@ -221,10 +261,18 @@ export default function CobroVentaPage() {
               ))}
             </SeccionPagos>
 
-            <SeccionPagos titulo="Cuenta corriente" onAgregar={() => setCc((a) => [...a, { clave: clave(), importe: '' }])}>
+            <SeccionPagos
+              titulo="Cuenta corriente"
+              onAgregar={() => {
+                const nueva = clave()
+                setCc((a) => [...a, { clave: nueva, importe: '' }])
+                setClaveAEnfocar(nueva)
+              }}
+            >
               {cc.map((p) => (
                 <Group key={p.clave}>
                   <NumberInput
+                    ref={registrarImporteRef(p.clave)}
                     label="Importe"
                     value={p.importe}
                     onChange={(v) => setCc((a) => a.map((x) => (x.clave === p.clave ? { ...x, importe: String(v) } : x)))}
@@ -240,14 +288,17 @@ export default function CobroVentaPage() {
 
             <SeccionPagos
               titulo="Transferencia"
-              onAgregar={() =>
-                setTransferencia((a) => [...a, { clave: clave(), importe: '', documento: '', nombre: '', apellido: '', banco: '' }])
-              }
+              onAgregar={() => {
+                const nueva = clave()
+                setTransferencia((a) => [...a, { clave: nueva, importe: '', documento: '', nombre: '', apellido: '', banco: '' }])
+                setClaveAEnfocar(nueva)
+              }}
             >
               {transferencia.map((p) => (
                 <Paper key={p.clave} withBorder p="sm">
                   <Group grow>
                     <NumberInput
+                      ref={registrarImporteRef(p.clave)}
                       label="Importe"
                       value={p.importe}
                       onChange={(v) => setTransferencia((a) => a.map((x) => (x.clave === p.clave ? { ...x, importe: String(v) } : x)))}
@@ -340,17 +391,21 @@ export default function CobroVentaPage() {
 function SeccionPagos({
   titulo,
   onAgregar,
+  agregarRef,
   children,
 }: {
   titulo: string
   onAgregar: () => void
+  /** Sólo la usa Efectivo, para que el foco arranque ahí apenas carga la pantalla (ver
+   * CobroVentaPage). */
+  agregarRef?: RefObject<HTMLButtonElement | null>
   children: ReactNode
 }) {
   return (
     <div>
       <Group justify="space-between" mb="xs">
         <Text fw={500}>{titulo}</Text>
-        <Button size="xs" variant="light" onClick={onAgregar}>
+        <Button ref={agregarRef} size="xs" variant="light" onClick={onAgregar}>
           + Agregar
         </Button>
       </Group>
