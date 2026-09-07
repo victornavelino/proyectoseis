@@ -15,7 +15,6 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { leerPesoBalanza } from '../../api/balanza'
 import { listarArticulos } from '../../api/articulo'
@@ -36,7 +35,6 @@ function nuevaClave() {
 }
 
 export default function VentaNuevaPage() {
-  const navigate = useNavigate()
   const { perfil } = useAuth()
 
   const [cliente, setCliente] = useState<Cliente | null>(null)
@@ -141,6 +139,17 @@ export default function VentaNuevaPage() {
     setCarrito((actual) => actual.filter((i) => i.clave !== clave))
   }
 
+  // Deja la página lista para la siguiente venta sin pasar por /cobrar: el carnicero solo carga
+  // ventas, el cobro lo hace otro operador aparte (desde el listado de Ventas). El empleado que
+  // atiende queda tal cual (mismo vendedor para varias ventas seguidas); el buscador de cliente
+  // se remonta con autoFocus (ver BuscadorLista) así que el foco vuelve solo ahí.
+  const reiniciarParaNuevaVenta = () => {
+    setCliente(null)
+    setCarrito([])
+    setPrevisualizacion(null)
+    setErrorPreview(null)
+  }
+
   const confirmarVenta = async () => {
     if (!cliente || !empleadoId) return
     const items = carrito.filter((i) => Number(i.cantidadPeso) > 0)
@@ -154,13 +163,13 @@ export default function VentaNuevaPage() {
       })
       notifications.show({ message: `Venta #${venta.numero_ticket} registrada.`, color: 'green' })
       // La venta ya quedó registrada en este punto — si falla sólo el PDF, no bloqueamos el
-      // flujo de cobro por eso, vamos directo a /cobrar con un aviso.
+      // flujo por eso.
       try {
         const blob = await imprimirTicket(venta.numero_ticket)
         setTicketPreview({ numeroTicket: venta.numero_ticket, url: URL.createObjectURL(blob) })
       } catch {
         notifications.show({ message: 'La venta se registró pero no se pudo generar el ticket para imprimir.', color: 'yellow' })
-        navigate(`/ventas/${venta.numero_ticket}/cobrar`)
+        reiniciarParaNuevaVenta()
       }
     } catch (err) {
       const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
@@ -173,9 +182,8 @@ export default function VentaNuevaPage() {
   const cerrarPreviewYContinuar = () => {
     if (!ticketPreview) return
     URL.revokeObjectURL(ticketPreview.url)
-    const numeroTicket = ticketPreview.numeroTicket
     setTicketPreview(null)
-    navigate(`/ventas/${numeroTicket}/cobrar`)
+    reiniciarParaNuevaVenta()
   }
 
   const precioDe = (articuloId: number) => previsualizacion?.articulos.find((a) => a.articulo === articuloId)
@@ -313,7 +321,21 @@ export default function VentaNuevaPage() {
         <Text size="xl" fw={700}>
           Total: {previsualizacion ? formatearMonto(previsualizacion.monto) : '—'}
         </Text>
-        <Button size="lg" color="red" disabled={!puedeConfirmar} loading={confirmando} onClick={() => void confirmarVenta()}>
+        <Button
+          size="lg"
+          color="red"
+          disabled={!puedeConfirmar}
+          loading={confirmando}
+          onClick={() => void confirmarVenta()}
+          onKeyDown={(e) => {
+            // Tab desde acá vuelve al buscador de artículo en vez de salir del formulario — es
+            // el último campo del flujo de carga, así que cierra el círculo para seguir
+            // cargando ítems sin soltar el teclado.
+            if (e.key !== 'Tab' || e.shiftKey) return
+            e.preventDefault()
+            articuloInputRef.current?.focus()
+          }}
+        >
           Confirmar venta
         </Button>
       </Group>
