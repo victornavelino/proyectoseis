@@ -16,6 +16,9 @@ interface Props<T> {
   enfocarSiguienteRef?: RefObject<HTMLInputElement | null>
   /** Foco automático apenas se monta el buscador (ej. al entrar a "Nueva venta"). */
   autoFocus?: boolean
+  /** Expone el input de búsqueda para que el padre le pueda devolver el foco desde afuera (ej.
+   * desde el campo de cantidad/peso al confirmar con Enter, ver VentaNuevaPage). */
+  inputRef?: RefObject<HTMLInputElement | null>
 }
 
 /** Buscador genérico: texto + lista de resultados navegable con flechas ↑/↓ y Enter (además de
@@ -31,13 +34,14 @@ export default function BuscadorLista<T>({
   minCaracteres = 2,
   enfocarSiguienteRef,
   autoFocus,
+  inputRef,
 }: Props<T>) {
   const [texto, setTexto] = useState('')
   const [textoDebounced] = useDebouncedValue(texto, 300)
   const [resultados, setResultados] = useState<T[]>([])
   const [cargando, setCargando] = useState(false)
   const [indiceActivo, setIndiceActivo] = useState(-1)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputElRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (textoDebounced.trim().length < minCaracteres) {
@@ -73,7 +77,7 @@ export default function BuscadorLista<T>({
     if (enfocarSiguienteRef?.current) {
       enfocarSiguienteRef.current.focus()
     } else {
-      inputRef.current?.focus()
+      inputElRef.current?.focus()
     }
   }
 
@@ -94,7 +98,10 @@ export default function BuscadorLista<T>({
   return (
     <div>
       <TextInput
-        ref={inputRef}
+        ref={(el) => {
+          inputElRef.current = el
+          if (inputRef) inputRef.current = el
+        }}
         placeholder={placeholder}
         value={texto}
         onChange={(e) => setTexto(e.currentTarget.value)}

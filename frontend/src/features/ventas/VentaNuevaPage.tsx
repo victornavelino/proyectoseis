@@ -47,7 +47,10 @@ export default function VentaNuevaPage() {
   const [errorPreview, setErrorPreview] = useState<string | null>(null)
   const [confirmando, setConfirmando] = useState(false)
   const [ticketPreview, setTicketPreview] = useState<{ numeroTicket: number; url: string } | null>(null)
+  const [claveAEnfocar, setClaveAEnfocar] = useState<string | null>(null)
   const empleadoInputRef = useRef<HTMLInputElement>(null)
+  const articuloInputRef = useRef<HTMLInputElement>(null)
+  const cantidadRefs = useRef(new Map<string, HTMLInputElement>())
 
   useEffect(() => {
     listarEmpleadosActivos()
@@ -65,6 +68,19 @@ export default function VentaNuevaPage() {
       setEmpleadoId(String(perfil.empleado))
     }
   }, [empleados, perfil, empleadoId])
+
+  // Apenas se agrega un artículo, el foco salta a su campo de Cantidad/Peso (ver
+  // agregarArticulo) — la fila recién se crea en este render, así que hace falta esperar a que
+  // el ref del input exista.
+  useEffect(() => {
+    if (!claveAEnfocar) return
+    const input = cantidadRefs.current.get(claveAEnfocar)
+    if (input) {
+      input.focus()
+      input.select()
+    }
+    setClaveAEnfocar(null)
+  }, [claveAEnfocar])
 
   const [carritoDebounced] = useDebouncedValue(carrito, 400)
 
@@ -103,6 +119,7 @@ export default function VentaNuevaPage() {
         cantidadPeso: articulo.es_por_peso ? '' : '1',
       },
     ])
+    setClaveAEnfocar(clave)
     if (articulo.es_por_peso) {
       try {
         const peso = await leerPesoBalanza()
@@ -223,6 +240,7 @@ export default function VentaNuevaPage() {
           placeholder="Buscar artículo por nombre o código…"
           buscar={(q) => listarArticulos({ search: q }).then((r) => r.results)}
           onSeleccionar={(a) => void agregarArticulo(a)}
+          inputRef={articuloInputRef}
           clave={(a) => a.id}
           renderItem={(a) => (
             <Group justify="space-between">
@@ -250,8 +268,17 @@ export default function VentaNuevaPage() {
                 <Table.Td>{item.articuloNombre}</Table.Td>
                 <Table.Td>
                   <NumberInput
+                    ref={(el) => {
+                      if (el) cantidadRefs.current.set(item.clave, el)
+                      else cantidadRefs.current.delete(item.clave)
+                    }}
                     value={item.cantidadPeso}
                     onChange={(v) => actualizarCantidad(item.clave, String(v))}
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter') return
+                      e.preventDefault()
+                      articuloInputRef.current?.focus()
+                    }}
                     decimalScale={2}
                     min={0}
                     w={110}
