@@ -5,10 +5,12 @@ import {
   Badge,
   Button,
   Container,
+  Divider,
   Group,
   NumberInput,
   Paper,
   Select,
+  Stack,
   Table,
   Text,
   Title,
@@ -191,153 +193,186 @@ export default function VentaNuevaPage() {
   const puedeConfirmar = !!cliente && !!empleadoId && carrito.length > 0 && !errorPreview && !!previsualizacion
 
   return (
-    <Container size="md" py="md">
+    <Container size="lg" py="md">
       <Title order={2}>Nueva venta</Title>
       <Text c="dimmed" size="sm" mb="lg">
         Punto de venta
       </Text>
 
-      <Paper withBorder p="md" mb="md">
-        <Group grow align="flex-start">
-          <div>
-            <Text fw={500} size="sm" mb={4}>
-              Cliente
-            </Text>
-            {cliente ? (
-              <Group justify="space-between">
-                <Text>
-                  {cliente.persona_detalle.apellido}, {cliente.persona_detalle.nombre}
+      <Group align="flex-start" gap="lg">
+        <Stack gap="md" style={{ flex: 1, minWidth: 320 }}>
+          <Paper withBorder p="md">
+            <Group grow align="flex-start">
+              <div>
+                <Text fw={500} size="sm" mb={4}>
+                  Cliente
                 </Text>
-                <Button size="xs" variant="subtle" onClick={() => setCliente(null)}>
-                  Cambiar
-                </Button>
-              </Group>
-            ) : (
-              <BuscadorLista<Cliente>
-                placeholder="Buscar cliente por nombre o documento…"
-                buscar={(q) => listarClientes({ search: q }).then((r) => r.results)}
-                onSeleccionar={setCliente}
-                enfocarSiguienteRef={empleadoInputRef}
-                autoFocus
-                clave={(c) => c.id}
-                renderItem={(c) => (
-                  <Text size="sm">
-                    {c.persona_detalle.apellido}, {c.persona_detalle.nombre} — {c.persona_detalle.documento_identidad}
-                  </Text>
-                )}
-              />
-            )}
-          </div>
-
-          <Select
-            ref={empleadoInputRef}
-            label="Empleado que atiende"
-            placeholder="Elegir…"
-            data={empleados.map((e) => ({ value: String(e.id), label: e.persona_nombre }))}
-            value={empleadoId}
-            onChange={setEmpleadoId}
-          />
-        </Group>
-      </Paper>
-
-      <Paper withBorder p="md" mb="md">
-        <Text fw={500} size="sm" mb={4}>
-          Agregar artículo
-        </Text>
-        <BuscadorLista<Articulo>
-          placeholder="Buscar artículo por nombre o código…"
-          buscar={(q) => listarArticulos({ search: q }).then((r) => r.results)}
-          onSeleccionar={(a) => void agregarArticulo(a)}
-          inputRef={articuloInputRef}
-          clave={(a) => a.id}
-          renderItem={(a) => (
-            <Group justify="space-between">
-              <Text size="sm">{a.nombre}</Text>
-              <Badge variant="light">{a.codigo}</Badge>
-            </Group>
-          )}
-        />
-      </Paper>
-
-      <Table striped verticalSpacing="sm" mb="md">
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Artículo</Table.Th>
-            <Table.Th>Cantidad / Peso</Table.Th>
-            <Table.Th>Subtotal</Table.Th>
-            <Table.Th />
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {carrito.map((item) => {
-            const precio = precioDe(item.articuloId)
-            return (
-              <Table.Tr key={item.clave}>
-                <Table.Td>{item.articuloNombre}</Table.Td>
-                <Table.Td>
-                  <NumberInput
-                    ref={(el) => {
-                      if (el) cantidadRefs.current.set(item.clave, el)
-                      else cantidadRefs.current.delete(item.clave)
-                    }}
-                    value={item.cantidadPeso}
-                    onChange={(v) => actualizarCantidad(item.clave, String(v))}
-                    onKeyDown={(e) => {
-                      if (e.key !== 'Enter') return
-                      e.preventDefault()
-                      articuloInputRef.current?.focus()
-                    }}
-                    decimalScale={2}
-                    min={0}
-                    w={110}
+                {cliente ? (
+                  <Group justify="space-between">
+                    <Text>
+                      {cliente.persona_detalle.apellido}, {cliente.persona_detalle.nombre}
+                    </Text>
+                    <Button size="xs" variant="subtle" onClick={() => setCliente(null)}>
+                      Cambiar
+                    </Button>
+                  </Group>
+                ) : (
+                  <BuscadorLista<Cliente>
+                    placeholder="Buscar cliente por nombre o documento…"
+                    buscar={(q) => listarClientes({ search: q }).then((r) => r.results)}
+                    onSeleccionar={setCliente}
+                    enfocarSiguienteRef={empleadoInputRef}
+                    autoFocus
+                    clave={(c) => c.id}
+                    renderItem={(c) => (
+                      <Text size="sm">
+                        {c.persona_detalle.apellido}, {c.persona_detalle.nombre} — {c.persona_detalle.documento_identidad}
+                      </Text>
+                    )}
                   />
-                </Table.Td>
-                <Table.Td>{precio ? formatearMonto(precio.total_articulo) : '—'}</Table.Td>
-                <Table.Td>
-                  <ActionIcon color="red" variant="subtle" onClick={() => quitarItem(item.clave)} aria-label="Quitar">
-                    ✕
-                  </ActionIcon>
-                </Table.Td>
-              </Table.Tr>
-            )
-          })}
-          {carrito.length === 0 && (
-            <Table.Tr>
-              <Table.Td colSpan={4}>
-                <Text c="dimmed">Buscá un artículo para agregarlo.</Text>
-              </Table.Td>
-            </Table.Tr>
-          )}
-        </Table.Tbody>
-      </Table>
+                )}
+              </div>
 
-      {errorPreview && (
-        <Alert color="red" mb="md">
-          {errorPreview}
-        </Alert>
-      )}
+              <Select
+                ref={empleadoInputRef}
+                label="Empleado que atiende"
+                placeholder="Elegir…"
+                data={empleados.map((e) => ({ value: String(e.id), label: e.persona_nombre }))}
+                value={empleadoId}
+                onChange={setEmpleadoId}
+              />
+            </Group>
+          </Paper>
 
-      <Group justify="space-between" align="center">
-        <Text size="xl" fw={700}>
-          Total: {previsualizacion ? formatearMonto(previsualizacion.monto) : '—'}
-        </Text>
-        <Button
-          size="lg"
-          color="red"
-          disabled={!puedeConfirmar}
-          loading={confirmando}
-          onClick={() => void confirmarVenta()}
-          onKeyDown={(e) => {
-            // Tab desde acá vuelve al buscador de artículo en vez de salir del formulario — es
-            // el último campo del flujo de carga, así que cierra el círculo para seguir
-            // cargando ítems sin soltar el teclado.
-            if (e.key !== 'Tab' || e.shiftKey) return
-            e.preventDefault()
-            articuloInputRef.current?.focus()
-          }}
-        >
-          Confirmar venta
-        </Button>
+          <Paper withBorder p="md">
+            <Text fw={500} size="sm" mb={4}>
+              Agregar artículo
+            </Text>
+            <BuscadorLista<Articulo>
+              placeholder="Buscar artículo por nombre o código…"
+              buscar={(q) => listarArticulos({ search: q }).then((r) => r.results)}
+              onSeleccionar={(a) => void agregarArticulo(a)}
+              inputRef={articuloInputRef}
+              clave={(a) => a.id}
+              renderItem={(a) => (
+                <Group justify="space-between">
+                  <Text size="sm">{a.nombre}</Text>
+                  <Badge variant="light">{a.codigo}</Badge>
+                </Group>
+              )}
+            />
+          </Paper>
+
+          <Paper withBorder p={0}>
+            <Table striped verticalSpacing="sm">
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Artículo</Table.Th>
+                  <Table.Th>Cantidad / Peso</Table.Th>
+                  <Table.Th>Subtotal</Table.Th>
+                  <Table.Th />
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {carrito.map((item) => {
+                  const precio = precioDe(item.articuloId)
+                  return (
+                    <Table.Tr key={item.clave}>
+                      <Table.Td>{item.articuloNombre}</Table.Td>
+                      <Table.Td>
+                        <NumberInput
+                          ref={(el) => {
+                            if (el) cantidadRefs.current.set(item.clave, el)
+                            else cantidadRefs.current.delete(item.clave)
+                          }}
+                          value={item.cantidadPeso}
+                          onChange={(v) => actualizarCantidad(item.clave, String(v))}
+                          onKeyDown={(e) => {
+                            if (e.key !== 'Enter') return
+                            e.preventDefault()
+                            articuloInputRef.current?.focus()
+                          }}
+                          decimalScale={2}
+                          min={0}
+                          w={110}
+                        />
+                      </Table.Td>
+                      <Table.Td>{precio ? formatearMonto(precio.total_articulo) : '—'}</Table.Td>
+                      <Table.Td>
+                        <ActionIcon color="red" variant="subtle" onClick={() => quitarItem(item.clave)} aria-label="Quitar">
+                          ✕
+                        </ActionIcon>
+                      </Table.Td>
+                    </Table.Tr>
+                  )
+                })}
+                {carrito.length === 0 && (
+                  <Table.Tr>
+                    <Table.Td colSpan={4}>
+                      <Text c="dimmed">Buscá un artículo para agregarlo.</Text>
+                    </Table.Td>
+                  </Table.Tr>
+                )}
+              </Table.Tbody>
+            </Table>
+          </Paper>
+
+          {errorPreview && <Alert color="red">{errorPreview}</Alert>}
+        </Stack>
+
+        {/* Resumen fijo: cliente/empleado/total y el botón de confirmar quedan siempre a la
+           vista, sin depender de scrollear pasado el carrito — importante con muchos ítems. */}
+        <Paper withBorder p="lg" style={{ width: 300, flexShrink: 0, position: 'sticky', top: 16 }}>
+          <Text fw={600} size="sm" c="dimmed" mb="sm">
+            Resumen
+          </Text>
+          <Stack gap={6} mb="md">
+            <Group justify="space-between">
+              <Text size="sm" c="dimmed">
+                Cliente
+              </Text>
+              <Text size="sm" fw={500} ta="right">
+                {cliente ? `${cliente.persona_detalle.apellido}, ${cliente.persona_detalle.nombre}` : '—'}
+              </Text>
+            </Group>
+            <Group justify="space-between">
+              <Text size="sm" c="dimmed">
+                Artículos
+              </Text>
+              <Text size="sm" fw={500}>
+                {carrito.length}
+              </Text>
+            </Group>
+          </Stack>
+
+          <Divider mb="md" />
+
+          <Text size="sm" c="dimmed">
+            Total
+          </Text>
+          <Text fz={32} fw={800} mb="lg">
+            {previsualizacion ? formatearMonto(previsualizacion.monto) : '—'}
+          </Text>
+
+          <Button
+            fullWidth
+            size="lg"
+            color="red"
+            disabled={!puedeConfirmar}
+            loading={confirmando}
+            onClick={() => void confirmarVenta()}
+            onKeyDown={(e) => {
+              // Tab desde acá vuelve al buscador de artículo en vez de salir del formulario — es
+              // el último campo del flujo de carga, así que cierra el círculo para seguir
+              // cargando ítems sin soltar el teclado.
+              if (e.key !== 'Tab' || e.shiftKey) return
+              e.preventDefault()
+              articuloInputRef.current?.focus()
+            }}
+          >
+            Confirmar venta
+          </Button>
+        </Paper>
       </Group>
 
       <TicketPreviewModal

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ActionIcon, Alert, Button, Container, Divider, Group, Modal, Paper, Table, Text, Title } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Button, Container, Divider, Group, Modal, Paper, Table, Text, Title } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconPrinter } from '@tabler/icons-react'
 import { abrirCaja, cajaAbiertaActual, cerrarCaja, listarCajas } from '../../api/caja'
@@ -81,32 +81,37 @@ export default function CajaPage() {
         {cargando ? (
           <Text>Cargando…</Text>
         ) : cajaAbierta ? (
-          <>
-            <Group justify="space-between">
-              <div>
-                <Text fw={600}>Caja abierta</Text>
-                <Text size="sm" c="dimmed">
-                  Desde {new Date(cajaAbierta.fecha_inicio).toLocaleString('es-AR')}
-                </Text>
-                <Text mt="xs">Saldo actual: {formatearMonto(cajaAbierta.saldo_actual)}</Text>
-              </div>
-              <Button color="red" loading={procesando} onClick={() => void handleCerrar()}>
-                Cerrar caja
-              </Button>
-            </Group>
-          </>
+          <Group justify="space-between" align="flex-end">
+            <div>
+              <Badge color="green" variant="light" mb={6}>
+                Caja abierta
+              </Badge>
+              <Text size="sm" c="dimmed">
+                Desde {new Date(cajaAbierta.fecha_inicio).toLocaleString('es-AR')}
+              </Text>
+              <Text size="sm" c="dimmed" mt={4}>
+                Saldo actual
+              </Text>
+              <Text fz={32} fw={800}>
+                {formatearMonto(cajaAbierta.saldo_actual)}
+              </Text>
+            </div>
+            <Button size="lg" color="red" loading={procesando} onClick={() => void handleCerrar()}>
+              Cerrar caja
+            </Button>
+          </Group>
         ) : (
-          <Group justify="space-between">
+          <Group justify="space-between" align="center">
             <Text>No hay una caja abierta en esta sucursal.</Text>
-            <Button color="red" loading={procesando} onClick={() => void handleAbrir()}>
+            <Button size="lg" color="red" loading={procesando} onClick={() => void handleAbrir()}>
               Abrir caja
             </Button>
           </Group>
         )}
       </Paper>
 
-      <Paper withBorder p="md">
-        <Text size="sm" c="dimmed" mb="sm">
+      <Paper withBorder p={0}>
+        <Text size="sm" c="dimmed" p="md" pb={0}>
           Historial
         </Text>
         <Table striped verticalSpacing="sm">
@@ -143,35 +148,59 @@ export default function CajaPage() {
             ))}
           </Table.Tbody>
         </Table>
-        {!cargando && historial.length === 0 && <EstadoVacio titulo="Sin cajas todavía" />}
+        {!cargando && historial.length === 0 && (
+          <div style={{ padding: 'var(--mantine-spacing-md)' }}>
+            <EstadoVacio titulo="Sin cajas todavía" />
+          </div>
+        )}
       </Paper>
 
       <Modal opened={!!resumen} onClose={() => setResumen(null)} title="Resumen de cierre" size="md">
         {resumen && (
           <>
-            <Text fw={600}>Caja final: {formatearMonto(resumen.caja_final)}</Text>
+            <Text size="sm" c="dimmed">
+              Caja final
+            </Text>
+            <Text fz={28} fw={800} mb="md">
+              {formatearMonto(resumen.caja_final)}
+            </Text>
+
             <Divider my="sm" label="Ingresos" labelPosition="center" />
             {resumen.ingresos.map((i) => (
               <Group justify="space-between" key={i.concepto}>
-                <Text size="sm">{i.concepto}</Text>
-                <Text size="sm">{formatearMonto(i.importe)}</Text>
+                <Text size="sm" c="dimmed">
+                  {i.concepto}
+                </Text>
+                <Text size="sm" c="green.8">
+                  {formatearMonto(i.importe)}
+                </Text>
               </Group>
             ))}
             <Group justify="space-between" fw={600} mt={4}>
               <Text size="sm">{resumen.total_ingresos.concepto}</Text>
-              <Text size="sm">{formatearMonto(resumen.total_ingresos.importe)}</Text>
+              <Text size="sm" c="green.8">
+                {formatearMonto(resumen.total_ingresos.importe)}
+              </Text>
             </Group>
+
             <Divider my="sm" label="Egresos" labelPosition="center" />
             {resumen.egresos.map((e) => (
               <Group justify="space-between" key={e.concepto}>
-                <Text size="sm">{e.concepto}</Text>
-                <Text size="sm">{formatearMonto(e.importe)}</Text>
+                <Text size="sm" c="dimmed">
+                  {e.concepto}
+                </Text>
+                <Text size="sm" c="red.8">
+                  {formatearMonto(e.importe)}
+                </Text>
               </Group>
             ))}
             <Group justify="space-between" fw={600} mt={4}>
               <Text size="sm">{resumen.total_egresos.concepto}</Text>
-              <Text size="sm">{formatearMonto(resumen.total_egresos.importe)}</Text>
+              <Text size="sm" c="red.8">
+                {formatearMonto(resumen.total_egresos.importe)}
+              </Text>
             </Group>
+
             <Divider my="sm" />
             <Group justify="space-between" fw={600}>
               <Text size="sm">{resumen.total_cuenta_corriente.concepto}</Text>

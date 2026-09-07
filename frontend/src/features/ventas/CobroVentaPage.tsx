@@ -127,11 +127,11 @@ export default function CobroVentaPage() {
   if (!venta) return <Container py="md">No se encontró la venta.</Container>
 
   return (
-    <Container size="md" py="md">
-      <Group justify="space-between" align="flex-start">
+    <Container size="lg" py="md">
+      <Group justify="space-between" align="flex-start" mb="lg">
         <div>
           <Title order={2}>Cobrar venta #{venta.numero_ticket}</Title>
-          <Text c="dimmed" size="sm" mb="lg">
+          <Text c="dimmed" size="sm">
             {venta.cliente_nombre} — Total {formatearMonto(venta.monto)}
           </Text>
         </div>
@@ -145,12 +145,20 @@ export default function CobroVentaPage() {
         </ActionIcon>
       </Group>
 
-      {venta.anulado && <Alert color="red">Esta venta está anulada.</Alert>}
-      {venta.cobrada && !venta.anulado && <Alert color="green">Esta venta ya fue cobrada.</Alert>}
+      {venta.anulado && (
+        <Alert color="red" mb="md">
+          Esta venta está anulada.
+        </Alert>
+      )}
+      {venta.cobrada && !venta.anulado && (
+        <Alert color="green" mb="md">
+          Esta venta ya fue cobrada.
+        </Alert>
+      )}
 
       {!venta.anulado && !venta.cobrada && (
-        <>
-          <Stack gap="md">
+        <Group align="flex-start" gap="lg" mb="lg">
+          <Stack gap="md" style={{ flex: 1, minWidth: 320 }}>
             <SeccionPagos
               titulo="Efectivo"
               onAgregar={() => setEfectivo((a) => [...a, { clave: clave(), importe: '' }])}
@@ -260,18 +268,38 @@ export default function CobroVentaPage() {
             </SeccionPagos>
           </Stack>
 
-          <Divider my="md" />
-
-          <Group justify="space-between">
-            <Text>
-              Ingresado: <strong>{formatearMonto(totalIngresado)}</strong> / A cobrar:{' '}
-              <strong>{formatearMonto(totalVenta)}</strong>
+          {/* Resumen fijo del cobro: siempre a la vista mientras se cargan varios pagos
+             parciales, sin depender de scrollear hasta el final de las secciones. */}
+          <Paper withBorder p="lg" style={{ width: 300, flexShrink: 0, position: 'sticky', top: 16 }}>
+            <Text fw={600} size="sm" c="dimmed" mb="sm">
+              Resumen del cobro
             </Text>
-            <Badge color={coincide ? 'green' : 'red'}>{coincide ? 'Coincide' : 'No coincide'}</Badge>
-          </Group>
 
-          <Group justify="flex-end" mt="md">
+            <Stack gap={6} mb="md">
+              <Group justify="space-between">
+                <Text size="sm" c="dimmed">
+                  A cobrar
+                </Text>
+                <Text size="sm" fw={500}>
+                  {formatearMonto(totalVenta)}
+                </Text>
+              </Group>
+              <Group justify="space-between">
+                <Text size="sm" c="dimmed">
+                  Ingresado
+                </Text>
+                <Text size="sm" fw={500}>
+                  {formatearMonto(totalIngresado)}
+                </Text>
+              </Group>
+            </Stack>
+
+            <Badge fullWidth color={coincide ? 'green' : 'red'} size="lg" mb="lg">
+              {coincide ? 'Coincide' : 'No coincide'}
+            </Badge>
+
             <Button
+              fullWidth
               size="lg"
               color="red"
               disabled={!coincide || !hayAlgunPago}
@@ -280,29 +308,31 @@ export default function CobroVentaPage() {
             >
               Confirmar cobro
             </Button>
-          </Group>
-        </>
+          </Paper>
+        </Group>
       )}
 
-      <Divider my="lg" label="Detalle de la venta" labelPosition="center" />
-      <Table striped verticalSpacing="xs">
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Artículo</Table.Th>
-            <Table.Th>Cantidad</Table.Th>
-            <Table.Th>Subtotal</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {venta.articulos.map((a) => (
-            <Table.Tr key={a.id}>
-              <Table.Td>{a.nombre_articulo}</Table.Td>
-              <Table.Td>{a.cantidad_peso}</Table.Td>
-              <Table.Td>{formatearMonto(a.total_articulo)}</Table.Td>
+      <Paper withBorder p={0}>
+        <Divider label="Detalle de la venta" labelPosition="center" pt="sm" />
+        <Table striped verticalSpacing="xs">
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Artículo</Table.Th>
+              <Table.Th>Cantidad</Table.Th>
+              <Table.Th>Subtotal</Table.Th>
             </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
+          </Table.Thead>
+          <Table.Tbody>
+            {venta.articulos.map((a) => (
+              <Table.Tr key={a.id}>
+                <Table.Td>{a.nombre_articulo}</Table.Td>
+                <Table.Td>{a.cantidad_peso}</Table.Td>
+                <Table.Td>{formatearMonto(a.total_articulo)}</Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </Paper>
     </Container>
   )
 }

@@ -8,11 +8,14 @@ import { Notifications } from '@mantine/notifications'
 import App from './App'
 import './index.css'
 
-// Tema mínimo por ahora — se ajusta (colores, tamaños) al construir las primeras pantallas
-// reales de mostrador (especificaciones.md: botones claros, uso cómodo en atención al público).
+// Inter + estilo flat/Swiss (sin sombras ni degradés, alto contraste, jerarquía clara) — pensado
+// para pantallas de mostrador de uso repetitivo: especificaciones.md pide botones claros y uso
+// cómodo en atención al público.
 const theme = createTheme({
   primaryColor: 'red',
-  fontFamily: 'system-ui, -apple-system, sans-serif',
+  fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+  headings: { fontFamily: 'Inter, system-ui, -apple-system, sans-serif', fontWeight: '700' },
+  defaultRadius: 'md',
 })
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
