@@ -14,6 +14,8 @@ interface Props<T> {
    * "Empleado" en VentaNuevaPage). Si no se pasa, el foco vuelve al propio input de búsqueda
    * (lo natural cuando este buscador se usa para agregar varios ítems seguidos, ej. artículos). */
   enfocarSiguienteRef?: RefObject<HTMLInputElement | null>
+  /** Foco automático apenas se monta el buscador (ej. al entrar a "Nueva venta"). */
+  autoFocus?: boolean
 }
 
 /** Buscador genérico: texto + lista de resultados navegable con flechas ↑/↓ y Enter (además de
@@ -28,6 +30,7 @@ export default function BuscadorLista<T>({
   clave,
   minCaracteres = 2,
   enfocarSiguienteRef,
+  autoFocus,
 }: Props<T>) {
   const [texto, setTexto] = useState('')
   const [textoDebounced] = useDebouncedValue(texto, 300)
@@ -97,6 +100,7 @@ export default function BuscadorLista<T>({
         onChange={(e) => setTexto(e.currentTarget.value)}
         onKeyDown={onKeyDown}
         rightSection={cargando ? <Loader size="xs" /> : null}
+        autoFocus={autoFocus}
       />
       {resultados.length > 0 && (
         <Paper withBorder mt={4} p={4} shadow="sm" style={{ maxHeight: 220, overflowY: 'auto' }}>

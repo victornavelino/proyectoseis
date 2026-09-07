@@ -193,6 +193,7 @@ export default function VentaNuevaPage() {
                 buscar={(q) => listarClientes({ search: q }).then((r) => r.results)}
                 onSeleccionar={setCliente}
                 enfocarSiguienteRef={empleadoInputRef}
+                autoFocus
                 clave={(c) => c.id}
                 renderItem={(c) => (
                   <Text size="sm">
