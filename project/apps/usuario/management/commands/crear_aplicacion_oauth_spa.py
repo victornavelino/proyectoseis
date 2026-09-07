@@ -25,6 +25,16 @@ class Command(BaseCommand):
                 "entorno OAUTH2_SPA_REDIRECT_URIS (settings.OAUTH2_SPA_REDIRECT_URIS)."
             ),
         )
+        parser.add_argument(
+            '--client-id', default=None,
+            help=(
+                "Fuerza un client_id específico en vez de generar uno nuevo. Necesario al "
+                "recrear la Application en una base restaurada de un backup (el frontend ya "
+                "tiene el client_id anterior horneado en el build de Vite, VITE_OAUTH_CLIENT_ID) "
+                "— sin esto, --nombre matchea por nombre y de no existir la fila crea una "
+                "Application con client_id nuevo que ya no coincide con el que usa el frontend."
+            ),
+        )
 
     def handle(self, *args, **options):
         redirect_uris = options['redirect_uris'] or settings.OAUTH2_SPA_REDIRECT_URIS
@@ -35,20 +45,29 @@ class Command(BaseCommand):
             ))
             return
 
-        app, created = Application.objects.update_or_create(
-            name=options['nombre'],
-            defaults={
-                'client_type': Application.CLIENT_PUBLIC,
-                'authorization_grant_type': Application.GRANT_AUTHORIZATION_CODE,
-                'redirect_uris': ' '.join(redirect_uris),
-                # True: esta Application ES el propio frontend del sistema (primera parte, no
-                # una app de terceros) — no tiene sentido pedirle "autorización" al usuario para
-                # sí mismo, así que se salta la pantalla de "¿Autorizar a Frontend SPA?". Si
-                # algún día se agrega una integración de un tercero real, esa sí debería llevar
-                # 'skip_authorization': False.
-                'skip_authorization': True,
-            },
-        )
+        defaults = {
+            'name': options['nombre'],
+            'client_type': Application.CLIENT_PUBLIC,
+            'authorization_grant_type': Application.GRANT_AUTHORIZATION_CODE,
+            'redirect_uris': ' '.join(redirect_uris),
+            # True: esta Application ES el propio frontend del sistema (primera parte, no
+            # una app de terceros) — no tiene sentido pedirle "autorización" al usuario para
+            # sí mismo, así que se salta la pantalla de "¿Autorizar a Frontend SPA?". Si
+            # algún día se agrega una integración de un tercero real, esa sí debería llevar
+            # 'skip_authorization': False.
+            'skip_authorization': True,
+        }
+
+        if options['client_id']:
+            # Buscar/crear por client_id explícito: preserva la identidad que ya conoce el
+            # frontend en vez de matchear por nombre (ver help de --client-id).
+            app, created = Application.objects.update_or_create(
+                client_id=options['client_id'], defaults=defaults,
+            )
+        else:
+            app, created = Application.objects.update_or_create(
+                name=options['nombre'], defaults=defaults,
+            )
         accion = 'creada' if created else 'actualizada'
         self.stdout.write(self.style.SUCCESS(f"Application '{app.name}' {accion}."))
         self.stdout.write(f"client_id: {app.client_id}")
