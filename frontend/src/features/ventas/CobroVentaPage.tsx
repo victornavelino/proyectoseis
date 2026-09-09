@@ -7,6 +7,7 @@ import {
   Container,
   Divider,
   Group,
+  Kbd,
   NumberInput,
   Paper,
   Select,
@@ -112,6 +113,29 @@ export default function CobroVentaPage() {
     else importeRefs.current.delete(itemClave)
   }
 
+  // Un método de pago por sección — se usan tanto desde el botón "+ Agregar" como desde los
+  // atajos de teclado F1/F2/F3/F6 (ver el listener más abajo).
+  const agregarEfectivo = () => {
+    const nueva = clave()
+    setEfectivo((a) => [...a, { clave: nueva, importe: '' }])
+    setClaveAEnfocar(nueva)
+  }
+  const agregarTarjeta = () => {
+    const nueva = clave()
+    setTarjeta((a) => [...a, { clave: nueva, planTarjetaId: null, numeroTarjeta: '', importe: '', numeroCupon: '', lote: '' }])
+    setClaveAEnfocar(nueva)
+  }
+  const agregarCc = () => {
+    const nueva = clave()
+    setCc((a) => [...a, { clave: nueva, importe: '' }])
+    setClaveAEnfocar(nueva)
+  }
+  const agregarTransferencia = () => {
+    const nueva = clave()
+    setTransferencia((a) => [...a, { clave: nueva, importe: '', documento: '', nombre: '', apellido: '', banco: '' }])
+    setClaveAEnfocar(nueva)
+  }
+
   const totalIngresado = useMemo(() => {
     const suma = (lista: { importe: string }[]) => lista.reduce((acc, p) => acc + (Number(p.importe) || 0), 0)
     return suma(efectivo) + suma(tarjeta) + suma(cc) + suma(transferencia)
@@ -154,6 +178,41 @@ export default function CobroVentaPage() {
     }
   }
 
+  // Atajos de teclado del cobro: F1/F2/F3/F6 agregan un pago del método correspondiente (igual
+  // que tocar "+ Agregar") y F4 confirma el cobro — así el cajero no necesita el mouse. Van a
+  // nivel de window (no de un input puntual) porque son teclas de función, no imprimibles: no
+  // interfieren con lo que se esté tipeando en ese momento.
+  useEffect(() => {
+    if (cargando || !venta || venta.anulado || venta.cobrada) return
+    const onKeyDown = (e: globalThis.KeyboardEvent) => {
+      switch (e.key) {
+        case 'F1':
+          e.preventDefault()
+          agregarEfectivo()
+          break
+        case 'F2':
+          e.preventDefault()
+          agregarTarjeta()
+          break
+        case 'F3':
+          e.preventDefault()
+          agregarCc()
+          break
+        case 'F6':
+          e.preventDefault()
+          agregarTransferencia()
+          break
+        case 'F4':
+          e.preventDefault()
+          if (coincide && hayAlgunPago && !cobrando) void confirmarCobro()
+          break
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cargando, venta, coincide, hayAlgunPago, cobrando])
+
   if (cargando) return <Container py="md">Cargando…</Container>
   if (!venta) return <Container py="md">No se encontró la venta.</Container>
 
@@ -190,15 +249,7 @@ export default function CobroVentaPage() {
       {!venta.anulado && !venta.cobrada && (
         <Group align="flex-start" gap="lg" mb="lg">
           <Stack gap="md" style={{ flex: 1, minWidth: 320 }}>
-            <SeccionPagos
-              titulo="Efectivo"
-              agregarRef={efectivoAgregarRef}
-              onAgregar={() => {
-                const nueva = clave()
-                setEfectivo((a) => [...a, { clave: nueva, importe: '' }])
-                setClaveAEnfocar(nueva)
-              }}
-            >
+            <SeccionPagos titulo="Efectivo" atajo="F1" agregarRef={efectivoAgregarRef} onAgregar={agregarEfectivo}>
               {efectivo.map((p) => (
                 <Group key={p.clave}>
                   <NumberInput
@@ -216,14 +267,7 @@ export default function CobroVentaPage() {
               ))}
             </SeccionPagos>
 
-            <SeccionPagos
-              titulo="Tarjeta"
-              onAgregar={() => {
-                const nueva = clave()
-                setTarjeta((a) => [...a, { clave: nueva, planTarjetaId: null, numeroTarjeta: '', importe: '', numeroCupon: '', lote: '' }])
-                setClaveAEnfocar(nueva)
-              }}
-            >
+            <SeccionPagos titulo="Tarjeta" atajo="F2" onAgregar={agregarTarjeta}>
               {tarjeta.map((p) => (
                 <Paper key={p.clave} withBorder p="sm">
                   <Group grow>
@@ -261,14 +305,7 @@ export default function CobroVentaPage() {
               ))}
             </SeccionPagos>
 
-            <SeccionPagos
-              titulo="Cuenta corriente"
-              onAgregar={() => {
-                const nueva = clave()
-                setCc((a) => [...a, { clave: nueva, importe: '' }])
-                setClaveAEnfocar(nueva)
-              }}
-            >
+            <SeccionPagos titulo="Cuenta corriente" atajo="F3" onAgregar={agregarCc}>
               {cc.map((p) => (
                 <Group key={p.clave}>
                   <NumberInput
@@ -286,14 +323,7 @@ export default function CobroVentaPage() {
               ))}
             </SeccionPagos>
 
-            <SeccionPagos
-              titulo="Transferencia"
-              onAgregar={() => {
-                const nueva = clave()
-                setTransferencia((a) => [...a, { clave: nueva, importe: '', documento: '', nombre: '', apellido: '', banco: '' }])
-                setClaveAEnfocar(nueva)
-              }}
-            >
+            <SeccionPagos titulo="Transferencia" atajo="F6" onAgregar={agregarTransferencia}>
               {transferencia.map((p) => (
                 <Paper key={p.clave} withBorder p="sm">
                   <Group grow>
@@ -349,16 +379,19 @@ export default function CobroVentaPage() {
               {coincide ? 'Coincide' : 'No coincide'}
             </Badge>
 
-            <Button
-              fullWidth
-              size="lg"
-              color="red"
-              disabled={!coincide || !hayAlgunPago}
-              loading={cobrando}
-              onClick={() => void confirmarCobro()}
-            >
-              Confirmar cobro
-            </Button>
+            <Group gap="xs" wrap="nowrap" align="stretch">
+              <Button
+                flex={1}
+                size="lg"
+                color="red"
+                disabled={!coincide || !hayAlgunPago}
+                loading={cobrando}
+                onClick={() => void confirmarCobro()}
+              >
+                Confirmar cobro
+              </Button>
+              <Kbd style={{ alignSelf: 'center' }}>F4</Kbd>
+            </Group>
           </Paper>
         </Group>
       )}
@@ -390,11 +423,15 @@ export default function CobroVentaPage() {
 
 function SeccionPagos({
   titulo,
+  atajo,
   onAgregar,
   agregarRef,
   children,
 }: {
   titulo: string
+  /** Tecla de función que agrega un pago de este método (ver el listener en CobroVentaPage) —
+   * se muestra al lado de "+ Agregar" a modo de leyenda guía. */
+  atajo: string
   onAgregar: () => void
   /** Sólo la usa Efectivo, para que el foco arranque ahí apenas carga la pantalla (ver
    * CobroVentaPage). */
@@ -405,9 +442,12 @@ function SeccionPagos({
     <div>
       <Group justify="space-between" mb="xs">
         <Text fw={500}>{titulo}</Text>
-        <Button ref={agregarRef} size="xs" variant="light" onClick={onAgregar}>
-          + Agregar
-        </Button>
+        <Group gap="xs" wrap="nowrap">
+          <Kbd>{atajo}</Kbd>
+          <Button ref={agregarRef} size="xs" variant="light" onClick={onAgregar}>
+            + Agregar
+          </Button>
+        </Group>
       </Group>
       <Stack gap="xs">{children}</Stack>
     </div>
