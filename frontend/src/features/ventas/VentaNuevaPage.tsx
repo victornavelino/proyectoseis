@@ -7,6 +7,7 @@ import {
   Container,
   Divider,
   Group,
+  Kbd,
   NumberInput,
   Paper,
   Select,
@@ -192,6 +193,19 @@ export default function VentaNuevaPage() {
 
   const puedeConfirmar = !!cliente && !!empleadoId && carrito.length > 0 && !errorPreview && !!previsualizacion
 
+  // Atajo de teclado F4 = confirmar venta, igual que en el cobro (ver CobroVentaPage) — a nivel
+  // de window porque es una tecla de función, no interfiere con lo que se esté tipeando.
+  useEffect(() => {
+    const onKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (e.key !== 'F4') return
+      e.preventDefault()
+      if (puedeConfirmar && !confirmando) void confirmarVenta()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [puedeConfirmar, confirmando])
+
   return (
     <Container size="lg" py="md">
       <Title order={2}>Nueva venta</Title>
@@ -354,24 +368,27 @@ export default function VentaNuevaPage() {
             {previsualizacion ? formatearMonto(previsualizacion.monto) : '—'}
           </Text>
 
-          <Button
-            fullWidth
-            size="lg"
-            color="red"
-            disabled={!puedeConfirmar}
-            loading={confirmando}
-            onClick={() => void confirmarVenta()}
-            onKeyDown={(e) => {
-              // Tab desde acá vuelve al buscador de artículo en vez de salir del formulario — es
-              // el último campo del flujo de carga, así que cierra el círculo para seguir
-              // cargando ítems sin soltar el teclado.
-              if (e.key !== 'Tab' || e.shiftKey) return
-              e.preventDefault()
-              articuloInputRef.current?.focus()
-            }}
-          >
-            Confirmar venta
-          </Button>
+          <Group gap="xs" wrap="nowrap" align="stretch">
+            <Button
+              flex={1}
+              size="lg"
+              color="red"
+              disabled={!puedeConfirmar}
+              loading={confirmando}
+              onClick={() => void confirmarVenta()}
+              onKeyDown={(e) => {
+                // Tab desde acá vuelve al buscador de artículo en vez de salir del formulario —
+                // es el último campo del flujo de carga, así que cierra el círculo para seguir
+                // cargando ítems sin soltar el teclado.
+                if (e.key !== 'Tab' || e.shiftKey) return
+                e.preventDefault()
+                articuloInputRef.current?.focus()
+              }}
+            >
+              Confirmar venta
+            </Button>
+            <Kbd style={{ alignSelf: 'center' }}>F4</Kbd>
+          </Group>
         </Paper>
       </Group>
 
