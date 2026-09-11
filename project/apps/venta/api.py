@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q
+from django.db.models import Q, Sum
+from django.utils import timezone
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError as DRFValidationError
@@ -7,7 +10,10 @@ from rest_framework.response import Response
 
 from decimal import Decimal, ROUND_HALF_UP
 
-from cuentacorriente.models import CuentaCorriente
+from caja.models import Caja, CobroVenta, CuponPagoTarjeta, PagoTransferencia
+from caja.utils import calcular_saldo_caja
+from cuentacorriente.constants import DEBITO
+from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from cuentacorriente.utils import calcular_saldo_cc
 from util.pdf import render_pdf_response
 from venta.exceptions import (
@@ -87,6 +93,134 @@ class VentaViewSet(viewsets.ReadOnlyModelViewSet):
         except ArticuloSinPrecioError as exc:
             raise DRFValidationError({'articulos': str(exc)})
         return Response(VentaSerializer(venta).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'], url_path='resumen-dashboard')
+    def resumen_dashboard(self, request):
+        """Resumen agregado para los gráficos de la pantalla de Inicio: ventas de hoy, estado de
+        caja, evolución de ventas, cortes más vendidos y medios de pago — todo filtrado por la
+        sucursal del usuario logueado (mismo criterio que `crear`/`previsualizar`), así que no
+        cruza datos entre sucursales aunque compartan la misma base.
+        `?dias=<N>` (default 14, tope 90) define la ventana de los gráficos de evolución/top
+        artículos/medios de pago; la tarjeta "hoy" es siempre del día en curso.
+        """
+        sucursal = request.user.sucursal
+        if sucursal is None:
+            raise DRFValidationError({'usuario': 'El usuario no tiene una sucursal asignada.'})
+
+        try:
+            dias = min(max(int(request.query_params.get('dias', 14)), 1), 90)
+        except ValueError:
+            dias = 14
+
+        CENTAVO = Decimal('0.01')
+
+        def _money(valor):
+            # Sum() sobre un DecimalField(decimal_places=2) preserva la escala en Postgres, pero
+            # no en SQLite (usado en los tests) — se cuantiza siempre acá para que la respuesta
+            # no dependa del motor de base de datos.
+            return str((valor or Decimal('0')).quantize(CENTAVO, rounding=ROUND_HALF_UP))
+
+        hoy = timezone.localdate()
+        desde = hoy - timedelta(days=dias - 1)
+        ventas_no_anuladas = Venta.objects.filter(sucursal=sucursal, anulado=False)
+
+        agregado_hoy = ventas_no_anuladas.filter(fecha__date=hoy).aggregate(
+            total=Sum('monto'),
+        )
+        total_hoy = agregado_hoy['total'] or Decimal('0')
+        # Se cuenta acá (no en el aggregate de arriba) para no depender de qué campo cuenta
+        # Count(): con numero_ticket alcanza, pero un aggregate ya resuelto es más barato.
+        cantidad_hoy = ventas_no_anuladas.filter(fecha__date=hoy).count()
+        ticket_promedio = total_hoy / cantidad_hoy if cantidad_hoy else Decimal('0')
+
+        caja_abierta = Caja.objects.filter(
+            sucursal=sucursal, fecha_fin__isnull=True, fecha_inicio__isnull=False
+        ).last()
+        if caja_abierta:
+            caja_data = {
+                'abierta': True,
+                'fecha_apertura': caja_abierta.fecha_inicio,
+                'saldo': _money(calcular_saldo_caja(caja_abierta)),
+            }
+        else:
+            caja_data = {'abierta': False}
+
+        # Evolución de ventas por día — se completan los días sin ventas con 0 para que el
+        # gráfico de línea del frontend no salte fechas.
+        totales_por_fecha = {
+            fila['fecha__date']: fila['total']
+            for fila in ventas_no_anuladas.filter(fecha__date__gte=desde)
+            .values('fecha__date')
+            .annotate(total=Sum('monto'))
+        }
+        ventas_por_dia = [
+            {
+                'fecha': (desde + timedelta(days=i)).isoformat(),
+                'total': _money(totales_por_fecha.get(desde + timedelta(days=i))),
+            }
+            for i in range(dias)
+        ]
+
+        top_articulos = [
+            {
+                'articulo': fila['articulo_id'],
+                'nombre': fila['nombre_articulo'],
+                'cantidad': str(fila['cantidad']),
+                'total': _money(fila['total']),
+            }
+            for fila in (
+                VentaArticulo.objects.filter(
+                    venta__sucursal=sucursal, venta__anulado=False, venta__fecha__date__gte=desde,
+                )
+                .values('articulo_id', 'nombre_articulo')
+                .annotate(cantidad=Sum('cantidad_peso'), total=Sum('total_articulo'))
+                .order_by('-total')[:8]
+            )
+        ]
+
+        def _suma(queryset):
+            return _money(queryset.aggregate(total=Sum('importe'))['total'])
+
+        medios_pago = [
+            {
+                'medio': 'efectivo',
+                'total': _suma(CobroVenta.objects.filter(
+                    sucursal=sucursal, venta__isnull=False, venta__anulado=False,
+                    venta__fecha__date__gte=desde,
+                )),
+            },
+            {
+                'medio': 'tarjeta',
+                'total': _suma(CuponPagoTarjeta.objects.filter(
+                    venta__sucursal=sucursal, venta__anulado=False, venta__fecha__date__gte=desde,
+                )),
+            },
+            {
+                'medio': 'cuenta_corriente',
+                'total': _suma(MovimientoCuentaCorriente.objects.filter(
+                    tipo=DEBITO, venta__sucursal=sucursal, venta__anulado=False,
+                    venta__fecha__date__gte=desde,
+                )),
+            },
+            {
+                'medio': 'transferencia',
+                'total': _suma(PagoTransferencia.objects.filter(
+                    venta__sucursal=sucursal, venta__anulado=False, venta__fecha__date__gte=desde,
+                )),
+            },
+        ]
+
+        return Response({
+            'hoy': {
+                'total': _money(total_hoy),
+                'cantidad_tickets': cantidad_hoy,
+                'ticket_promedio': _money(ticket_promedio),
+            },
+            'caja': caja_data,
+            'ventas_por_dia': ventas_por_dia,
+            'top_articulos': top_articulos,
+            'medios_pago': medios_pago,
+        })
 
     @action(detail=False, methods=['post'])
     def previsualizar(self, request):

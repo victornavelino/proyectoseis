@@ -1,6 +1,6 @@
 import { apiFetch, apiFetchBlob } from './client'
 import type { PaginatedResponse } from '../types/api'
-import type { CrearVentaInput, ItemVentaInput, Venta, VentaPrevisualizada } from '../types/venta'
+import type { CrearVentaInput, ItemVentaInput, ResumenDashboard, Venta, VentaPrevisualizada } from '../types/venta'
 
 const POR_PAGINA = 10
 
@@ -33,4 +33,9 @@ export function crearVenta(datos: CrearVentaInput) {
 /** Ticket de venta en PDF (WeasyPrint, ver venta.api.VentaViewSet.imprimir en el backend). */
 export function imprimirTicket(numeroTicket: number) {
   return apiFetchBlob(`api/v1/venta/${numeroTicket}/imprimir/`)
+}
+
+/** Resumen para los gráficos de Inicio (ver venta.api.VentaViewSet.resumen_dashboard). */
+export function obtenerResumenDashboard(dias = 14) {
+  return apiFetch<ResumenDashboard>('api/v1/venta/resumen-dashboard/', { params: { dias } })
 }

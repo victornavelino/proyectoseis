@@ -63,3 +63,16 @@ export interface VentaPrevisualizada {
   articulos: ItemPrevisualizado[]
   monto: string
 }
+
+/** Ver venta.api.VentaViewSet.resumen_dashboard en el backend. */
+export interface ResumenDashboard {
+  hoy: {
+    total: string
+    cantidad_tickets: number
+    ticket_promedio: string
+  }
+  caja: { abierta: false } | { abierta: true; fecha_apertura: string; saldo: string }
+  ventas_por_dia: { fecha: string; total: string }[]
+  top_articulos: { articulo: number; nombre: string; cantidad: string; total: string }[]
+  medios_pago: { medio: 'efectivo' | 'tarjeta' | 'cuenta_corriente' | 'transferencia'; total: string }[]
+}
