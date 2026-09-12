@@ -21,8 +21,8 @@ from caja.exceptions import (
     VentaYaCobradaError,
     VentasSinCobrarError,
 )
-from caja.constants import INGRESO
-from caja.models import Caja, CobroVenta, CuponPagoTarjeta, PagoTransferencia
+from caja.constants import EGRESO, INGRESO
+from caja.models import Adelanto, Caja, CobroVenta, CuponPagoTarjeta, Gasto, Ingreso, PagoTransferencia, RetiroEfectivo, Sueldo
 from caja.utils import calcular_caja_final
 from cuentacorriente.constants import DEBITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
@@ -41,6 +41,48 @@ def _caja_abierta_de(sucursal):
     if not caja_abierta:
         raise CajaCerradaError('La caja de la sucursal está cerrada.')
     return caja_abierta
+
+
+@transaction.atomic
+def _crear_movimiento_caja(modelo, *, usuario, tipo, **campos):
+    """Alta de un movimiento "simple" de caja (Sueldo/Adelanto/Ingreso/RetiroEfectivo/Gasto),
+    para los ViewSets de `caja/api.py`. `usuario`, `sucursal`, `caja` y `tipo` los pone el
+    servidor siempre — nunca se confían del cliente (mismo criterio que `cobrar_venta`).
+
+    Antes esta regla vivía repetida en el `save_model` de cada `ModelAdmin` (Sueldo/Adelanto/
+    Ingreso/RetiroEfectivo/Gasto en `caja/admin.py`); acá se centraliza una sola vez para el
+    front nuevo. El admin sigue funcionando igual, conviven (DEC-001).
+    """
+    sucursal = usuario.sucursal
+    caja_abierta = _caja_abierta_de(sucursal)
+    instancia = modelo(usuario=usuario, sucursal=sucursal, caja=caja_abierta, tipo=tipo, **campos)
+    try:
+        instancia.save()
+    except DjangoValidationError as exc:
+        # Red de seguridad: si la caja se cerró entre el check de arriba y este save() (carrera
+        # infrecuente), `MovimientoCaja.clean()` la vuelve a validar y rechaza acá.
+        raise CajaCerradaError('; '.join(exc.messages) if exc.messages else str(exc))
+    return instancia
+
+
+def crear_sueldo(*, usuario, **campos):
+    return _crear_movimiento_caja(Sueldo, usuario=usuario, tipo=EGRESO, **campos)
+
+
+def crear_adelanto(*, usuario, **campos):
+    return _crear_movimiento_caja(Adelanto, usuario=usuario, tipo=EGRESO, **campos)
+
+
+def crear_ingreso(*, usuario, **campos):
+    return _crear_movimiento_caja(Ingreso, usuario=usuario, tipo=INGRESO, **campos)
+
+
+def crear_retiro_efectivo(*, usuario, **campos):
+    return _crear_movimiento_caja(RetiroEfectivo, usuario=usuario, tipo=EGRESO, **campos)
+
+
+def crear_gasto(*, usuario, **campos):
+    return _crear_movimiento_caja(Gasto, usuario=usuario, tipo=EGRESO, **campos)
 
 
 @transaction.atomic

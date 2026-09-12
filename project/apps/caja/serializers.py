@@ -2,9 +2,26 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
-from caja.models import Caja, CuponPagoTarjeta, PagoTransferencia, PlanTarjetaDeCredito, TarjetaDeCredito
+from caja.models import (
+    Adelanto,
+    Caja,
+    CuponPagoTarjeta,
+    Gasto,
+    Ingreso,
+    PagoTransferencia,
+    PlanTarjetaDeCredito,
+    RetiroEfectivo,
+    Sueldo,
+    TarjetaDeCredito,
+    TipoGasto,
+    TipoIngreso,
+)
 from caja.utils import calcular_saldo_caja
 from venta.models import Venta
+
+# Campos que todo movimiento simple de caja (Sueldo/Adelanto/Ingreso/RetiroEfectivo/Gasto)
+# expone de sólo lectura: los pone el servidor (caja/services.py), nunca el cliente.
+CAMPOS_MOVIMIENTO_CAJA_SOLO_LECTURA = ('id', 'fecha', 'usuario', 'usuario_username', 'cerrado')
 
 
 class TarjetaDeCreditoSerializer(serializers.ModelSerializer):
@@ -48,6 +65,74 @@ class CajaSerializer(serializers.ModelSerializer):
 
     def get_saldo_actual(self, obj):
         return str(calcular_saldo_caja(obj))
+
+
+class TipoIngresoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoIngreso
+        fields = ('id', 'descripcion')
+
+
+class TipoGastoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoGasto
+        fields = ('id', 'descripcion')
+
+
+class AdelantoSerializer(serializers.ModelSerializer):
+    usuario_username = serializers.CharField(source='usuario.username', read_only=True)
+    empleado_nombre = serializers.CharField(source='empleado.persona.obtener_nombre_completo', read_only=True)
+    importe = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('0.01'))
+
+    class Meta:
+        model = Adelanto
+        fields = CAMPOS_MOVIMIENTO_CAJA_SOLO_LECTURA + ('descripcion', 'importe', 'empleado', 'empleado_nombre')
+        read_only_fields = CAMPOS_MOVIMIENTO_CAJA_SOLO_LECTURA
+
+
+class SueldoSerializer(serializers.ModelSerializer):
+    usuario_username = serializers.CharField(source='usuario.username', read_only=True)
+    empleado_nombre = serializers.CharField(source='empleado.persona.obtener_nombre_completo', read_only=True)
+    importe = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('0.01'))
+
+    class Meta:
+        model = Sueldo
+        fields = CAMPOS_MOVIMIENTO_CAJA_SOLO_LECTURA + ('descripcion', 'importe', 'empleado', 'empleado_nombre')
+        read_only_fields = CAMPOS_MOVIMIENTO_CAJA_SOLO_LECTURA
+
+
+class IngresoSerializer(serializers.ModelSerializer):
+    usuario_username = serializers.CharField(source='usuario.username', read_only=True)
+    tipo_ingreso_descripcion = serializers.CharField(source='tipo_ingreso.descripcion', read_only=True)
+    importe = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('0.01'))
+
+    class Meta:
+        model = Ingreso
+        fields = CAMPOS_MOVIMIENTO_CAJA_SOLO_LECTURA + (
+            'concepto', 'importe', 'tipo_ingreso', 'tipo_ingreso_descripcion',
+        )
+        read_only_fields = CAMPOS_MOVIMIENTO_CAJA_SOLO_LECTURA
+
+
+class RetiroEfectivoSerializer(serializers.ModelSerializer):
+    usuario_username = serializers.CharField(source='usuario.username', read_only=True)
+    importe = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('0.01'))
+
+    class Meta:
+        model = RetiroEfectivo
+        fields = CAMPOS_MOVIMIENTO_CAJA_SOLO_LECTURA + ('concepto', 'importe')
+        read_only_fields = CAMPOS_MOVIMIENTO_CAJA_SOLO_LECTURA
+
+
+class GastoSerializer(serializers.ModelSerializer):
+    usuario_username = serializers.CharField(source='usuario.username', read_only=True)
+    tipo_gasto_descripcion = serializers.CharField(source='tipo_gasto.descripcion', read_only=True)
+    importe = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('0.01'))
+
+    class Meta:
+        model = Gasto
+        fields = CAMPOS_MOVIMIENTO_CAJA_SOLO_LECTURA + ('concepto', 'importe', 'tipo_gasto', 'tipo_gasto_descripcion')
+        read_only_fields = CAMPOS_MOVIMIENTO_CAJA_SOLO_LECTURA
 
 
 class CuponPagoTarjetaSerializer(serializers.ModelSerializer):

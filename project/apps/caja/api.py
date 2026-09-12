@@ -5,17 +5,38 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
 
 from caja.exceptions import CajaError
-from caja.models import Caja, CuponPagoTarjeta, PagoTransferencia, PlanTarjetaDeCredito, TarjetaDeCredito
+from caja.models import (
+    Adelanto,
+    Caja,
+    CuponPagoTarjeta,
+    Gasto,
+    Ingreso,
+    PagoTransferencia,
+    PlanTarjetaDeCredito,
+    RetiroEfectivo,
+    Sueldo,
+    TarjetaDeCredito,
+    TipoGasto,
+    TipoIngreso,
+)
 from caja.serializers import (
+    AdelantoSerializer,
     CajaSerializer,
     CobrarVentaInputSerializer,
     CuponPagoTarjetaSerializer,
+    GastoSerializer,
+    IngresoSerializer,
     PagoTransferenciaSerializer,
     PlanTarjetaDeCreditoSerializer,
+    RetiroEfectivoSerializer,
+    SueldoSerializer,
     TarjetaDeCreditoSerializer,
+    TipoGastoSerializer,
+    TipoIngresoSerializer,
 )
 from caja.services import abrir_caja, cerrar_caja
 from caja.services import cobrar_venta as cobrar_venta_service
+from caja.services import crear_adelanto, crear_gasto, crear_ingreso, crear_retiro_efectivo, crear_sueldo
 from caja.utils import (
     calcular_egresos_caja,
     calcular_ingresos_caja,
@@ -42,6 +63,101 @@ class PlanTarjetaDeCreditoViewSet(viewsets.ModelViewSet):
     permission_classes = (IsStaffOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('tarjeta',)
+
+
+class TipoIngresoViewSet(viewsets.ModelViewSet):
+    queryset = TipoIngreso.objects.all()
+    serializer_class = TipoIngresoSerializer
+    permission_classes = (IsStaffOrReadOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('descripcion',)
+
+
+class TipoGastoViewSet(viewsets.ModelViewSet):
+    queryset = TipoGasto.objects.all()
+    serializer_class = TipoGastoSerializer
+    permission_classes = (IsStaffOrReadOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('descripcion',)
+
+
+class MovimientoCajaViewSetMixin:
+    """Comportamiento compartido por los ViewSets de los movimientos "simples" de caja (Sueldo,
+    Adelanto, Ingreso, RetiroEfectivo, Gasto):
+
+    - `get_queryset` acota a la sucursal del usuario autenticado (mismo criterio que cada
+      `ModelAdmin.get_queryset` en `caja/admin.py` — acá se centraliza una sola vez).
+    - `perform_create` delega en el servicio de negocio correspondiente (`crear_fn`, definido
+      por cada subclase) en vez de `serializer.save()`: ahí es donde se resuelven `usuario`,
+      `sucursal`, `caja` y `tipo`, y donde se valida que la caja de la sucursal esté abierta.
+    - `perform_update`/`perform_destroy` bloquean si el movimiento ya quedó `cerrado` (la caja
+      donde vive ya se cerró) — mismo criterio que `has_change_permission`/`has_delete_permission`
+      de esos Admin para un usuario no superusuario.
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
+    filterset_fields = ('caja',)
+    crear_fn = None
+
+    def get_queryset(self):
+        sucursal = self.request.user.sucursal
+        if sucursal is None:
+            return self.queryset.none()
+        return self.queryset.filter(sucursal=sucursal)
+
+    def perform_create(self, serializer):
+        try:
+            instancia = self.crear_fn(usuario=self.request.user, **serializer.validated_data)
+        except CajaError as exc:
+            raise DRFValidationError({'caja': str(exc)})
+        serializer.instance = instancia
+
+    def _bloquear_si_cerrado(self, instance):
+        if instance.cerrado:
+            raise DRFValidationError({'cerrado': 'La caja ya se cerró, no se puede modificar este movimiento.'})
+
+    def perform_update(self, serializer):
+        self._bloquear_si_cerrado(serializer.instance)
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        self._bloquear_si_cerrado(instance)
+        instance.delete()
+
+
+class SueldoViewSet(MovimientoCajaViewSetMixin, viewsets.ModelViewSet):
+    queryset = Sueldo.objects.select_related('usuario', 'empleado__persona')
+    serializer_class = SueldoSerializer
+    search_fields = ('descripcion',)
+    crear_fn = staticmethod(crear_sueldo)
+
+
+class AdelantoViewSet(MovimientoCajaViewSetMixin, viewsets.ModelViewSet):
+    queryset = Adelanto.objects.select_related('usuario', 'empleado__persona')
+    serializer_class = AdelantoSerializer
+    search_fields = ('descripcion',)
+    crear_fn = staticmethod(crear_adelanto)
+
+
+class IngresoViewSet(MovimientoCajaViewSetMixin, viewsets.ModelViewSet):
+    queryset = Ingreso.objects.select_related('usuario', 'tipo_ingreso')
+    serializer_class = IngresoSerializer
+    search_fields = ('concepto',)
+    crear_fn = staticmethod(crear_ingreso)
+
+
+class RetiroEfectivoViewSet(MovimientoCajaViewSetMixin, viewsets.ModelViewSet):
+    queryset = RetiroEfectivo.objects.select_related('usuario')
+    serializer_class = RetiroEfectivoSerializer
+    search_fields = ('concepto',)
+    crear_fn = staticmethod(crear_retiro_efectivo)
+
+
+class GastoViewSet(MovimientoCajaViewSetMixin, viewsets.ModelViewSet):
+    queryset = Gasto.objects.select_related('usuario', 'tipo_gasto')
+    serializer_class = GastoSerializer
+    search_fields = ('concepto',)
+    crear_fn = staticmethod(crear_gasto)
 
 
 class CuponPagoTarjetaViewSet(viewsets.ReadOnlyModelViewSet):
