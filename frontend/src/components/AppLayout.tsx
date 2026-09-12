@@ -34,6 +34,8 @@ import {
   IconSearch,
   IconShoppingCart,
   IconTags,
+  IconTrendingDown,
+  IconTrendingUp,
   IconUser,
   IconUserPlus,
   IconUsers,
@@ -47,6 +49,10 @@ interface ItemNav {
   label: string
   icon: Icon
   seccion: string
+  /** Subtítulo opcional dentro del grupo (ej. "Ingresos"/"Egresos" dentro de "Caja") — se
+   * muestra sólo cuando cambia respecto al ítem anterior, para agrupar visualmente sin abrir
+   * un nuevo `titulo` de sección. */
+  subgrupo?: string
 }
 
 const NAV: { titulo: string; items: ItemNav[] }[] = [
@@ -95,8 +101,21 @@ const NAV: { titulo: string; items: ItemNav[] }[] = [
     titulo: 'Caja',
     items: [
       { to: '/caja', label: 'Caja', icon: IconCash, seccion: 'Caja' },
+      { to: '/caja/ingresos', label: 'Ingresos varios', icon: IconTrendingUp, seccion: 'Caja', subgrupo: 'Ingresos' },
+      { to: '/caja/sueldos', label: 'Sueldos', icon: IconTrendingDown, seccion: 'Caja', subgrupo: 'Egresos' },
+      { to: '/caja/adelantos', label: 'Adelantos', icon: IconTrendingDown, seccion: 'Caja', subgrupo: 'Egresos' },
+      {
+        to: '/caja/retiros-efectivo',
+        label: 'Retiros de efectivo',
+        icon: IconTrendingDown,
+        seccion: 'Caja',
+        subgrupo: 'Egresos',
+      },
+      { to: '/caja/gastos', label: 'Gastos', icon: IconTrendingDown, seccion: 'Caja', subgrupo: 'Egresos' },
       { to: '/caja/tarjetas', label: 'Tarjetas', icon: IconCreditCard, seccion: 'Caja' },
       { to: '/caja/planes-tarjeta', label: 'Planes de tarjeta', icon: IconListDetails, seccion: 'Caja' },
+      { to: '/caja/tipos-ingreso', label: 'Tipos de ingreso', icon: IconTags, seccion: 'Caja' },
+      { to: '/caja/tipos-gasto', label: 'Tipos de gasto', icon: IconTags, seccion: 'Caja' },
     ],
   },
 ]
@@ -195,31 +214,38 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="xs" mb={4}>
                 {grupo.titulo}
               </Text>
-              {grupo.items.map((item) => {
+              {grupo.items.map((item, indice) => {
                 const activo = location.pathname === item.to
                 const IconItem = item.icon
+                const mostrarSubgrupo = item.subgrupo && item.subgrupo !== grupo.items[indice - 1]?.subgrupo
                 return (
-                  <UnstyledButton
-                    key={item.to}
-                    component={Link}
-                    to={item.to}
-                    p="xs"
-                    mb={2}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      width: '100%',
-                      borderRadius: 6,
-                      backgroundColor: activo ? 'var(--mantine-color-red-light)' : 'transparent',
-                      color: activo ? 'var(--mantine-color-red-light-color)' : undefined,
-                    }}
-                  >
-                    <IconItem size={18} />
-                    <Text size="sm" fw={activo ? 600 : 400}>
-                      {item.label}
-                    </Text>
-                  </UnstyledButton>
+                  <div key={item.to}>
+                    {mostrarSubgrupo && (
+                      <Text fz={10} fw={700} c="dimmed" tt="uppercase" px="xs" mt={6} mb={2}>
+                        {item.subgrupo}
+                      </Text>
+                    )}
+                    <UnstyledButton
+                      component={Link}
+                      to={item.to}
+                      p="xs"
+                      mb={2}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        width: '100%',
+                        borderRadius: 6,
+                        backgroundColor: activo ? 'var(--mantine-color-red-light)' : 'transparent',
+                        color: activo ? 'var(--mantine-color-red-light-color)' : undefined,
+                      }}
+                    >
+                      <IconItem size={18} />
+                      <Text size="sm" fw={activo ? 600 : 400}>
+                        {item.label}
+                      </Text>
+                    </UnstyledButton>
+                  </div>
                 )
               })}
             </div>

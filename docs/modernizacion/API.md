@@ -363,9 +363,37 @@ usuario no-staff → 403; anular por staff → 200; anular dos veces → 400; an
 | Cupón de pago con tarjeta | `/api/v1/cuponpagotarjeta/` | `IsAuthenticated`, sólo lectura | se crean exclusivamente vía `caja/cobrar-venta/` |
 | Pago por transferencia | `/api/v1/pagotransferencia/` | `IsAuthenticated`, sólo lectura | ídem |
 | Caja | `/api/v1/caja/` | `IsAuthenticated`, sólo lectura (`list`/`retrieve`) + acciones `abrir`/`cerrar` | expone `saldo_actual` (reutiliza `caja.utils.calcular_saldo_caja`) |
+| Sueldo | `/api/v1/sueldo/` | `IsAuthenticated`, CRUD acotado (ver abajo) | egreso, requiere `descripcion`+`importe`, `empleado` opcional |
+| Adelanto | `/api/v1/adelanto/` | `IsAuthenticated`, CRUD acotado | egreso, mismos campos que Sueldo |
+| Ingreso | `/api/v1/ingreso/` | `IsAuthenticated`, CRUD acotado | ingreso "vario" (no cobro de venta), requiere `concepto`+`importe`+`tipo_ingreso` |
+| Retiro de efectivo | `/api/v1/retiroefectivo/` | `IsAuthenticated`, CRUD acotado | egreso, requiere `concepto`+`importe` |
+| Gasto | `/api/v1/gasto/` | `IsAuthenticated`, CRUD acotado | egreso, requiere `concepto`+`importe`+`tipo_gasto` |
+| Tipo de ingreso | `/api/v1/tipoingreso/` | `IsStaffOrReadOnly` | catálogo simple para `Ingreso.tipo_ingreso` |
+| Tipo de gasto | `/api/v1/tipogasto/` | `IsStaffOrReadOnly` | catálogo simple para `Gasto.tipo_gasto` |
 
 Al igual que `venta`, `caja` **no** es un `ModelViewSet` de CRUD directo — abrir/cerrar/cobrar son
 acciones de negocio dedicadas y transaccionales (`caja/services.py`).
+
+### Sueldo / Adelanto / Ingreso / RetiroEfectivo / Gasto
+
+Hasta esta etapa estos 5 tipos de movimiento sólo se podían cargar desde el Django Admin (nunca
+tuvieron endpoint ni pantalla en el frontend nuevo). `MovimientoCajaViewSetMixin` (`caja/api.py`)
+centraliza el comportamiento de los 5:
+
+- **`create`**: delega en `caja/services.py` (`crear_sueldo`/`crear_adelanto`/`crear_ingreso`/
+  `crear_retiro_efectivo`/`crear_gasto`), que resuelve `usuario`, `sucursal`, `caja` y `tipo` en
+  servidor — nunca se confían del cliente — y valida que haya una caja abierta en la sucursal
+  del usuario (400 con `{"caja": "..."}` si no la hay, o si el usuario no tiene sucursal
+  asignada). Mismo criterio que `cobrar_venta`.
+- **`list`/`retrieve`**: acotados a la sucursal del usuario autenticado (`get_queryset`) — un
+  usuario de una sucursal no ve ni puede tocar movimientos de otra.
+- **`update`/`destroy`**: bloqueados (400 con `{"cerrado": "..."}`) si el movimiento ya quedó
+  `cerrado` (la caja donde vive se cerró) — mismo criterio que `has_change_permission`/
+  `has_delete_permission` de cada `ModelAdmin` en `caja/admin.py` para un usuario no
+  superusuario, ahora centralizado en un solo lugar para el endpoint nuevo.
+
+El flujo de Django Admin (`caja/admin.py`) sigue funcionando igual sin cambios, conviven
+(DEC-001).
 
 ### `POST /api/v1/caja/abrir/`
 `IsAuthenticated`. Abre una caja para la sucursal del usuario autenticado. Falla (400) si ya hay

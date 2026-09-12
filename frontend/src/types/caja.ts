@@ -63,6 +63,61 @@ export interface CobrarVentaInput {
   pagos_transferencia: PagoTransferenciaInput[]
 }
 
+export interface TipoIngreso {
+  id: number
+  descripcion: string
+}
+export type TipoIngresoInput = Omit<TipoIngreso, 'id'>
+
+export interface TipoGasto {
+  id: number
+  descripcion: string
+}
+export type TipoGastoInput = Omit<TipoGasto, 'id'>
+
+/** Campos comunes a los movimientos "simples" de caja (Sueldo/Adelanto/Ingreso/RetiroEfectivo/
+ * Gasto) — `usuario_username`/`cerrado`/`fecha` los pone el servidor, ver caja/serializers.py. */
+interface MovimientoCajaBase {
+  id: number
+  importe: string
+  fecha: string
+  usuario_username: string
+  cerrado: boolean
+}
+
+export interface Sueldo extends MovimientoCajaBase {
+  descripcion: string
+  empleado: number | null
+  empleado_nombre: string | null
+}
+export type SueldoInput = Pick<Sueldo, 'descripcion' | 'importe' | 'empleado'>
+
+export interface Adelanto extends MovimientoCajaBase {
+  descripcion: string
+  empleado: number | null
+  empleado_nombre: string | null
+}
+export type AdelantoInput = Pick<Adelanto, 'descripcion' | 'importe' | 'empleado'>
+
+export interface Ingreso extends MovimientoCajaBase {
+  concepto: string
+  tipo_ingreso: number | null
+  tipo_ingreso_descripcion: string | null
+}
+export type IngresoInput = Pick<Ingreso, 'concepto' | 'importe' | 'tipo_ingreso'>
+
+export interface RetiroEfectivo extends MovimientoCajaBase {
+  concepto: string
+}
+export type RetiroEfectivoInput = Pick<RetiroEfectivo, 'concepto' | 'importe'>
+
+export interface Gasto extends MovimientoCajaBase {
+  concepto: string
+  tipo_gasto: number | null
+  tipo_gasto_descripcion: string | null
+}
+export type GastoInput = Pick<Gasto, 'concepto' | 'importe' | 'tipo_gasto'>
+
 export interface ConceptoImporte {
   concepto: string
   importe: string

@@ -10,9 +10,16 @@ import ListasPrecioPage from './features/catalogo/ListasPrecioPage'
 import PreciosPage from './features/catalogo/PreciosPage'
 import TiposIvaPage from './features/catalogo/TiposIvaPage'
 import UnidadesMedidaPage from './features/catalogo/UnidadesMedidaPage'
+import AdelantosPage from './features/caja/AdelantosPage'
 import CajaPage from './features/caja/CajaPage'
+import GastosPage from './features/caja/GastosPage'
+import IngresosPage from './features/caja/IngresosPage'
 import PlanesTarjetaPage from './features/caja/PlanesTarjetaPage'
+import RetirosEfectivoPage from './features/caja/RetirosEfectivoPage'
+import SueldosPage from './features/caja/SueldosPage'
 import TarjetasPage from './features/caja/TarjetasPage'
+import TiposGastoPage from './features/caja/TiposGastoPage'
+import TiposIngresoPage from './features/caja/TiposIngresoPage'
 import ClientesPage from './features/clientes/ClientesPage'
 import CuentasCorrientesPage from './features/cuentacorriente/CuentasCorrientesPage'
 import EmpleadosPage from './features/empleados/EmpleadosPage'
@@ -52,8 +59,15 @@ const RUTAS: { path: string; element: ReactNode }[] = [
   { path: '/promociones', element: <PromocionesPage /> },
   { path: '/promociones/descuentos', element: <DescuentosPage /> },
   { path: '/caja', element: <CajaPage /> },
+  { path: '/caja/ingresos', element: <IngresosPage /> },
+  { path: '/caja/sueldos', element: <SueldosPage /> },
+  { path: '/caja/adelantos', element: <AdelantosPage /> },
+  { path: '/caja/retiros-efectivo', element: <RetirosEfectivoPage /> },
+  { path: '/caja/gastos', element: <GastosPage /> },
   { path: '/caja/tarjetas', element: <TarjetasPage /> },
   { path: '/caja/planes-tarjeta', element: <PlanesTarjetaPage /> },
+  { path: '/caja/tipos-ingreso', element: <TiposIngresoPage /> },
+  { path: '/caja/tipos-gasto', element: <TiposGastoPage /> },
 ]
 
 export default function App() {
