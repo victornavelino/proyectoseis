@@ -78,6 +78,12 @@ export function cerrarCaja(id: number) {
   return apiFetch<ResumenCierreCaja>(`api/v1/caja/${id}/cerrar/`, { method: 'POST' })
 }
 
+/** Mismo desglose que devuelve `cerrarCaja`, para volver a ver el "Resumen de cierre" de una
+ * caja ya cerrada (historial) sin tener que cerrarla de nuevo. */
+export function obtenerResumenCaja(id: number) {
+  return apiFetch<ResumenCierreCaja>(`api/v1/caja/${id}/resumen/`)
+}
+
 /** Resumen de cierre de caja en PDF (WeasyPrint, ver caja.api.CajaViewSet.imprimir en el backend). */
 export function imprimirCaja(id: number) {
   return apiFetchBlob(`api/v1/caja/${id}/imprimir/`)

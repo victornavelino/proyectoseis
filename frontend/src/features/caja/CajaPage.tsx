@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { ActionIcon, Alert, Badge, Button, Container, Divider, Group, Modal, Paper, Table, Text, Title } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconPrinter } from '@tabler/icons-react'
-import { abrirCaja, cajaAbiertaActual, cerrarCaja, listarCajas } from '../../api/caja'
+import { IconEye, IconPrinter } from '@tabler/icons-react'
+import { abrirCaja, cajaAbiertaActual, cerrarCaja, listarCajas, obtenerResumenCaja } from '../../api/caja'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import EstadoVacio from '../../components/EstadoVacio'
@@ -59,6 +59,19 @@ export default function CajaPage() {
       notifications.show({ title: 'No se pudo cerrar la caja', message: detalle, color: 'red' })
     } finally {
       setProcesando(false)
+    }
+  }
+
+  // Reabre el mismo diálogo "Resumen de cierre" para una caja ya cerrada del historial — antes
+  // el ícono de la fila abría directo el PDF (imprimirCaja); ahora primero se ve el resumen acá
+  // (formato más ordenado) y de ahí, si hace falta, se imprime (ver botón dentro del Modal).
+  const handleVerResumen = async (id: number) => {
+    try {
+      const r = await obtenerResumenCaja(id)
+      setResumen(r)
+    } catch (err) {
+      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      notifications.show({ title: 'No se pudo obtener el resumen', message: detalle, color: 'red' })
     }
   }
 
@@ -137,10 +150,10 @@ export default function CajaPage() {
                   {c.fecha_fin && (
                     <ActionIcon
                       variant="subtle"
-                      aria-label="Imprimir resumen de caja"
-                      onClick={() => void abrirResumenCajaParaImprimir(c.id)}
+                      aria-label="Ver resumen de cierre"
+                      onClick={() => void handleVerResumen(c.id)}
                     >
-                      <IconPrinter size={16} />
+                      <IconEye size={16} />
                     </ActionIcon>
                   )}
                 </Table.Td>
@@ -159,6 +172,9 @@ export default function CajaPage() {
         {resumen && (
           <>
             <Text size="sm" c="dimmed">
+              {resumen.sucursal_nombre} · {resumen.fecha_fin ? new Date(resumen.fecha_fin).toLocaleString('es-AR') : '—'}
+            </Text>
+            <Text size="sm" c="dimmed" mt={4}>
               Caja final
             </Text>
             <Text fz={28} fw={800} mb="md">
@@ -205,6 +221,19 @@ export default function CajaPage() {
             <Group justify="space-between" fw={600}>
               <Text size="sm">{resumen.total_cuenta_corriente.concepto}</Text>
               <Text size="sm">{formatearMonto(resumen.total_cuenta_corriente.importe)}</Text>
+            </Group>
+
+            <Group justify="flex-end" mt="lg">
+              <Button variant="default" onClick={() => setResumen(null)}>
+                Cerrar
+              </Button>
+              <Button
+                color="red"
+                leftSection={<IconPrinter size={16} />}
+                onClick={() => void abrirResumenCajaParaImprimir(resumen.id)}
+              >
+                Imprimir
+              </Button>
             </Group>
           </>
         )}

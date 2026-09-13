@@ -415,6 +415,15 @@ Y. Este endpoint nuevo sólo cuenta las ventas sin cobrar **de la sucursal de es
 Verificado con smoke test: una venta sin cobrar en la propia sucursal sí bloquea el cierre; tras
 cobrarla, cierra sin problema.
 
+### `GET /api/v1/caja/<id>/resumen/`
+`IsAuthenticated`. Mismo desglose que devuelve `cerrar` (`ingresos`, `total_ingresos`, `egresos`,
+`total_egresos`, `total_cuenta_corriente`), pero de sólo lectura para una caja que **ya está
+cerrada** — usado por `CajaPage.tsx` para reabrir el mismo diálogo "Resumen de cierre" desde el
+historial sin tener que cerrarla de nuevo (antes esa fila sólo abría directo el PDF de
+`imprimir`). 400 si la caja sigue abierta (mismo motivo que `imprimir`: los totales de cta.
+cte./transferencias del período filtran por `fecha__lte=caja.fecha_fin`, que es `None` mientras
+está abierta).
+
 ### `POST /api/v1/caja/cobrar-venta/`
 `IsAuthenticated`. Cobro combinado de una venta (reemplaza a `caja.views.cobrar_ticket`). Body:
 

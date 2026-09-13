@@ -203,6 +203,19 @@ class CajaViewSet(viewsets.ReadOnlyModelViewSet):
             raise DRFValidationError({'caja': str(exc)})
         return Response(CajaSerializer(caja).data, status=status.HTTP_201_CREATED)
 
+    @staticmethod
+    def _serializar_resumen_cierre(caja):
+        """Desglose de cierre (ingresos/egresos/totales, reutiliza caja.utils, no se duplica la
+        fórmula) — compartido por `cerrar` (recién cerrada) y `resumen` (una ya cerrada, para
+        volver a mostrarla desde el historial sin tener que cerrarla de nuevo)."""
+        data = CajaSerializer(caja).data
+        data['ingresos'] = calcular_ingresos_caja(caja)
+        data['total_ingresos'] = calcular_total_ingresos(caja)
+        data['egresos'] = calcular_egresos_caja(caja)
+        data['total_egresos'] = calcular_total_egresos(caja)
+        data['total_cuenta_corriente'] = calcular_total_compras_cc(caja)
+        return data
+
     @action(detail=True, methods=['post'])
     def cerrar(self, request, pk=None):
         caja = self.get_object()
@@ -210,14 +223,21 @@ class CajaViewSet(viewsets.ReadOnlyModelViewSet):
             caja = cerrar_caja(caja)
         except CajaError as exc:
             raise DRFValidationError({'caja': str(exc)})
-        data = CajaSerializer(caja).data
-        # Desglose de cierre (reutiliza caja.utils, no se duplica la fórmula):
-        data['ingresos'] = calcular_ingresos_caja(caja)
-        data['total_ingresos'] = calcular_total_ingresos(caja)
-        data['egresos'] = calcular_egresos_caja(caja)
-        data['total_egresos'] = calcular_total_egresos(caja)
-        data['total_cuenta_corriente'] = calcular_total_compras_cc(caja)
-        return Response(data)
+        return Response(self._serializar_resumen_cierre(caja))
+
+    @action(detail=True, methods=['get'])
+    def resumen(self, request, pk=None):
+        """Mismo desglose que devuelve `cerrar` (ingresos/egresos/totales), pero de sólo lectura
+        para una caja que ya está cerrada — usado por el historial para reabrir el mismo diálogo
+        "Resumen de cierre" que se ve justo al cerrar, sin tener que cerrarla de nuevo (ver
+        CajaPage.tsx). Sólo válido para cajas cerradas: mismo motivo que `imprimir`, los totales
+        de cta. cte./transferencias del período filtran por `fecha__lte=caja.fecha_fin`, que es
+        None mientras la caja sigue abierta.
+        """
+        caja = self.get_object()
+        if caja.fecha_fin is None:
+            raise DRFValidationError({'caja': 'La caja está abierta: no tiene un resumen de cierre todavía.'})
+        return Response(self._serializar_resumen_cierre(caja))
 
     @action(detail=True, methods=['get'])
     def imprimir(self, request, pk=None):
