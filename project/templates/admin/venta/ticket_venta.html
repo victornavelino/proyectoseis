@@ -1,28 +1,55 @@
+{% load moneda %}
+<!-- Mismo lenguaje visual que el modal "Resumen de cierre" de caja (CajaPage.tsx): divisores
+     con etiqueta centrada y el total grande al pie (ver admin/_ticket_estilos.html). -->
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+{% include "admin/_ticket_estilos.html" %}
+</head>
+<body>
+  <div class="ticket">
+    <p class="titulo">{{ PROJECT_NAME_TITLE }}</p>
+    <p class="subtitulo">{{ venta.sucursal }} · {{ venta.fecha|date:"d/m/Y H:i" }}</p>
 
-    <!-- AGREGAR CONTENIDO AQUI -->
-<style>
-    /* Márgenes de impresión (antes cmd_options de wkhtmltopdf) */
-    @page { margin-top: 3mm; margin-left: 0; }
-</style>
-<ul style="list-style-type:none">
-    <li>{{ PROJECT_NAME_TITLE }}</li>&nbsp
-    <li>Sucursal: {{vendedor.sucursal}}</li>
-    <li>Fecha: {{venta.fecha|date:"M d, Y, H:i"}}</li>
+    <div class="fila"><span class="etiqueta">Ticket</span><span>#{{ venta.numero_ticket }}</span></div>
+    <div class="fila"><span class="etiqueta">Vendedor</span><span>{{ vendedor }}</span></div>
+    <div class="fila"><span class="etiqueta">Cliente</span><span>{{ venta.cliente }}</span></div>
 
-    <li>Nro Ticket: {{venta.numero_ticket}}</li>
-    <li>Vendedor: {{vendedor}}</li>
-    <li>Cliente: {{venta.cliente}}</li>
-    <li>____________________________</li>
-    {% for articulo in articulos %}
-    &nbsp
-    <li>{{articulo.nombre_articulo}} x {{articulo.cantidad_peso}} = {{articulo.precio}} </li>
-    <li>Precio Unit.: ${{articulo.precio_unitario}} </li>
-    <li>Importe: ${{articulo.total_articulo}} </li>
-    {% endfor %}
-    <li>____________________________</li>
-    <li>Saldo CC: {{saldo_cc}}</li>
-    <li>____________________________</li>
-    <li>Descuentos: {{monto_descuento}}</li>
-    <li>MONTO TOTAL: {{venta.monto}}</li>
+    <div class="divisor">Artículos</div>
+    <table class="articulos">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th class="num">Cant.</th>
+          <th class="num">P. Unit.</th>
+          <th class="num">Importe</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for articulo in articulos %}
+        <tr>
+          <td class="nombre-articulo">{{ articulo.nombre_articulo }}</td>
+          <td class="num">{{ articulo.cantidad_peso|floatformat:"-2" }}</td>
+          <td class="num">{{ articulo.precio_unitario|moneda }}</td>
+          <td class="num">{{ articulo.total_articulo|moneda }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-</ul>
+    <div class="divisor"></div>
+    {% if monto_descuento %}
+    <div class="fila"><span class="etiqueta">Descuentos</span><span>{{ monto_descuento|moneda }}</span></div>
+    {% endif %}
+    <div class="fila"><span class="etiqueta">Saldo cta. cte.</span><span>{{ saldo_cc|moneda }}</span></div>
+
+    <div class="total">
+      <span class="etiqueta">TOTAL</span>
+      <span class="importe">{{ venta.monto|moneda }}</span>
+    </div>
+
+    <p class="pie">Gracias por su compra</p>
+  </div>
+</body>
+</html>
