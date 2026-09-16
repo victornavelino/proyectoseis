@@ -35,6 +35,11 @@ export function imprimirTicket(numeroTicket: number) {
   return apiFetchBlob(`api/v1/venta/${numeroTicket}/imprimir/`)
 }
 
+/** Anula una venta no cobrada (ver venta.api.VentaViewSet.anular; requiere usuario staff). */
+export function anularVenta(numeroTicket: number) {
+  return apiFetch<Venta>(`api/v1/venta/${numeroTicket}/anular/`, { method: 'POST' })
+}
+
 /** Resumen para los gráficos de Inicio (ver venta.api.VentaViewSet.resumen_dashboard). */
 export function obtenerResumenDashboard(dias = 14) {
   return apiFetch<ResumenDashboard>('api/v1/venta/resumen-dashboard/', { params: { dias } })
