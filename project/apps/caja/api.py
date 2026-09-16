@@ -1,3 +1,6 @@
+import copy
+
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -22,6 +25,7 @@ from caja.models import (
 from caja.serializers import (
     AdelantoSerializer,
     CajaSerializer,
+    CerrarCajaInputSerializer,
     CobrarVentaInputSerializer,
     CuponPagoTarjetaSerializer,
     GastoSerializer,
@@ -40,6 +44,7 @@ from caja.services import crear_adelanto, crear_gasto, crear_ingreso, crear_reti
 from caja.utils import (
     calcular_egresos_caja,
     calcular_ingresos_caja,
+    calcular_saldo_caja,
     calcular_total_compras_cc,
     calcular_total_compras_transf,
     calcular_total_egresos,
@@ -214,13 +219,51 @@ class CajaViewSet(viewsets.ReadOnlyModelViewSet):
         data['egresos'] = calcular_egresos_caja(caja)
         data['total_egresos'] = calcular_total_egresos(caja)
         data['total_cuenta_corriente'] = calcular_total_compras_cc(caja)
+        # Ya cerrada: `caja_final` (fijado por cerrar_caja) ES el monto calculado — se expone
+        # también acá para que el frontend use siempre el mismo campo, esté la caja abierta
+        # (preview) o cerrada (ver `previsualizar_cierre`).
+        data['caja_final_calculado'] = data['caja_final']
         return data
+
+    @action(detail=True, methods=['get'], url_path='previsualizar-cierre')
+    def previsualizar_cierre(self, request, pk=None):
+        """Mismo desglose que `cerrar`/`resumen`, pero para la caja TODAVÍA abierta — sin cerrarla
+        ni tocar nada en la base. Se usa para mostrar el diálogo "Resumen de cierre" ANTES de
+        confirmar el cierre, así el cajero puede cotejar el arqueo físico contra el monto
+        calculado (ver CajaPage.tsx) y recién ahí decide cerrar.
+
+        Como `calcular_ingresos_caja`/`calcular_total_compras_cc`/`calcular_total_compras_transf`
+        (caja/utils.py) filtran por `fecha__lte=caja.fecha_fin` -y ese campo todavía es None-, se
+        arma una copia en memoria (nunca persistida) de la caja con `fecha_fin=ahora` sólo para
+        que esas consultas tengan con qué filtrar; la respuesta sigue mostrando `fecha_fin: null`
+        (viene de la caja real), dejando claro que todavía no se cerró.
+        """
+        caja = self.get_object()
+        if caja.fecha_fin is not None:
+            raise DRFValidationError({'caja': 'La caja ya está cerrada.'})
+        caja_al_corte = copy.copy(caja)
+        caja_al_corte.fecha_fin = timezone.now()
+
+        data = CajaSerializer(caja).data
+        data['ingresos'] = calcular_ingresos_caja(caja_al_corte)
+        data['total_ingresos'] = calcular_total_ingresos(caja_al_corte)
+        data['egresos'] = calcular_egresos_caja(caja_al_corte)
+        data['total_egresos'] = calcular_total_egresos(caja_al_corte)
+        data['total_cuenta_corriente'] = calcular_total_compras_cc(caja_al_corte)
+        # A diferencia de `_serializar_resumen_cierre`, acá `caja_final` todavía no existe (la
+        # caja sigue abierta) -> el monto a cotejar contra el arqueo es `calcular_saldo_caja`
+        # (misma fórmula que `cerrar_caja` usa para validar, sin el efecto secundario de marcar
+        # movimientos como `cerrado`).
+        data['caja_final_calculado'] = str(calcular_saldo_caja(caja))
+        return Response(data)
 
     @action(detail=True, methods=['post'])
     def cerrar(self, request, pk=None):
         caja = self.get_object()
+        entrada = CerrarCajaInputSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
         try:
-            caja = cerrar_caja(caja)
+            caja = cerrar_caja(caja, arqueo=entrada.validated_data['arqueo'])
         except CajaError as exc:
             raise DRFValidationError({'caja': str(exc)})
         return Response(self._serializar_resumen_cierre(caja))

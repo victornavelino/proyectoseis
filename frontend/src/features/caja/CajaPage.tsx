@@ -1,8 +1,29 @@
 import { useEffect, useState } from 'react'
-import { ActionIcon, Alert, Badge, Button, Container, Divider, Group, Modal, Paper, Table, Text, Title } from '@mantine/core'
+import {
+  ActionIcon,
+  Alert,
+  Badge,
+  Button,
+  Container,
+  Divider,
+  Group,
+  Modal,
+  NumberInput,
+  Paper,
+  Table,
+  Text,
+  Title,
+} from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconEye, IconPrinter } from '@tabler/icons-react'
-import { abrirCaja, cajaAbiertaActual, cerrarCaja, listarCajas, obtenerResumenCaja } from '../../api/caja'
+import {
+  abrirCaja,
+  cajaAbiertaActual,
+  cerrarCaja,
+  listarCajas,
+  obtenerResumenCaja,
+  previsualizarCierre,
+} from '../../api/caja'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import EstadoVacio from '../../components/EstadoVacio'
@@ -17,6 +38,9 @@ export default function CajaPage() {
   const [cargando, setCargando] = useState(true)
   const [procesando, setProcesando] = useState(false)
   const [resumen, setResumen] = useState<ResumenCierreCaja | null>(null)
+  // Sólo se completa mientras `resumen` es una previsualización (fecha_fin todavía null) — el
+  // arqueo de caja (conteo físico) que el cajero carga a mano antes de confirmar el cierre.
+  const [arqueo, setArqueo] = useState<number | ''>('')
 
   const cargar = () => {
     if (!perfil?.sucursal) return
@@ -46,14 +70,33 @@ export default function CajaPage() {
     }
   }
 
-  const handleCerrar = async () => {
+  // Abre el diálogo "Resumen de cierre" en modo previsualización (todavía no cierra la caja):
+  // ahí el cajero carga el arqueo de caja y sólo si alcanza confirma el cierre real.
+  const handleAbrirCierre = async () => {
     if (!cajaAbierta) return
     setProcesando(true)
     try {
-      const r = await cerrarCaja(cajaAbierta.id)
+      const r = await previsualizarCierre(cajaAbierta.id)
       setResumen(r)
+      setArqueo('')
+    } catch (err) {
+      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      notifications.show({ title: 'No se pudo previsualizar el cierre', message: detalle, color: 'red' })
+    } finally {
+      setProcesando(false)
+    }
+  }
+
+  // Confirma el cierre real (con el arqueo cargado) y, recién ahí, genera el PDF del resumen.
+  const handleConfirmarCierre = async () => {
+    if (!resumen || arqueo === '') return
+    setProcesando(true)
+    try {
+      const cerrada = await cerrarCaja(resumen.id, String(arqueo))
       notifications.show({ message: 'Caja cerrada.', color: 'green' })
       cargar()
+      await abrirResumenCajaParaImprimir(cerrada.id)
+      setResumen(null)
     } catch (err) {
       const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
       notifications.show({ title: 'No se pudo cerrar la caja', message: detalle, color: 'red' })
@@ -109,7 +152,7 @@ export default function CajaPage() {
                 {formatearMonto(cajaAbierta.saldo_actual)}
               </Text>
             </div>
-            <Button size="lg" color="red" loading={procesando} onClick={() => void handleCerrar()}>
+            <Button size="lg" color="red" loading={procesando} onClick={() => void handleAbrirCierre()}>
               Cerrar caja
             </Button>
           </Group>
@@ -168,18 +211,53 @@ export default function CajaPage() {
         )}
       </Paper>
 
-      <Modal opened={!!resumen} onClose={() => setResumen(null)} title="Resumen de cierre" size="md">
+      <Modal
+        opened={!!resumen}
+        onClose={() => setResumen(null)}
+        title="Resumen de cierre"
+        size="md"
+        closeOnClickOutside={!procesando}
+        withCloseButton={!procesando}
+      >
         {resumen && (
           <>
             <Text size="sm" c="dimmed">
               {resumen.sucursal_nombre} · {resumen.fecha_fin ? new Date(resumen.fecha_fin).toLocaleString('es-AR') : '—'}
             </Text>
-            <Text size="sm" c="dimmed" mt={4}>
-              Caja final
-            </Text>
-            <Text fz={28} fw={800} mb="md">
-              {formatearMonto(resumen.caja_final)}
-            </Text>
+
+            <Group align="flex-end" mt={4} mb="md">
+              <div>
+                <Text size="sm" c="dimmed">
+                  Monto calculado
+                </Text>
+                <Text fz={28} fw={800}>
+                  {formatearMonto(resumen.caja_final_calculado)}
+                </Text>
+              </div>
+              {resumen.fecha_fin ? (
+                <div>
+                  <Text size="sm" c="dimmed">
+                    Arqueo de caja
+                  </Text>
+                  <Text fz={28} fw={800}>
+                    {resumen.arqueo ? formatearMonto(resumen.arqueo) : '—'}
+                  </Text>
+                </div>
+              ) : (
+                <NumberInput
+                  label="Arqueo de caja"
+                  description="Total real contado en caja"
+                  placeholder="0,00"
+                  min={0}
+                  decimalScale={2}
+                  value={arqueo}
+                  onChange={(v) => setArqueo(typeof v === 'number' ? v : '')}
+                  disabled={procesando}
+                  error={arqueo !== '' && Number(arqueo) < Number(resumen.caja_final_calculado) ? 'Falta efectivo' : null}
+                  style={{ flex: 1 }}
+                />
+              )}
+            </Group>
 
             <Divider my="sm" label="Ingresos" labelPosition="center" />
             {resumen.ingresos.map((i) => (
@@ -224,16 +302,34 @@ export default function CajaPage() {
             </Group>
 
             <Group justify="flex-end" mt="lg">
-              <Button variant="default" onClick={() => setResumen(null)}>
-                Cerrar
-              </Button>
-              <Button
-                color="red"
-                leftSection={<IconPrinter size={16} />}
-                onClick={() => void abrirResumenCajaParaImprimir(resumen.id)}
-              >
-                Imprimir
-              </Button>
+              {resumen.fecha_fin ? (
+                <>
+                  <Button variant="default" onClick={() => setResumen(null)}>
+                    Cerrar
+                  </Button>
+                  <Button
+                    color="red"
+                    leftSection={<IconPrinter size={16} />}
+                    onClick={() => void abrirResumenCajaParaImprimir(resumen.id)}
+                  >
+                    Imprimir
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="default" onClick={() => setResumen(null)} disabled={procesando}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    color="red"
+                    loading={procesando}
+                    disabled={arqueo === '' || Number(arqueo) < Number(resumen.caja_final_calculado)}
+                    onClick={() => void handleConfirmarCierre()}
+                  >
+                    Cerrar
+                  </Button>
+                </>
+              )}
             </Group>
           </>
         )}

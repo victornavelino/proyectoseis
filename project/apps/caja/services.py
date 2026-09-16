@@ -9,6 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from caja.exceptions import (
+    ArqueoInsuficienteError,
     CajaCerradaError,
     CajaYaAbiertaError,
     CajaYaCerradaError,
@@ -23,7 +24,7 @@ from caja.exceptions import (
 )
 from caja.constants import EGRESO, INGRESO
 from caja.models import Adelanto, Caja, CobroVenta, CuponPagoTarjeta, Gasto, Ingreso, PagoTransferencia, RetiroEfectivo, Sueldo
-from caja.utils import calcular_caja_final
+from caja.utils import calcular_caja_final, calcular_saldo_caja
 from cuentacorriente.constants import DEBITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from cuentacorriente.utils import calcular_saldo_cc
@@ -98,7 +99,11 @@ def abrir_caja(*, usuario):
 
 
 @transaction.atomic
-def cerrar_caja(caja):
+def cerrar_caja(caja, *, arqueo):
+    """Cierra la caja, pero sólo si el arqueo (conteo físico del efectivo, cargado a mano por el
+    cajero) alcanza el monto calculado a partir de los movimientos — no se permite cerrar con un
+    faltante. Si sobra (arqueo > calculado) sí se permite: el excedente queda registrado en
+    `arqueo` para el reporte, sin bloquear el cierre."""
     if caja.fecha_fin:
         raise CajaYaCerradaError('Esta caja ya está cerrada.')
     # A diferencia del legacy (`caja.views.cerrar_caja` y `CajaAdmin.cerrar_caja`, que cuentan
@@ -109,9 +114,18 @@ def cerrar_caja(caja):
         raise VentasSinCobrarError(
             f'Hay {ventas_sin_cobrar} venta(s) sin cobrar en esta sucursal, no se puede cerrar la caja.'
         )
+    # Se valida ANTES de calcular_caja_final: esa función marca `cerrado=True` en cada movimiento
+    # (efecto secundario permanente) — no queremos aplicarlo si el cierre se va a rechazar acá.
+    calculado = calcular_saldo_caja(caja)
+    if arqueo < calculado:
+        raise ArqueoInsuficienteError(
+            f'El arqueo de caja (${arqueo}) es menor al monto calculado (${calculado}); no se puede '
+            'cerrar la caja con un faltante.'
+        )
     caja.fecha_fin = timezone.now()
     caja.caja_final = calcular_caja_final(caja)
-    caja.save(update_fields=['fecha_fin', 'caja_final'])
+    caja.arqueo = arqueo
+    caja.save(update_fields=['fecha_fin', 'caja_final', 'arqueo'])
     caja.refresh_from_db()
     return caja
 

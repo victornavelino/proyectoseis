@@ -22,6 +22,10 @@ class Caja(models.Model):
     fecha_fin = models.DateTimeField(blank=True, null=True)
     caja_inicial = models.DecimalField(max_digits=12, decimal_places=2, null=True, default=0, blank=True)
     caja_final = models.DecimalField(max_digits=12, decimal_places=2, null=True, default=0, blank=True)
+    # Arqueo de caja: total real contado a mano por el cajero al cerrar, para cotejar contra
+    # `caja_final` (el calculado a partir de los movimientos) — ver caja/services.py cerrar_caja.
+    # Null mientras la caja sigue abierta (recién se carga al cerrar).
+    arqueo = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Arqueo de caja')
     sucursal = models.ForeignKey(Sucursal, on_delete=models.PROTECT, null=True, verbose_name='Sucursal')
     usuario = models.ForeignKey(Usuario, null=False, on_delete=models.PROTECT, verbose_name='Usuario')
 

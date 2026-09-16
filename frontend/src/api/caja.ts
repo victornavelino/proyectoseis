@@ -74,8 +74,18 @@ export function cajaAbiertaActual(sucursal: number) {
 export function abrirCaja() {
   return apiFetch<Caja>('api/v1/caja/abrir/', { method: 'POST' })
 }
-export function cerrarCaja(id: number) {
-  return apiFetch<ResumenCierreCaja>(`api/v1/caja/${id}/cerrar/`, { method: 'POST' })
+
+/** Mismo desglose que devuelve `cerrarCaja`, pero para la caja todavía abierta (no la cierra) —
+ * se usa para mostrar el diálogo "Resumen de cierre" con el monto calculado ANTES de confirmar,
+ * así el cajero puede cargar el arqueo y recién ahí cerrar. */
+export function previsualizarCierre(id: number) {
+  return apiFetch<ResumenCierreCaja>(`api/v1/caja/${id}/previsualizar-cierre/`)
+}
+
+/** Cierra la caja: `arqueo` es el total contado a mano por el cajero — el backend rechaza el
+ * cierre si es menor al monto calculado (ver caja.services.cerrar_caja). */
+export function cerrarCaja(id: number, arqueo: string) {
+  return apiFetch<ResumenCierreCaja>(`api/v1/caja/${id}/cerrar/`, { method: 'POST', body: { arqueo } })
 }
 
 /** Mismo desglose que devuelve `cerrarCaja`, para volver a ver el "Resumen de cierre" de una

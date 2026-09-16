@@ -29,6 +29,11 @@ class VentasSinCobrarError(CajaError):
     """Hay ventas sin cobrar en la sucursal, no se puede cerrar la caja."""
 
 
+class ArqueoInsuficienteError(CajaError):
+    """El arqueo de caja (conteo físico) es menor al monto calculado a partir de los
+    movimientos: no se puede cerrar la caja con un faltante."""
+
+
 class VentaAnuladaError(CajaError):
     """La venta está anulada, no se puede cobrar."""
 

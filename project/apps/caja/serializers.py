@@ -57,6 +57,7 @@ class CajaSerializer(serializers.ModelSerializer):
             'fecha_fin',
             'caja_inicial',
             'caja_final',
+            'arqueo',
             'saldo_actual',
         )
         # Todo de sólo lectura: abrir/cerrar son las acciones dedicadas del ViewSet (no un
@@ -211,6 +212,12 @@ class PagoTransferenciaInputSerializer(serializers.Serializer):
     documento_identidad = serializers.CharField(max_length=12)
     banco = serializers.CharField(max_length=60, required=False, allow_blank=True, allow_null=True)
     observaciones = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True)
+
+
+class CerrarCajaInputSerializer(serializers.Serializer):
+    """Body de `CajaViewSet.cerrar`: el arqueo de caja (conteo físico) que el cajero cargó a
+    mano — ver caja/services.py `cerrar_caja`."""
+    arqueo = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('0'))
 
 
 class CobrarVentaInputSerializer(serializers.Serializer):
