@@ -55,4 +55,5 @@ class SinCuentaCorrienteError(CajaError):
 
 
 class TopeCuentaCorrienteError(CajaError):
-    """El pago a cuenta corriente supera el tope de la cuenta."""
+    """El pago a cuenta corriente supera el saldo a favor disponible del cliente (no se permite
+    que quede debiendo dinero al negocio)."""

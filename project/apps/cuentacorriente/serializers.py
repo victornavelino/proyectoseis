@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from cuentacorriente.constants import DEBITO
@@ -56,20 +58,24 @@ class MovimientoCuentaCorrienteSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        # El modelo no valida el tope (riesgo detectado en la auditoría, SISTEMA_ACTUAL.md
-        # §15.6: hoy se puede superar sin aviso). Lo agregamos acá, en la capa nueva, sin tocar
-        # el modelo ni el código legacy que lo sigue usando sin este control.
+        # El modelo no valida esto (riesgo detectado en la auditoría, SISTEMA_ACTUAL.md §15.6:
+        # hoy se puede superar sin aviso). Lo agregamos acá, en la capa nueva, sin tocar el
+        # modelo ni el código legacy que lo sigue usando sin este control.
+        #
+        # La cuenta corriente es un saldo a favor del cliente, no una línea de crédito: no se le
+        # permite quedar debiendo dinero al negocio, así que un débito nunca puede superar lo que
+        # tiene disponible (saldo negativo = a favor).
         tipo = attrs.get('tipo', getattr(self.instance, 'tipo', None))
         if self.instance is None and tipo == DEBITO:
             cuenta = attrs['cuenta']
             importe = attrs['importe']
-            if cuenta.tope:
-                saldo_actual = calcular_saldo_cc(cuenta)
-                if (saldo_actual + importe) > cuenta.tope:
-                    raise serializers.ValidationError({
-                        'importe': (
-                            f'El movimiento supera el tope de la cuenta corriente '
-                            f'(tope: {cuenta.tope}, saldo actual: {saldo_actual}).'
-                        )
-                    })
+            saldo_actual = calcular_saldo_cc(cuenta)
+            disponible = -saldo_actual if saldo_actual < 0 else Decimal('0')
+            if importe > disponible:
+                raise serializers.ValidationError({
+                    'importe': (
+                        f'El movimiento (${importe}) supera el saldo a favor disponible del '
+                        f'cliente (${disponible}).'
+                    )
+                })
         return attrs

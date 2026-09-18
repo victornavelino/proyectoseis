@@ -193,14 +193,18 @@ def cobrar_venta(*, venta, pagos_efectivo, pagos_tarjeta, pagos_cuenta_corriente
             )
 
         for pago in pagos_cuenta_corriente:
-            cuenta = CuentaCorriente.objects.filter(cliente=venta.cliente, activa=True).first()
+            cuenta = CuentaCorriente.objects.select_for_update().filter(cliente=venta.cliente, activa=True).first()
             if cuenta is None:
                 raise SinCuentaCorrienteError('El cliente no tiene una cuenta corriente activa.')
             saldo_actual = calcular_saldo_cc(cuenta)
-            if cuenta.tope and (saldo_actual + pago['importe']) > cuenta.tope:
+            # La cuenta corriente es un saldo a favor del cliente, no una línea de crédito: no se
+            # le permite quedar debiendo dinero al negocio, así que el pago nunca puede superar lo
+            # que tiene disponible (saldo negativo = a favor).
+            disponible = -saldo_actual if saldo_actual < 0 else Decimal('0')
+            if pago['importe'] > disponible:
                 raise TopeCuentaCorrienteError(
-                    f"El pago a cuenta corriente supera el tope (tope: {cuenta.tope}, "
-                    f"saldo actual: {saldo_actual})."
+                    f"El pago a cuenta corriente (${pago['importe']}) supera el saldo a favor "
+                    f"disponible del cliente (${disponible})."
                 )
             MovimientoCuentaCorriente.objects.create(
                 cuenta=cuenta, importe=pago['importe'], tipo=DEBITO, venta=venta,
