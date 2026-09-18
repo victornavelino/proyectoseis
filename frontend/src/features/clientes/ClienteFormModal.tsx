@@ -3,7 +3,7 @@ import { Alert, Button, Divider, Group, Modal, Select, Stack, Text, TextInput } 
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { crearCliente, listarListasPrecio } from '../../api/cliente'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import { buscarPersonaPorDocumento, crearPersona, obtenerPersona } from '../../api/persona'
 import type { Cliente, CondicionIva } from '../../types/cliente'
 import type { ListaPrecio } from '../../types/articulo'
@@ -108,7 +108,7 @@ export default function ClienteFormModal({ opened, onClose, onGuardado }: Props)
       }
       setYaBuscado(true)
     } catch (err) {
-      notifications.show({ title: 'Error al buscar', message: (err as Error).message, color: 'red' })
+      notifications.show({ title: 'Error al buscar', message: mensajeDeError(err), color: 'red' })
     } finally {
       setBuscando(false)
     }
@@ -138,7 +138,7 @@ export default function ClienteFormModal({ opened, onClose, onGuardado }: Props)
       onGuardado()
       onClose()
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo guardar', message: detalle, color: 'red' })
     }
   })

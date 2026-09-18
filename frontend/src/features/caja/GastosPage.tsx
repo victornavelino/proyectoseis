@@ -4,7 +4,7 @@ import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { IconEdit, IconTrash } from '@tabler/icons-react'
 import { actualizarGasto, crearGasto, eliminarGasto, listarGastos, listarTodosLosTiposGasto } from '../../api/caja'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import ListaCrud from '../../components/ListaCrud'
 import type { Gasto, GastoInput, TipoGasto } from '../../types/caja'
@@ -49,7 +49,7 @@ function GastoFormModal({
       onGuardado()
       onClose()
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo guardar', message: detalle, color: 'red' })
     }
   })
@@ -110,7 +110,7 @@ export default function GastosPage() {
       notifications.show({ message: 'Gasto eliminado.', color: 'green' })
       setRecarga((n) => n + 1)
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo eliminar', message: detalle, color: 'red' })
     }
   }

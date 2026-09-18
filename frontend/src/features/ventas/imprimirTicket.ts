@@ -1,6 +1,6 @@
 import { notifications } from '@mantine/notifications'
 import { imprimirTicket as pedirPdfTicket } from '../../api/venta'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 
 /** Pide el PDF del ticket a la API (autenticado con el Bearer token, no con la cookie de sesión
  * de Django — por eso no se reusa la vista legacy `venta.views.imprimir_ticket`) y lo abre en
@@ -15,7 +15,7 @@ export async function abrirTicketParaImprimir(numeroTicket: number): Promise<voi
     // siga siendo válido mientras carga el PDF.
     setTimeout(() => URL.revokeObjectURL(url), 60_000)
   } catch (err) {
-    const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+    const detalle = mensajeDeError(err)
     notifications.show({ title: 'No se pudo generar el ticket', message: detalle, color: 'red' })
   }
 }

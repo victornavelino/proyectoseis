@@ -4,7 +4,7 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { IconPlus, IconSearch, IconX } from '@tabler/icons-react'
 import { CLIENTES_POR_PAGINA, listarClientes } from '../../api/cliente'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import EstadoVacio from '../../components/EstadoVacio'
 import Paginador from '../../components/Paginador'
 import type { Cliente } from '../../types/cliente'
@@ -30,7 +30,7 @@ export default function ClientesPage() {
         setClientes(r.results)
         setTotal(r.count)
       })
-      .catch((err: ApiError) => notifications.show({ title: 'Error', message: err.message, color: 'red' }))
+      .catch((err: unknown) => notifications.show({ title: 'Error', message: mensajeDeError(err), color: 'red' }))
       .finally(() => setCargando(false))
   }
 

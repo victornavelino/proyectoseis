@@ -3,7 +3,7 @@ import { Button, Group, Modal, Select, Switch, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { actualizarArticulo, crearArticulo } from '../../api/articulo'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import type { Articulo, ArticuloInput, Categoria, UnidadMedida } from '../../types/articulo'
 
 interface Props {
@@ -65,7 +65,7 @@ export default function ArticuloFormModal({ opened, onClose, onGuardado, articul
       onGuardado()
       onClose()
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo guardar', message: detalle, color: 'red' })
     }
   })

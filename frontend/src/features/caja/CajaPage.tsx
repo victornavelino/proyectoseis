@@ -24,7 +24,7 @@ import {
   obtenerResumenCaja,
   previsualizarCierre,
 } from '../../api/caja'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import EstadoVacio from '../../components/EstadoVacio'
 import type { Caja, ResumenCierreCaja } from '../../types/caja'
@@ -50,7 +50,7 @@ export default function CajaPage() {
         setCajaAbierta(abierta.results[0] ?? null)
         setHistorial(todas.results)
       })
-      .catch((err: ApiError) => notifications.show({ title: 'Error', message: err.message, color: 'red' }))
+      .catch((err: unknown) => notifications.show({ title: 'Error', message: mensajeDeError(err), color: 'red' }))
       .finally(() => setCargando(false))
   }
 
@@ -63,7 +63,7 @@ export default function CajaPage() {
       notifications.show({ message: 'Caja abierta.', color: 'green' })
       cargar()
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo abrir la caja', message: detalle, color: 'red' })
     } finally {
       setProcesando(false)
@@ -80,7 +80,7 @@ export default function CajaPage() {
       setResumen(r)
       setArqueo('')
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo previsualizar el cierre', message: detalle, color: 'red' })
     } finally {
       setProcesando(false)
@@ -98,7 +98,7 @@ export default function CajaPage() {
       await abrirResumenCajaParaImprimir(cerrada.id)
       setResumen(null)
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo cerrar la caja', message: detalle, color: 'red' })
     } finally {
       setProcesando(false)
@@ -113,7 +113,7 @@ export default function CajaPage() {
       const r = await obtenerResumenCaja(id)
       setResumen(r)
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo obtener el resumen', message: detalle, color: 'red' })
     }
   }

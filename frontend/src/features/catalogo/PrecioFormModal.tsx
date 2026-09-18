@@ -4,7 +4,7 @@ import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { actualizarPrecio, crearPrecio, listarArticulos } from '../../api/articulo'
 import { listarTodasLasSucursales } from '../../api/empleado'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import BuscadorLista from '../../components/BuscadorLista'
 import type { Articulo, ListaPrecio, Precio, PrecioInput } from '../../types/articulo'
 import type { Sucursal } from '../../types/empleado'
@@ -63,7 +63,7 @@ export default function PrecioFormModal({ opened, onClose, onGuardado, precio, l
       onGuardado()
       onClose()
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo guardar', message: detalle, color: 'red' })
     }
   })

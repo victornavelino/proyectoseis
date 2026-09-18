@@ -4,7 +4,7 @@ import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { IconEdit } from '@tabler/icons-react'
 import { actualizarTipoIva, crearTipoIva, listarTiposIva } from '../../api/articulo'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import ListaCrud from '../../components/ListaCrud'
 import type { TipoIva, TipoIvaInput } from '../../types/articulo'
@@ -37,7 +37,7 @@ function TipoIvaFormModal({
       onGuardado()
       onClose()
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo guardar', message: detalle, color: 'red' })
     }
   })

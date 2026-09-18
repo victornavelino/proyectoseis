@@ -3,7 +3,7 @@ import { Button, Group, Modal, PasswordInput, Stack, Switch, TextInput } from '@
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { actualizarUsuarioSucursal, crearUsuarioSucursal } from '../../api/usuario'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import type { UsuarioSucursal } from '../../types/usuario'
 
 interface Props {
@@ -62,7 +62,7 @@ export default function UsuarioSucursalFormModal({ opened, onClose, onGuardado, 
       onGuardado()
       onClose()
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo guardar', message: detalle, color: 'red' })
     }
   })

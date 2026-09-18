@@ -21,7 +21,7 @@ import { notifications } from '@mantine/notifications'
 import { useAuth } from '../../auth/AuthContext'
 import { leerPesoBalanza } from '../../api/balanza'
 import { listarArticulos } from '../../api/articulo'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import { listarClientes } from '../../api/cliente'
 import { listarEmpleadosActivos } from '../../api/empleado'
 import { crearVenta, imprimirTicket, previsualizarVenta } from '../../api/venta'
@@ -100,9 +100,9 @@ export default function VentaNuevaPage() {
         setPrevisualizacion(r)
         setErrorPreview(null)
       })
-      .catch((err: ApiError) => {
+      .catch((err: unknown) => {
         setPrevisualizacion(null)
-        setErrorPreview(typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail))
+        setErrorPreview(mensajeDeError(err))
       })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [carritoDebounced, cliente])
@@ -175,7 +175,7 @@ export default function VentaNuevaPage() {
         reiniciarParaNuevaVenta()
       }
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo registrar la venta', message: detalle, color: 'red' })
     } finally {
       setConfirmando(false)

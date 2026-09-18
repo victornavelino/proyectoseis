@@ -4,7 +4,7 @@ import { BarChart, DonutChart, LineChart } from '@mantine/charts'
 import { IconBox, IconReceipt2, IconShoppingCart, IconUsers, type Icon } from '@tabler/icons-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import { obtenerResumenDashboard } from '../../api/venta'
 import type { ResumenDashboard } from '../../types/venta'
 import { formatearMonto } from '../ventas/dinero'
@@ -42,7 +42,7 @@ export default function InicioPage() {
     obtenerResumenDashboard()
       .then(setResumen)
       .catch((err: unknown) => {
-        const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+        const detalle = mensajeDeError(err)
         setErrorResumen(detalle)
       })
       .finally(() => setCargandoResumen(false))

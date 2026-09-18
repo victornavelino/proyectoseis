@@ -19,6 +19,25 @@ export class ApiError extends Error {
   }
 }
 
+/** Junta todos los textos de un cuerpo de error de DRF (string, lista, o dict {campo: mensaje(s)},
+ * anidado o no) en una lista plana, sin las claves. */
+function extraerMensajes(detail: unknown): string[] {
+  if (typeof detail === 'string') return [detail]
+  if (Array.isArray(detail)) return detail.flatMap(extraerMensajes)
+  if (detail && typeof detail === 'object') return Object.values(detail).flatMap(extraerMensajes)
+  return []
+}
+
+/** Mensaje de error listo para mostrarle al usuario: solo el texto, sin la estructura JSON
+ * que devuelve DRF (ej. {"caja": "La caja está cerrada"} → "La caja está cerrada"). */
+export function mensajeDeError(err: unknown): string {
+  if (err instanceof ApiError) {
+    const mensajes = extraerMensajes(err.detail)
+    return mensajes.length > 0 ? mensajes.join('\n') : err.message
+  }
+  return err instanceof Error ? err.message : String(err)
+}
+
 // Evita disparar varios refresh en paralelo si hay varios pedidos simultáneos con el token vencido.
 let refrescoEnCurso: Promise<void> | null = null
 

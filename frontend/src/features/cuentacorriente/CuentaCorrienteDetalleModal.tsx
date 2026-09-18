@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Badge, Button, Group, Modal, NumberInput, SegmentedControl, Table, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { crearMovimientoCuentaCorriente, listarMovimientosCuentaCorriente } from '../../api/cuentacorriente'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import type { CuentaCorriente, MovimientoCuentaCorriente, TipoMovimientoCC } from '../../types/cuentacorriente'
 import { formatearMonto } from '../ventas/dinero'
 
@@ -26,7 +26,7 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
     setCargando(true)
     listarMovimientosCuentaCorriente(cuenta.id)
       .then((r) => setMovimientos(r.results))
-      .catch((err: ApiError) => notifications.show({ title: 'Error', message: err.message, color: 'red' }))
+      .catch((err: unknown) => notifications.show({ title: 'Error', message: mensajeDeError(err), color: 'red' }))
       .finally(() => setCargando(false))
   }
 
@@ -56,7 +56,7 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
       cargar()
       onCambio()
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo registrar', message: detalle, color: 'red' })
     } finally {
       setGuardando(false)

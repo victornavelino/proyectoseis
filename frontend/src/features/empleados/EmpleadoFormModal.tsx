@@ -3,7 +3,7 @@ import { Alert, Button, Group, Modal, Stack, Switch, Text, TextInput } from '@ma
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { actualizarEmpleado, crearEmpleado } from '../../api/empleado'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import { buscarPersonaPorDocumento, crearPersona, obtenerPersona } from '../../api/persona'
 import type { Empleado } from '../../types/empleado'
 import type { Persona } from '../../types/persona'
@@ -82,7 +82,7 @@ export default function EmpleadoFormModal({ opened, onClose, onGuardado, emplead
       }
       setYaBuscado(true)
     } catch (err) {
-      notifications.show({ title: 'Error al buscar', message: (err as Error).message, color: 'red' })
+      notifications.show({ title: 'Error al buscar', message: mensajeDeError(err), color: 'red' })
     } finally {
       setBuscando(false)
     }
@@ -110,7 +110,7 @@ export default function EmpleadoFormModal({ opened, onClose, onGuardado, emplead
       onGuardado()
       onClose()
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo guardar', message: detalle, color: 'red' })
     }
   })

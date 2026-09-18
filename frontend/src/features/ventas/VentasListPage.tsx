@@ -5,7 +5,7 @@ import { notifications } from '@mantine/notifications'
 import { IconBan, IconPlus, IconPrinter, IconSearch, IconX } from '@tabler/icons-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { VENTAS_POR_PAGINA, anularVenta, listarVentas } from '../../api/venta'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import EstadoVacio from '../../components/EstadoVacio'
 import Paginador from '../../components/Paginador'
@@ -55,7 +55,7 @@ export default function VentasListPage() {
         setVentas(r.results)
         setTotal(r.count)
       })
-      .catch((err: ApiError) => notifications.show({ title: 'Error', message: err.message, color: 'red' }))
+      .catch((err: unknown) => notifications.show({ title: 'Error', message: mensajeDeError(err), color: 'red' }))
       .finally(() => setCargando(false))
   }, [busquedaDebounced, pagina, recarga])
 
@@ -90,7 +90,7 @@ export default function VentasListPage() {
       setVentaAAnular(null)
       setRecarga((n) => n + 1)
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo anular', message: detalle, color: 'red' })
     } finally {
       setAnulando(false)

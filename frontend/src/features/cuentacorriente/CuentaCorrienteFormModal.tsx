@@ -3,7 +3,7 @@ import { Button, Group, Modal, NumberInput, Switch, Text, Textarea } from '@mant
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { actualizarCuentaCorriente, crearCuentaCorriente } from '../../api/cuentacorriente'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import BuscadorLista from '../../components/BuscadorLista'
 import { listarClientes } from '../../api/cliente'
 import type { Cliente } from '../../types/cliente'
@@ -55,7 +55,7 @@ export default function CuentaCorrienteFormModal({ opened, onClose, onGuardado, 
       onGuardado()
       onClose()
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo guardar', message: detalle, color: 'red' })
     }
   })

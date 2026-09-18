@@ -22,7 +22,7 @@ import { notifications } from '@mantine/notifications'
 import { IconBuildingBank, IconCash, IconCreditCard, IconPrinter, IconTransfer } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { cobrarVenta, listarPlanesTarjeta } from '../../api/caja'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import { obtenerVenta } from '../../api/venta'
 import type { PlanTarjetaDeCredito } from '../../types/caja'
 import type { Venta } from '../../types/venta'
@@ -99,7 +99,7 @@ export default function CobroVentaPage() {
     if (!numeroTicket) return
     obtenerVenta(Number(numeroTicket))
       .then(setVenta)
-      .catch((err: ApiError) => notifications.show({ title: 'Error', message: err.message, color: 'red' }))
+      .catch((err: unknown) => notifications.show({ title: 'Error', message: mensajeDeError(err), color: 'red' }))
       .finally(() => setCargando(false))
     listarPlanesTarjeta()
       .then((r) => setPlanes(r.results))
@@ -190,7 +190,7 @@ export default function CobroVentaPage() {
       notifications.show({ message: `Venta #${actualizada.numero_ticket} cobrada.`, color: 'green' })
       navigate('/ventas')
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo cobrar', message: detalle, color: 'red' })
     } finally {
       setCobrando(false)

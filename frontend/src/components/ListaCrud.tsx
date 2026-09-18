@@ -3,7 +3,7 @@ import { Button, Container, Group, Paper, Table, Text, TextInput, Title } from '
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { IconPlus, IconSearch, IconX } from '@tabler/icons-react'
-import { ApiError } from '../api/client'
+import { mensajeDeError } from '../api/client'
 import type { PaginatedResponse } from '../types/api'
 import EstadoVacio from './EstadoVacio'
 import Paginador from './Paginador'
@@ -68,7 +68,7 @@ export default function ListaCrud<T>({
         setItems(r.results)
         setTotal(r.count)
       })
-      .catch((err: ApiError) => notifications.show({ title: 'Error', message: err.message, color: 'red' }))
+      .catch((err: unknown) => notifications.show({ title: 'Error', message: mensajeDeError(err), color: 'red' }))
       .finally(() => setCargando(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busquedaDebounced, pagina, disparadorRecarga])

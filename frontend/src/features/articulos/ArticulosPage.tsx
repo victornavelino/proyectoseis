@@ -4,7 +4,7 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { IconEdit, IconPlus, IconSearch, IconX } from '@tabler/icons-react'
 import { ARTICULOS_POR_PAGINA, listarArticulos, listarCategorias, listarUnidadesMedida } from '../../api/articulo'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import EstadoVacio from '../../components/EstadoVacio'
 import Paginador from '../../components/Paginador'
@@ -46,7 +46,7 @@ export default function ArticulosPage() {
         setArticulos(r.results)
         setTotal(r.count)
       })
-      .catch((err: ApiError) => notifications.show({ title: 'Error', message: err.message, color: 'red' }))
+      .catch((err: unknown) => notifications.show({ title: 'Error', message: mensajeDeError(err), color: 'red' }))
       .finally(() => setCargando(false))
   }
 

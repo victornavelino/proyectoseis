@@ -28,7 +28,7 @@ import {
   eliminarPromocionArticulo,
 } from '../../api/promocion'
 import { listarArticulos } from '../../api/articulo'
-import { ApiError } from '../../api/client'
+import { mensajeDeError } from '../../api/client'
 import BuscadorLista from '../../components/BuscadorLista'
 import type { Sucursal } from '../../types/empleado'
 import type { Articulo } from '../../types/articulo'
@@ -171,7 +171,7 @@ export default function PromocionFormModal({ opened, onClose, onGuardado, promoc
       onGuardado()
       onClose()
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo guardar', message: detalle, color: 'red' })
     } finally {
       setGuardando(false)
@@ -297,7 +297,7 @@ function ArticulosDePromocion({
       notifications.show({ message: 'Artículo agregado.', color: 'green' })
       onCambio()
     } catch (err) {
-      const detalle = err instanceof ApiError ? JSON.stringify(err.detail) : (err as Error).message
+      const detalle = mensajeDeError(err)
       notifications.show({ title: 'No se pudo agregar', message: detalle, color: 'red' })
     }
   }
@@ -308,7 +308,7 @@ function ArticulosDePromocion({
       setItems((actual) => actual.filter((pa) => pa.id !== id))
       onCambio()
     } catch (err) {
-      notifications.show({ title: 'No se pudo quitar', message: (err as Error).message, color: 'red' })
+      notifications.show({ title: 'No se pudo quitar', message: mensajeDeError(err), color: 'red' })
     }
   }
 
