@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   ActionIcon,
   Alert,
@@ -8,6 +8,7 @@ import {
   Divider,
   Group,
   Kbd,
+  Modal,
   NumberInput,
   Paper,
   Select,
@@ -18,7 +19,7 @@ import {
   Title,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconPrinter } from '@tabler/icons-react'
+import { IconBuildingBank, IconCash, IconCreditCard, IconPrinter, IconTransfer } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { cobrarVenta, listarPlanesTarjeta } from '../../api/caja'
 import { ApiError } from '../../api/client'
@@ -70,11 +71,29 @@ export default function CobroVentaPage() {
   const [tarjeta, setTarjeta] = useState<PagoTarjeta[]>([])
   const [cc, setCc] = useState<PagoCC[]>([])
   const [transferencia, setTransferencia] = useState<PagoTransferencia[]>([])
-  const [claveAEnfocar, setClaveAEnfocar] = useState<string | null>(null)
-  const efectivoAgregarRef = useRef<HTMLButtonElement>(null)
-  // Compartido entre las cuatro secciones de pago — las claves salen todas de clave(), así que
-  // son únicas sin importar el método.
-  const importeRefs = useRef(new Map<string, HTMLInputElement>())
+
+  // Campo de carga de cada método de pago: siempre visible y habilitado — el botón "Agregar"
+  // (o F1/F2/F3/F6) acepta lo cargado acá y lo suma a la lista de pagos de abajo.
+  const [efectivoImporte, setEfectivoImporte] = useState('')
+  const [tarjetaStaging, setTarjetaStaging] = useState<Omit<PagoTarjeta, 'clave'>>({
+    planTarjetaId: null,
+    numeroTarjeta: '',
+    importe: '',
+    numeroCupon: '',
+    lote: '',
+  })
+  const [ccImporte, setCcImporte] = useState('')
+  const [transferenciaStaging, setTransferenciaStaging] = useState<Omit<PagoTransferencia, 'clave'>>({
+    importe: '',
+    documento: '',
+    nombre: '',
+    apellido: '',
+    banco: '',
+  })
+  const [tarjetaModalAbierto, setTarjetaModalAbierto] = useState(false)
+  const efectivoStagingRef = useRef<HTMLInputElement>(null)
+  const ccStagingRef = useRef<HTMLInputElement>(null)
+  const transferenciaStagingRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!numeroTicket) return
@@ -87,53 +106,53 @@ export default function CobroVentaPage() {
       .catch(() => notifications.show({ message: 'No se pudieron cargar los planes de tarjeta.', color: 'red' }))
   }, [numeroTicket])
 
-  // Apenas carga una venta cobrable, el foco arranca en "+ Agregar" de Efectivo — el método más
-  // común, para no tener que ir a buscarlo con el mouse.
+  // Apenas carga una venta cobrable, el foco arranca en el campo Importe de Efectivo — el
+  // método más común, para no tener que ir a buscarlo con el mouse.
   useEffect(() => {
     if (!cargando && venta && !venta.anulado && !venta.cobrada) {
-      efectivoAgregarRef.current?.focus()
+      efectivoStagingRef.current?.focus()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cargando, venta?.numero_ticket])
 
-  // Al agregar un pago, el foco salta a su campo Importe (la fila recién se crea en este
-  // render, así que hace falta esperar a que el ref del input exista).
-  useEffect(() => {
-    if (!claveAEnfocar) return
-    const input = importeRefs.current.get(claveAEnfocar)
-    if (input) {
-      input.focus()
-      input.select()
+  // Acepta lo cargado en el campo de la sección — se usa tanto desde el botón "Agregar" como
+  // desde Enter en el campo y los atajos F1/F2/F3/F6 (ver el listener más abajo). Si el importe
+  // no es válido todavía, en vez de agregar nada sólo lleva el foco al campo para completarlo.
+  const aceptarEfectivo = () => {
+    if (!(Number(efectivoImporte) > 0)) {
+      efectivoStagingRef.current?.focus()
+      return
     }
-    setClaveAEnfocar(null)
-  }, [claveAEnfocar])
-
-  const registrarImporteRef = (itemClave: string) => (el: HTMLInputElement | null) => {
-    if (el) importeRefs.current.set(itemClave, el)
-    else importeRefs.current.delete(itemClave)
+    setEfectivo((a) => [...a, { clave: clave(), importe: efectivoImporte }])
+    setEfectivoImporte('')
+    efectivoStagingRef.current?.focus()
   }
-
-  // Un método de pago por sección — se usan tanto desde el botón "+ Agregar" como desde los
-  // atajos de teclado F1/F2/F3/F6 (ver el listener más abajo).
-  const agregarEfectivo = () => {
-    const nueva = clave()
-    setEfectivo((a) => [...a, { clave: nueva, importe: '' }])
-    setClaveAEnfocar(nueva)
+  const aceptarTarjeta = () => {
+    if (!(Number(tarjetaStaging.importe) > 0)) return
+    setTarjeta((a) => [...a, { clave: clave(), ...tarjetaStaging }])
+    cerrarModalTarjeta()
   }
-  const agregarTarjeta = () => {
-    const nueva = clave()
-    setTarjeta((a) => [...a, { clave: nueva, planTarjetaId: null, numeroTarjeta: '', importe: '', numeroCupon: '', lote: '' }])
-    setClaveAEnfocar(nueva)
+  const cerrarModalTarjeta = () => {
+    setTarjetaModalAbierto(false)
+    setTarjetaStaging({ planTarjetaId: null, numeroTarjeta: '', importe: '', numeroCupon: '', lote: '' })
   }
-  const agregarCc = () => {
-    const nueva = clave()
-    setCc((a) => [...a, { clave: nueva, importe: '' }])
-    setClaveAEnfocar(nueva)
+  const aceptarCc = () => {
+    if (!(Number(ccImporte) > 0)) {
+      ccStagingRef.current?.focus()
+      return
+    }
+    setCc((a) => [...a, { clave: clave(), importe: ccImporte }])
+    setCcImporte('')
+    ccStagingRef.current?.focus()
   }
-  const agregarTransferencia = () => {
-    const nueva = clave()
-    setTransferencia((a) => [...a, { clave: nueva, importe: '', documento: '', nombre: '', apellido: '', banco: '' }])
-    setClaveAEnfocar(nueva)
+  const aceptarTransferencia = () => {
+    if (!(Number(transferenciaStaging.importe) > 0)) {
+      transferenciaStagingRef.current?.focus()
+      return
+    }
+    setTransferencia((a) => [...a, { clave: clave(), ...transferenciaStaging }])
+    setTransferenciaStaging({ importe: '', documento: '', nombre: '', apellido: '', banco: '' })
+    transferenciaStagingRef.current?.focus()
   }
 
   const totalIngresado = useMemo(() => {
@@ -178,29 +197,30 @@ export default function CobroVentaPage() {
     }
   }
 
-  // Atajos de teclado del cobro: F1/F2/F3/F6 agregan un pago del método correspondiente (igual
-  // que tocar "+ Agregar") y F4 confirma el cobro — así el cajero no necesita el mouse. Van a
-  // nivel de window (no de un input puntual) porque son teclas de función, no imprimibles: no
-  // interfieren con lo que se esté tipeando en ese momento.
+  // Atajos de teclado del cobro: F1/F3/F6 aceptan el importe cargado en la sección
+  // correspondiente (igual que tocar "Agregar"), F2 abre el modal de Tarjeta, y F4 confirma el
+  // cobro — así el cajero no necesita el mouse. Van a nivel de window (no de un input puntual)
+  // porque son teclas de función, no imprimibles: no interfieren con lo que se esté tipeando en
+  // ese momento.
   useEffect(() => {
     if (cargando || !venta || venta.anulado || venta.cobrada) return
     const onKeyDown = (e: globalThis.KeyboardEvent) => {
       switch (e.key) {
         case 'F1':
           e.preventDefault()
-          agregarEfectivo()
+          aceptarEfectivo()
           break
         case 'F2':
           e.preventDefault()
-          agregarTarjeta()
+          setTarjetaModalAbierto(true)
           break
         case 'F3':
           e.preventDefault()
-          agregarCc()
+          aceptarCc()
           break
         case 'F6':
           e.preventDefault()
-          agregarTransferencia()
+          aceptarTransferencia()
           break
         case 'F4':
           e.preventDefault()
@@ -216,8 +236,29 @@ export default function CobroVentaPage() {
   if (cargando) return <Container py="md">Cargando…</Container>
   if (!venta) return <Container py="md">No se encontró la venta.</Container>
 
+  const tablaArticulos = (
+    <Table striped verticalSpacing="xs">
+      <Table.Thead>
+        <Table.Tr>
+          <Table.Th>Artículo</Table.Th>
+          <Table.Th>Cantidad</Table.Th>
+          <Table.Th>Subtotal</Table.Th>
+        </Table.Tr>
+      </Table.Thead>
+      <Table.Tbody>
+        {venta.articulos.map((a) => (
+          <Table.Tr key={a.id}>
+            <Table.Td>{a.nombre_articulo}</Table.Td>
+            <Table.Td>{a.cantidad_peso}</Table.Td>
+            <Table.Td>{formatearMonto(a.total_articulo)}</Table.Td>
+          </Table.Tr>
+        ))}
+      </Table.Tbody>
+    </Table>
+  )
+
   return (
-    <Container size="lg" py="md">
+    <Container size="xl" py="md">
       <Group justify="space-between" align="flex-start" mb="lg">
         <div>
           <Title order={2}>Cobrar venta #{venta.numero_ticket}</Title>
@@ -248,12 +289,37 @@ export default function CobroVentaPage() {
 
       {!venta.anulado && !venta.cobrada && (
         <Group align="flex-start" gap="lg" mb="lg">
+          {/* Detalle de artículos a la izquierda, al lado de los tipos de cobro — así el
+             cajero ve qué se está cobrando mientras carga los montos. */}
+          <Paper withBorder p={0} style={{ width: 420, flexShrink: 0, position: 'sticky', top: 16, maxHeight: 'calc(100vh - 32px)', overflow: 'auto' }}>
+            <Divider label="Detalle de la venta" labelPosition="center" pt="sm" />
+            {tablaArticulos}
+          </Paper>
+
           <Stack gap="md" style={{ flex: 1, minWidth: 320 }}>
-            <SeccionPagos titulo="Efectivo" atajo="F1" agregarRef={efectivoAgregarRef} onAgregar={agregarEfectivo}>
+            <SeccionPagos titulo="Efectivo" icono={<IconCash size={18} />} atajo="F1">
+              <Group>
+                <NumberInput
+                  ref={efectivoStagingRef}
+                  label="Importe"
+                  value={efectivoImporte}
+                  onChange={(v) => setEfectivoImporte(String(v))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      aceptarEfectivo()
+                    }
+                  }}
+                  decimalScale={2}
+                  min={0}
+                />
+                <Button mt={22} onClick={aceptarEfectivo}>
+                  Agregar
+                </Button>
+              </Group>
               {efectivo.map((p) => (
                 <Group key={p.clave}>
                   <NumberInput
-                    ref={registrarImporteRef(p.clave)}
                     label="Importe"
                     value={p.importe}
                     onChange={(v) => setEfectivo((a) => a.map((x) => (x.clave === p.clave ? { ...x, importe: String(v) } : x)))}
@@ -267,7 +333,10 @@ export default function CobroVentaPage() {
               ))}
             </SeccionPagos>
 
-            <SeccionPagos titulo="Tarjeta" atajo="F2" onAgregar={agregarTarjeta}>
+            <SeccionPagos titulo="Tarjeta" icono={<IconCreditCard size={18} />} atajo="F2">
+              <Button variant="light" onClick={() => setTarjetaModalAbierto(true)}>
+                + Agregar pago con tarjeta
+              </Button>
               {tarjeta.map((p) => (
                 <Paper key={p.clave} withBorder p="sm">
                   <Group grow>
@@ -278,7 +347,6 @@ export default function CobroVentaPage() {
                       onChange={(v) => setTarjeta((a) => a.map((x) => (x.clave === p.clave ? { ...x, planTarjetaId: v } : x)))}
                     />
                     <NumberInput
-                      ref={registrarImporteRef(p.clave)}
                       label="Importe"
                       value={p.importe}
                       onChange={(v) => setTarjeta((a) => a.map((x) => (x.clave === p.clave ? { ...x, importe: String(v) } : x)))}
@@ -305,11 +373,29 @@ export default function CobroVentaPage() {
               ))}
             </SeccionPagos>
 
-            <SeccionPagos titulo="Cuenta corriente" atajo="F3" onAgregar={agregarCc}>
+            <SeccionPagos titulo="Cuenta corriente" icono={<IconBuildingBank size={18} />} atajo="F3">
+              <Group>
+                <NumberInput
+                  ref={ccStagingRef}
+                  label="Importe"
+                  value={ccImporte}
+                  onChange={(v) => setCcImporte(String(v))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      aceptarCc()
+                    }
+                  }}
+                  decimalScale={2}
+                  min={0}
+                />
+                <Button mt={22} onClick={aceptarCc}>
+                  Agregar
+                </Button>
+              </Group>
               {cc.map((p) => (
                 <Group key={p.clave}>
                   <NumberInput
-                    ref={registrarImporteRef(p.clave)}
                     label="Importe"
                     value={p.importe}
                     onChange={(v) => setCc((a) => a.map((x) => (x.clave === p.clave ? { ...x, importe: String(v) } : x)))}
@@ -323,12 +409,37 @@ export default function CobroVentaPage() {
               ))}
             </SeccionPagos>
 
-            <SeccionPagos titulo="Transferencia" atajo="F6" onAgregar={agregarTransferencia}>
+            <SeccionPagos titulo="Transferencia" icono={<IconTransfer size={18} />} atajo="F6">
+              <Paper withBorder p="sm">
+                <Group grow>
+                  <NumberInput
+                    ref={transferenciaStagingRef}
+                    label="Importe"
+                    value={transferenciaStaging.importe}
+                    onChange={(v) => setTransferenciaStaging((s) => ({ ...s, importe: String(v) }))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        aceptarTransferencia()
+                      }
+                    }}
+                    decimalScale={2}
+                    min={0}
+                  />
+                  <TextInput
+                    label="Documento del titular"
+                    value={transferenciaStaging.documento}
+                    onChange={(e) => setTransferenciaStaging((s) => ({ ...s, documento: e.currentTarget.value }))}
+                  />
+                </Group>
+                <Button mt="xs" onClick={aceptarTransferencia}>
+                  Agregar
+                </Button>
+              </Paper>
               {transferencia.map((p) => (
                 <Paper key={p.clave} withBorder p="sm">
                   <Group grow>
                     <NumberInput
-                      ref={registrarImporteRef(p.clave)}
                       label="Importe"
                       value={p.importe}
                       onChange={(v) => setTransferencia((a) => a.map((x) => (x.clave === p.clave ? { ...x, importe: String(v) } : x)))}
@@ -396,58 +507,81 @@ export default function CobroVentaPage() {
         </Group>
       )}
 
-      <Paper withBorder p={0}>
-        <Divider label="Detalle de la venta" labelPosition="center" pt="sm" />
-        <Table striped verticalSpacing="xs">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Artículo</Table.Th>
-              <Table.Th>Cantidad</Table.Th>
-              <Table.Th>Subtotal</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {venta.articulos.map((a) => (
-              <Table.Tr key={a.id}>
-                <Table.Td>{a.nombre_articulo}</Table.Td>
-                <Table.Td>{a.cantidad_peso}</Table.Td>
-                <Table.Td>{formatearMonto(a.total_articulo)}</Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
-      </Paper>
+      {(venta.anulado || venta.cobrada) && (
+        <Paper withBorder p={0}>
+          <Divider label="Detalle de la venta" labelPosition="center" pt="sm" />
+          {tablaArticulos}
+        </Paper>
+      )}
+
+      <Modal opened={tarjetaModalAbierto} onClose={cerrarModalTarjeta} title="Agregar pago con tarjeta">
+        <Stack gap="sm">
+          <Select
+            label="Plan"
+            data={planes.map((pl) => ({ value: String(pl.id), label: `${pl.tarjeta_nombre} — ${pl.nombre_plan} (${pl.interes}%)` }))}
+            value={tarjetaStaging.planTarjetaId}
+            onChange={(v) => setTarjetaStaging((s) => ({ ...s, planTarjetaId: v }))}
+            data-autofocus
+          />
+          <NumberInput
+            label="Importe"
+            value={tarjetaStaging.importe}
+            onChange={(v) => setTarjetaStaging((s) => ({ ...s, importe: String(v) }))}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                aceptarTarjeta()
+              }
+            }}
+            decimalScale={2}
+            min={0}
+          />
+          <Group grow>
+            <TextInput
+              label="Nº cupón"
+              value={tarjetaStaging.numeroCupon}
+              onChange={(e) => setTarjetaStaging((s) => ({ ...s, numeroCupon: e.currentTarget.value }))}
+            />
+            <TextInput
+              label="Lote"
+              value={tarjetaStaging.lote}
+              onChange={(e) => setTarjetaStaging((s) => ({ ...s, lote: e.currentTarget.value }))}
+            />
+          </Group>
+          <Group justify="flex-end" mt="sm">
+            <Button variant="subtle" onClick={cerrarModalTarjeta}>
+              Cancelar
+            </Button>
+            <Button onClick={aceptarTarjeta} disabled={!(Number(tarjetaStaging.importe) > 0)}>
+              Agregar
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Container>
   )
 }
 
 function SeccionPagos({
   titulo,
+  icono,
   atajo,
-  onAgregar,
-  agregarRef,
   children,
 }: {
   titulo: string
-  /** Tecla de función que agrega un pago de este método (ver el listener en CobroVentaPage) —
-   * se muestra al lado de "+ Agregar" a modo de leyenda guía. */
+  /** Ícono del tipo de pago (efectivo, tarjeta, etc.), mostrado junto al título de la sección. */
+  icono: ReactNode
+  /** Tecla de función que acepta el importe cargado en esta sección (ver el listener en
+   * CobroVentaPage) — se muestra junto al título a modo de leyenda guía. */
   atajo: string
-  onAgregar: () => void
-  /** Sólo la usa Efectivo, para que el foco arranque ahí apenas carga la pantalla (ver
-   * CobroVentaPage). */
-  agregarRef?: RefObject<HTMLButtonElement | null>
   children: ReactNode
 }) {
   return (
     <div>
-      <Group justify="space-between" mb="xs">
+      <Group gap={6} mb="xs">
+        {icono}
         <Text fw={500}>{titulo}</Text>
-        <Group gap="xs" wrap="nowrap">
-          <Kbd>{atajo}</Kbd>
-          <Button ref={agregarRef} size="xs" variant="light" onClick={onAgregar}>
-            + Agregar
-          </Button>
-        </Group>
+        <Kbd>{atajo}</Kbd>
       </Group>
       <Stack gap="xs">{children}</Stack>
     </div>
