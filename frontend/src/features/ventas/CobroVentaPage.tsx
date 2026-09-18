@@ -19,7 +19,15 @@ import {
   Title,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconBuildingBank, IconCash, IconCreditCard, IconPrinter, IconTransfer } from '@tabler/icons-react'
+import {
+  IconBuildingBank,
+  IconCash,
+  IconCreditCard,
+  IconPrinter,
+  IconTransfer,
+  IconTrash,
+  IconX,
+} from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { cobrarVenta, listarPlanesTarjeta } from '../../api/caja'
 import { mensajeDeError } from '../../api/client'
@@ -54,8 +62,25 @@ interface PagoTransferencia {
   banco: string
 }
 
+type Metodo = 'efectivo' | 'tarjeta' | 'cc' | 'transferencia'
+
 function clave() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+const TARJETA_STAGING_VACIA: Omit<PagoTarjeta, 'clave'> = {
+  planTarjetaId: null,
+  numeroTarjeta: '',
+  importe: '',
+  numeroCupon: '',
+  lote: '',
+}
+const TRANSFERENCIA_STAGING_VACIA: Omit<PagoTransferencia, 'clave'> = {
+  importe: '',
+  documento: '',
+  nombre: '',
+  apellido: '',
+  banco: '',
 }
 
 export default function CobroVentaPage() {
@@ -72,24 +97,18 @@ export default function CobroVentaPage() {
   const [cc, setCc] = useState<PagoCC[]>([])
   const [transferencia, setTransferencia] = useState<PagoTransferencia[]>([])
 
-  // Campo de carga de cada método de pago: siempre visible y habilitado — el botón "Agregar"
-  // (o F1/F2/F3/F6) acepta lo cargado acá y lo suma a la lista de pagos de abajo.
+  // Sólo un método de pago "abierto" a la vez (o el modal de Tarjeta) — en vez de mostrar las 4
+  // formas de cobro siempre expandidas, el cajero elige una con los botones grandes de arriba
+  // (o F1/F2/F3/F6) y sólo ve el formulario de esa.
+  const [metodoAbierto, setMetodoAbierto] = useState<Metodo | null>(null)
   const [efectivoImporte, setEfectivoImporte] = useState('')
-  const [tarjetaStaging, setTarjetaStaging] = useState<Omit<PagoTarjeta, 'clave'>>({
-    planTarjetaId: null,
-    numeroTarjeta: '',
-    importe: '',
-    numeroCupon: '',
-    lote: '',
-  })
+  // "Paga con" es sólo una calculadora de vuelto para el cajero: nunca se manda al backend.
+  const [pagaCon, setPagaCon] = useState('')
+  const [tarjetaStaging, setTarjetaStaging] = useState<Omit<PagoTarjeta, 'clave'>>(TARJETA_STAGING_VACIA)
   const [ccImporte, setCcImporte] = useState('')
-  const [transferenciaStaging, setTransferenciaStaging] = useState<Omit<PagoTransferencia, 'clave'>>({
-    importe: '',
-    documento: '',
-    nombre: '',
-    apellido: '',
-    banco: '',
-  })
+  const [transferenciaStaging, setTransferenciaStaging] = useState<Omit<PagoTransferencia, 'clave'>>(
+    TRANSFERENCIA_STAGING_VACIA,
+  )
   const [tarjetaModalAbierto, setTarjetaModalAbierto] = useState(false)
   const efectivoStagingRef = useRef<HTMLInputElement>(null)
   const ccStagingRef = useRef<HTMLInputElement>(null)
@@ -106,26 +125,64 @@ export default function CobroVentaPage() {
       .catch(() => notifications.show({ message: 'No se pudieron cargar los planes de tarjeta.', color: 'red' }))
   }, [numeroTicket])
 
-  // Apenas carga una venta cobrable, el foco arranca en el campo Importe de Efectivo — el
-  // método más común, para no tener que ir a buscarlo con el mouse.
+  const totalIngresado = useMemo(() => {
+    const suma = (lista: { importe: string }[]) => lista.reduce((acc, p) => acc + (Number(p.importe) || 0), 0)
+    return suma(efectivo) + suma(tarjeta) + suma(cc) + suma(transferencia)
+  }, [efectivo, tarjeta, cc, transferencia])
+
+  const totalVenta = venta ? Number(venta.monto) : 0
+  const saldoPendiente = totalVenta - totalIngresado
+  const cobroCompleto = saldoPendiente <= 0.005
+  const coincide = venta ? Math.abs(saldoPendiente) < 0.005 : false
+  const hayAlgunPago = efectivo.length + tarjeta.length + cc.length + transferencia.length > 0
+
+  // Abre el formulario del método elegido (o el modal, para Tarjeta) con el importe restante ya
+  // cargado — el caso más común es pagar todo con un solo método, así el cajero sólo confirma.
+  const abrirMetodo = (metodo: Metodo) => {
+    if (cobroCompleto) {
+      notifications.show({
+        message: 'Ya está cargado el total de la venta. Quitá un pago de la lista para modificarlo.',
+        color: 'yellow',
+      })
+      return
+    }
+    const sugerido = saldoPendiente.toFixed(2)
+    if (metodo === 'tarjeta') {
+      setTarjetaStaging((s) => ({ ...s, importe: s.importe || sugerido }))
+      setTarjetaModalAbierto(true)
+      return
+    }
+    setMetodoAbierto(metodo)
+    if (metodo === 'efectivo') setEfectivoImporte((v) => v || sugerido)
+    if (metodo === 'cc') setCcImporte((v) => v || sugerido)
+    if (metodo === 'transferencia') setTransferenciaStaging((s) => ({ ...s, importe: s.importe || sugerido }))
+  }
+
+  const cerrarPanel = () => {
+    setMetodoAbierto(null)
+    setEfectivoImporte('')
+    setPagaCon('')
+    setCcImporte('')
+    setTransferenciaStaging(TRANSFERENCIA_STAGING_VACIA)
+  }
+
+  // Apenas carga una venta cobrable, se abre directo el panel de Efectivo (el método más común)
+  // para no tener que ir a buscarlo con el mouse.
   useEffect(() => {
     if (!cargando && venta && !venta.anulado && !venta.cobrada) {
-      efectivoStagingRef.current?.focus()
+      setMetodoAbierto('efectivo')
+      setEfectivoImporte(String(venta.monto))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cargando, venta?.numero_ticket])
 
-  // Acepta lo cargado en el campo de la sección — se usa tanto desde el botón "Agregar" como
-  // desde Enter en el campo y los atajos F1/F2/F3/F6 (ver el listener más abajo). Si el importe
-  // no es válido todavía, en vez de agregar nada sólo lleva el foco al campo para completarlo.
   const aceptarEfectivo = () => {
     if (!(Number(efectivoImporte) > 0)) {
       efectivoStagingRef.current?.focus()
       return
     }
     setEfectivo((a) => [...a, { clave: clave(), importe: efectivoImporte }])
-    setEfectivoImporte('')
-    efectivoStagingRef.current?.focus()
+    cerrarPanel()
   }
   const aceptarTarjeta = () => {
     if (!(Number(tarjetaStaging.importe) > 0)) return
@@ -134,7 +191,7 @@ export default function CobroVentaPage() {
   }
   const cerrarModalTarjeta = () => {
     setTarjetaModalAbierto(false)
-    setTarjetaStaging({ planTarjetaId: null, numeroTarjeta: '', importe: '', numeroCupon: '', lote: '' })
+    setTarjetaStaging(TARJETA_STAGING_VACIA)
   }
   const aceptarCc = () => {
     if (!(Number(ccImporte) > 0)) {
@@ -142,8 +199,7 @@ export default function CobroVentaPage() {
       return
     }
     setCc((a) => [...a, { clave: clave(), importe: ccImporte }])
-    setCcImporte('')
-    ccStagingRef.current?.focus()
+    cerrarPanel()
   }
   const aceptarTransferencia = () => {
     if (!(Number(transferenciaStaging.importe) > 0)) {
@@ -151,18 +207,11 @@ export default function CobroVentaPage() {
       return
     }
     setTransferencia((a) => [...a, { clave: clave(), ...transferenciaStaging }])
-    setTransferenciaStaging({ importe: '', documento: '', nombre: '', apellido: '', banco: '' })
-    transferenciaStagingRef.current?.focus()
+    cerrarPanel()
   }
 
-  const totalIngresado = useMemo(() => {
-    const suma = (lista: { importe: string }[]) => lista.reduce((acc, p) => acc + (Number(p.importe) || 0), 0)
-    return suma(efectivo) + suma(tarjeta) + suma(cc) + suma(transferencia)
-  }, [efectivo, tarjeta, cc, transferencia])
-
-  const totalVenta = venta ? Number(venta.monto) : 0
-  const coincide = venta ? Math.abs(totalIngresado - totalVenta) < 0.005 : false
-  const hayAlgunPago = efectivo.length + tarjeta.length + cc.length + transferencia.length > 0
+  // Vuelto = lo que trae el cliente menos lo que se le está cobrando en esta línea de efectivo.
+  const vuelto = pagaCon !== '' ? Number(pagaCon) - Number(efectivoImporte || 0) : null
 
   const confirmarCobro = async () => {
     if (!venta || !coincide) return
@@ -197,30 +246,29 @@ export default function CobroVentaPage() {
     }
   }
 
-  // Atajos de teclado del cobro: F1/F3/F6 aceptan el importe cargado en la sección
-  // correspondiente (igual que tocar "Agregar"), F2 abre el modal de Tarjeta, y F4 confirma el
-  // cobro — así el cajero no necesita el mouse. Van a nivel de window (no de un input puntual)
-  // porque son teclas de función, no imprimibles: no interfieren con lo que se esté tipeando en
-  // ese momento.
+  // Atajos de teclado del cobro: F1/F2/F3/F6 abren el formulario del método correspondiente
+  // (igual que tocar su botón) y F4 confirma el cobro — así el cajero no necesita el mouse. Van a
+  // nivel de window (no de un input puntual) porque son teclas de función, no imprimibles: no
+  // interfieren con lo que se esté tipeando en ese momento.
   useEffect(() => {
     if (cargando || !venta || venta.anulado || venta.cobrada) return
     const onKeyDown = (e: globalThis.KeyboardEvent) => {
       switch (e.key) {
         case 'F1':
           e.preventDefault()
-          aceptarEfectivo()
+          abrirMetodo('efectivo')
           break
         case 'F2':
           e.preventDefault()
-          setTarjetaModalAbierto(true)
+          abrirMetodo('tarjeta')
           break
         case 'F3':
           e.preventDefault()
-          aceptarCc()
+          abrirMetodo('cc')
           break
         case 'F6':
           e.preventDefault()
-          aceptarTransferencia()
+          abrirMetodo('transferencia')
           break
         case 'F4':
           e.preventDefault()
@@ -231,7 +279,7 @@ export default function CobroVentaPage() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cargando, venta, coincide, hayAlgunPago, cobrando])
+  }, [cargando, venta, coincide, hayAlgunPago, cobrando, cobroCompleto, saldoPendiente])
 
   if (cargando) return <Container py="md">Cargando…</Container>
   if (!venta) return <Container py="md">No se encontró la venta.</Container>
@@ -256,6 +304,54 @@ export default function CobroVentaPage() {
       </Table.Tbody>
     </Table>
   )
+
+  // Una sola lista de pagos ya cargados (en vez de una lista aparte por método) para que el
+  // cajero vea de un vistazo todo lo que se cobró hasta ahora, y pueda quitar cualquier línea.
+  const filasPago = [
+    ...efectivo.map((p) => ({
+      clave: p.clave,
+      tipo: 'Efectivo',
+      detalle: '—',
+      importe: Number(p.importe),
+      quitar: () => setEfectivo((a) => a.filter((x) => x.clave !== p.clave)),
+    })),
+    ...tarjeta.map((p) => {
+      const plan = planes.find((pl) => String(pl.id) === p.planTarjetaId)
+      const detalle =
+        [plan ? `${plan.tarjeta_nombre} — ${plan.nombre_plan}` : null, p.numeroCupon && `cupón ${p.numeroCupon}`, p.lote && `lote ${p.lote}`]
+          .filter(Boolean)
+          .join(' · ') || '—'
+      return {
+        clave: p.clave,
+        tipo: 'Tarjeta',
+        detalle,
+        importe: Number(p.importe),
+        quitar: () => setTarjeta((a) => a.filter((x) => x.clave !== p.clave)),
+      }
+    }),
+    ...cc.map((p) => ({
+      clave: p.clave,
+      tipo: 'Cuenta corriente',
+      detalle: '—',
+      importe: Number(p.importe),
+      quitar: () => setCc((a) => a.filter((x) => x.clave !== p.clave)),
+    })),
+    ...transferencia.map((p) => ({
+      clave: p.clave,
+      tipo: 'Transferencia',
+      detalle: [`${p.nombre} ${p.apellido}`.trim(), p.documento && `doc ${p.documento}`, p.banco].filter(Boolean).join(' · ') || '—',
+      importe: Number(p.importe),
+      quitar: () => setTransferencia((a) => a.filter((x) => x.clave !== p.clave)),
+    })),
+  ]
+
+  const estadoSaldo = !hayAlgunPago
+    ? { texto: 'Sin pagos cargados', color: 'gray' }
+    : coincide
+      ? { texto: 'Cobro completo', color: 'green' }
+      : saldoPendiente > 0
+        ? { texto: `Falta ${formatearMonto(saldoPendiente)}`, color: 'yellow' }
+        : { texto: `Sobra ${formatearMonto(Math.abs(saldoPendiente))}`, color: 'red' }
 
   return (
     <Container size="xl" py="md">
@@ -297,84 +393,108 @@ export default function CobroVentaPage() {
           </Paper>
 
           <Stack gap="md" style={{ flex: 1, minWidth: 320 }}>
-            <SeccionPagos titulo="Efectivo" icono={<IconCash size={18} />} atajo="F1">
-              <Group>
-                <NumberInput
-                  ref={efectivoStagingRef}
-                  label="Importe"
-                  value={efectivoImporte}
-                  onChange={(v) => setEfectivoImporte(String(v))}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      aceptarEfectivo()
-                    }
-                  }}
-                  decimalScale={2}
-                  min={0}
-                />
-                <Button mt={22} onClick={aceptarEfectivo}>
-                  Agregar
-                </Button>
-              </Group>
-              {efectivo.map((p) => (
-                <Group key={p.clave}>
+            <Group grow gap="sm">
+              <MetodoBoton
+                icono={<IconCash size={20} />}
+                titulo="Efectivo"
+                atajo="F1"
+                activo={metodoAbierto === 'efectivo'}
+                deshabilitado={cobroCompleto}
+                onClick={() => abrirMetodo('efectivo')}
+              />
+              <MetodoBoton
+                icono={<IconCreditCard size={20} />}
+                titulo="Tarjeta"
+                atajo="F2"
+                activo={tarjetaModalAbierto}
+                deshabilitado={cobroCompleto}
+                onClick={() => abrirMetodo('tarjeta')}
+              />
+              <MetodoBoton
+                icono={<IconBuildingBank size={20} />}
+                titulo="Cta. corriente"
+                atajo="F3"
+                activo={metodoAbierto === 'cc'}
+                deshabilitado={cobroCompleto}
+                onClick={() => abrirMetodo('cc')}
+              />
+              <MetodoBoton
+                icono={<IconTransfer size={20} />}
+                titulo="Transferencia"
+                atajo="F6"
+                activo={metodoAbierto === 'transferencia'}
+                deshabilitado={cobroCompleto}
+                onClick={() => abrirMetodo('transferencia')}
+              />
+            </Group>
+
+            {metodoAbierto === 'efectivo' && (
+              <Paper withBorder p="md">
+                <Group justify="space-between" mb="xs">
+                  <Text fw={600} size="sm">
+                    Efectivo
+                  </Text>
+                  <ActionIcon variant="subtle" color="gray" aria-label="Cerrar" onClick={cerrarPanel}>
+                    <IconX size={16} />
+                  </ActionIcon>
+                </Group>
+                <Group grow align="flex-start">
                   <NumberInput
+                    ref={efectivoStagingRef}
                     label="Importe"
-                    value={p.importe}
-                    onChange={(v) => setEfectivo((a) => a.map((x) => (x.clave === p.clave ? { ...x, importe: String(v) } : x)))}
+                    value={efectivoImporte}
+                    onChange={(v) => setEfectivoImporte(String(v))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        aceptarEfectivo()
+                      }
+                    }}
+                    decimalScale={2}
+                    min={0}
+                    autoFocus
+                  />
+                  <NumberInput
+                    label="Paga con (para el vuelto)"
+                    placeholder="Opcional"
+                    value={pagaCon}
+                    onChange={(v) => setPagaCon(String(v))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        aceptarEfectivo()
+                      }
+                    }}
                     decimalScale={2}
                     min={0}
                   />
-                  <Button variant="subtle" color="red" mt={22} onClick={() => setEfectivo((a) => a.filter((x) => x.clave !== p.clave))}>
-                    Quitar
+                </Group>
+                {pagaCon !== '' && vuelto !== null && (
+                  <Text mt="xs" size="sm" fw={500} c={vuelto < 0 ? 'red' : 'dimmed'}>
+                    {vuelto >= 0 ? `Vuelto: ${formatearMonto(vuelto)}` : `Todavía falta ${formatearMonto(Math.abs(vuelto))}`}
+                  </Text>
+                )}
+                <Group justify="flex-end" mt="sm">
+                  <Button variant="subtle" color="gray" onClick={cerrarPanel}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={aceptarEfectivo} disabled={!(Number(efectivoImporte) > 0)}>
+                    Agregar
                   </Button>
                 </Group>
-              ))}
-            </SeccionPagos>
+              </Paper>
+            )}
 
-            <SeccionPagos titulo="Tarjeta" icono={<IconCreditCard size={18} />} atajo="F2">
-              <Button variant="light" onClick={() => setTarjetaModalAbierto(true)}>
-                + Agregar pago con tarjeta
-              </Button>
-              {tarjeta.map((p) => (
-                <Paper key={p.clave} withBorder p="sm">
-                  <Group grow>
-                    <Select
-                      label="Plan"
-                      data={planes.map((pl) => ({ value: String(pl.id), label: `${pl.tarjeta_nombre} — ${pl.nombre_plan} (${pl.interes}%)` }))}
-                      value={p.planTarjetaId}
-                      onChange={(v) => setTarjeta((a) => a.map((x) => (x.clave === p.clave ? { ...x, planTarjetaId: v } : x)))}
-                    />
-                    <NumberInput
-                      label="Importe"
-                      value={p.importe}
-                      onChange={(v) => setTarjeta((a) => a.map((x) => (x.clave === p.clave ? { ...x, importe: String(v) } : x)))}
-                      decimalScale={2}
-                      min={0}
-                    />
-                  </Group>
-                  <Group grow mt="xs">
-                    <TextInput
-                      label="Nº cupón"
-                      value={p.numeroCupon}
-                      onChange={(e) => setTarjeta((a) => a.map((x) => (x.clave === p.clave ? { ...x, numeroCupon: e.currentTarget.value } : x)))}
-                    />
-                    <TextInput
-                      label="Lote"
-                      value={p.lote}
-                      onChange={(e) => setTarjeta((a) => a.map((x) => (x.clave === p.clave ? { ...x, lote: e.currentTarget.value } : x)))}
-                    />
-                  </Group>
-                  <Button variant="subtle" color="red" size="xs" mt="xs" onClick={() => setTarjeta((a) => a.filter((x) => x.clave !== p.clave))}>
-                    Quitar
-                  </Button>
-                </Paper>
-              ))}
-            </SeccionPagos>
-
-            <SeccionPagos titulo="Cuenta corriente" icono={<IconBuildingBank size={18} />} atajo="F3">
-              <Group>
+            {metodoAbierto === 'cc' && (
+              <Paper withBorder p="md">
+                <Group justify="space-between" mb="xs">
+                  <Text fw={600} size="sm">
+                    Cuenta corriente
+                  </Text>
+                  <ActionIcon variant="subtle" color="gray" aria-label="Cerrar" onClick={cerrarPanel}>
+                    <IconX size={16} />
+                  </ActionIcon>
+                </Group>
                 <NumberInput
                   ref={ccStagingRef}
                   label="Importe"
@@ -388,29 +508,29 @@ export default function CobroVentaPage() {
                   }}
                   decimalScale={2}
                   min={0}
+                  autoFocus
                 />
-                <Button mt={22} onClick={aceptarCc}>
-                  Agregar
-                </Button>
-              </Group>
-              {cc.map((p) => (
-                <Group key={p.clave}>
-                  <NumberInput
-                    label="Importe"
-                    value={p.importe}
-                    onChange={(v) => setCc((a) => a.map((x) => (x.clave === p.clave ? { ...x, importe: String(v) } : x)))}
-                    decimalScale={2}
-                    min={0}
-                  />
-                  <Button variant="subtle" color="red" mt={22} onClick={() => setCc((a) => a.filter((x) => x.clave !== p.clave))}>
-                    Quitar
+                <Group justify="flex-end" mt="sm">
+                  <Button variant="subtle" color="gray" onClick={cerrarPanel}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={aceptarCc} disabled={!(Number(ccImporte) > 0)}>
+                    Agregar
                   </Button>
                 </Group>
-              ))}
-            </SeccionPagos>
+              </Paper>
+            )}
 
-            <SeccionPagos titulo="Transferencia" icono={<IconTransfer size={18} />} atajo="F6">
-              <Paper withBorder p="sm">
+            {metodoAbierto === 'transferencia' && (
+              <Paper withBorder p="md">
+                <Group justify="space-between" mb="xs">
+                  <Text fw={600} size="sm">
+                    Transferencia
+                  </Text>
+                  <ActionIcon variant="subtle" color="gray" aria-label="Cerrar" onClick={cerrarPanel}>
+                    <IconX size={16} />
+                  </ActionIcon>
+                </Group>
                 <Group grow>
                   <NumberInput
                     ref={transferenciaStagingRef}
@@ -425,39 +545,93 @@ export default function CobroVentaPage() {
                     }}
                     decimalScale={2}
                     min={0}
+                    autoFocus
                   />
                   <TextInput
                     label="Documento del titular"
                     value={transferenciaStaging.documento}
-                    onChange={(e) => setTransferenciaStaging((s) => ({ ...s, documento: e.currentTarget.value }))}
+                    onChange={(e) => {
+                      const documento = e.currentTarget.value
+                      setTransferenciaStaging((s) => ({ ...s, documento }))
+                    }}
                   />
                 </Group>
-                <Button mt="xs" onClick={aceptarTransferencia}>
-                  Agregar
-                </Button>
-              </Paper>
-              {transferencia.map((p) => (
-                <Paper key={p.clave} withBorder p="sm">
-                  <Group grow>
-                    <NumberInput
-                      label="Importe"
-                      value={p.importe}
-                      onChange={(v) => setTransferencia((a) => a.map((x) => (x.clave === p.clave ? { ...x, importe: String(v) } : x)))}
-                      decimalScale={2}
-                      min={0}
-                    />
-                    <TextInput
-                      label="Documento del titular"
-                      value={p.documento}
-                      onChange={(e) => setTransferencia((a) => a.map((x) => (x.clave === p.clave ? { ...x, documento: e.currentTarget.value } : x)))}
-                    />
-                  </Group>
-                  <Button variant="subtle" color="red" size="xs" mt="xs" onClick={() => setTransferencia((a) => a.filter((x) => x.clave !== p.clave))}>
-                    Quitar
+                <Group grow mt="xs">
+                  <TextInput
+                    label="Nombre"
+                    value={transferenciaStaging.nombre}
+                    onChange={(e) => {
+                      const nombre = e.currentTarget.value
+                      setTransferenciaStaging((s) => ({ ...s, nombre }))
+                    }}
+                  />
+                  <TextInput
+                    label="Apellido"
+                    value={transferenciaStaging.apellido}
+                    onChange={(e) => {
+                      const apellido = e.currentTarget.value
+                      setTransferenciaStaging((s) => ({ ...s, apellido }))
+                    }}
+                  />
+                  <TextInput
+                    label="Banco"
+                    value={transferenciaStaging.banco}
+                    onChange={(e) => {
+                      const banco = e.currentTarget.value
+                      setTransferenciaStaging((s) => ({ ...s, banco }))
+                    }}
+                  />
+                </Group>
+                <Group justify="flex-end" mt="sm">
+                  <Button variant="subtle" color="gray" onClick={cerrarPanel}>
+                    Cancelar
                   </Button>
-                </Paper>
-              ))}
-            </SeccionPagos>
+                  <Button onClick={aceptarTransferencia} disabled={!(Number(transferenciaStaging.importe) > 0)}>
+                    Agregar
+                  </Button>
+                </Group>
+              </Paper>
+            )}
+
+            <div>
+              <Text fw={600} size="sm" c="dimmed" mb="xs">
+                Pagos cargados
+              </Text>
+              {filasPago.length === 0 ? (
+                <Text size="sm" c="dimmed">
+                  Todavía no se cargó ningún pago.
+                </Text>
+              ) : (
+                <Table verticalSpacing="xs">
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Método</Table.Th>
+                      <Table.Th>Detalle</Table.Th>
+                      <Table.Th>Importe</Table.Th>
+                      <Table.Th />
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {filasPago.map((fila) => (
+                      <Table.Tr key={fila.clave}>
+                        <Table.Td>{fila.tipo}</Table.Td>
+                        <Table.Td>
+                          <Text size="sm" c="dimmed">
+                            {fila.detalle}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>{formatearMonto(fila.importe)}</Table.Td>
+                        <Table.Td>
+                          <ActionIcon color="red" variant="subtle" aria-label="Quitar" onClick={fila.quitar}>
+                            <IconTrash size={16} />
+                          </ActionIcon>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              )}
+            </div>
           </Stack>
 
           {/* Resumen fijo del cobro: siempre a la vista mientras se cargan varios pagos
@@ -486,8 +660,8 @@ export default function CobroVentaPage() {
               </Group>
             </Stack>
 
-            <Badge fullWidth color={coincide ? 'green' : 'red'} size="lg" mb="lg">
-              {coincide ? 'Coincide' : 'No coincide'}
+            <Badge fullWidth color={estadoSaldo.color} size="lg" mb="lg">
+              {estadoSaldo.texto}
             </Badge>
 
             <Group gap="xs" wrap="nowrap" align="stretch">
@@ -540,16 +714,22 @@ export default function CobroVentaPage() {
             <TextInput
               label="Nº cupón"
               value={tarjetaStaging.numeroCupon}
-              onChange={(e) => setTarjetaStaging((s) => ({ ...s, numeroCupon: e.currentTarget.value }))}
+              onChange={(e) => {
+                const numeroCupon = e.currentTarget.value
+                setTarjetaStaging((s) => ({ ...s, numeroCupon }))
+              }}
             />
             <TextInput
               label="Lote"
               value={tarjetaStaging.lote}
-              onChange={(e) => setTarjetaStaging((s) => ({ ...s, lote: e.currentTarget.value }))}
+              onChange={(e) => {
+                const lote = e.currentTarget.value
+                setTarjetaStaging((s) => ({ ...s, lote }))
+              }}
             />
           </Group>
           <Group justify="flex-end" mt="sm">
-            <Button variant="subtle" onClick={cerrarModalTarjeta}>
+            <Button variant="subtle" color="gray" onClick={cerrarModalTarjeta}>
               Cancelar
             </Button>
             <Button onClick={aceptarTarjeta} disabled={!(Number(tarjetaStaging.importe) > 0)}>
@@ -562,28 +742,36 @@ export default function CobroVentaPage() {
   )
 }
 
-function SeccionPagos({
-  titulo,
+function MetodoBoton({
   icono,
+  titulo,
   atajo,
-  children,
+  activo,
+  deshabilitado,
+  onClick,
 }: {
-  titulo: string
-  /** Ícono del tipo de pago (efectivo, tarjeta, etc.), mostrado junto al título de la sección. */
   icono: ReactNode
-  /** Tecla de función que acepta el importe cargado en esta sección (ver el listener en
-   * CobroVentaPage) — se muestra junto al título a modo de leyenda guía. */
+  titulo: string
   atajo: string
-  children: ReactNode
+  activo: boolean
+  deshabilitado: boolean
+  onClick: () => void
 }) {
   return (
-    <div>
-      <Group gap={6} mb="xs">
+    <Button
+      variant={activo ? 'filled' : 'light'}
+      color={activo ? 'blue' : 'gray'}
+      disabled={deshabilitado}
+      onClick={onClick}
+      styles={{ root: { height: 68, paddingInline: 6 }, label: { whiteSpace: 'normal' } }}
+    >
+      <Stack gap={4} align="center">
         {icono}
-        <Text fw={500}>{titulo}</Text>
-        <Kbd>{atajo}</Kbd>
-      </Group>
-      <Stack gap="xs">{children}</Stack>
-    </div>
+        <Text fw={600} size="xs" ta="center" style={{ lineHeight: 1.15 }}>
+          {titulo}
+        </Text>
+        <Kbd size="xs">{atajo}</Kbd>
+      </Stack>
+    </Button>
   )
 }
