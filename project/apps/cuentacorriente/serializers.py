@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 from cuentacorriente.constants import DEBITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
@@ -17,6 +18,19 @@ class CuentaCorrienteSerializer(serializers.ModelSerializer):
         model = CuentaCorriente
         fields = ('id', 'cliente', 'cliente_nombre', 'tope', 'fecha', 'observaciones', 'activa', 'saldo')
         read_only_fields = ('fecha',)
+        # DRF ya arma un UniqueValidator solo a partir de `unique=True` en el modelo, pero con el
+        # mensaje genérico de DRF ("this field must be unique") en vez del `error_messages` del
+        # modelo — se lo pisa acá explícitamente para que sea el mismo cartel en toda la app.
+        extra_kwargs = {
+            'cliente': {
+                'validators': [
+                    UniqueValidator(
+                        queryset=CuentaCorriente.objects.all(),
+                        message='El cliente ya tiene una cuenta corriente!',
+                    )
+                ]
+            }
+        }
 
     def get_saldo(self, obj):
         # str() explícito: un SerializerMethodField no pasa por el formateo de DecimalField, y el
