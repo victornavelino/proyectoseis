@@ -1,5 +1,7 @@
+from django.db.models import ProtectedError
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, viewsets
+from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from cuentacorriente.serializers import CuentaCorrienteSerializer, MovimientoCuentaCorrienteSerializer
@@ -19,6 +21,17 @@ class CuentaCorrienteViewSet(viewsets.ModelViewSet):
         'cliente__persona__apellido',
         'cliente__persona__documento_identidad',
     )
+
+    def destroy(self, request, *args, **kwargs):
+        # MovimientoCuentaCorriente.cuenta es on_delete=PROTECT (no se quiere perder historial
+        # de cobros por accidente) -> sin este try/except, borrar una cuenta con movimientos
+        # tira un ProtectedError sin atrapar y responde 500 en vez de un 400 explicable.
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            raise DRFValidationError(
+                'No se puede eliminar: la cuenta corriente tiene movimientos registrados.'
+            )
 
 
 class MovimientoCuentaCorrienteViewSet(viewsets.ModelViewSet):

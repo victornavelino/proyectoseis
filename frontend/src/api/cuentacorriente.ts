@@ -25,6 +25,9 @@ export function crearCuentaCorriente(datos: CuentaCorrienteInput) {
 export function actualizarCuentaCorriente(id: number, datos: CuentaCorrienteInput) {
   return apiFetch<CuentaCorriente>(`api/v1/cuentacorriente/${id}/`, { method: 'PUT', body: datos })
 }
+export function eliminarCuentaCorriente(id: number) {
+  return apiFetch<void>(`api/v1/cuentacorriente/${id}/`, { method: 'DELETE' })
+}
 
 export function listarMovimientosCuentaCorriente(cuenta: number, pagina = 1) {
   return apiFetch<PaginatedResponse<MovimientoCuentaCorriente>>('api/v1/movimientocuentacorriente/', {

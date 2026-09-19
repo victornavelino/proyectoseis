@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { ActionIcon, Badge } from '@mantine/core'
-import { IconEdit, IconEye } from '@tabler/icons-react'
-import { listarCuentasCorrientes } from '../../api/cuentacorriente'
+import { notifications } from '@mantine/notifications'
+import { IconEdit, IconEye, IconTrash } from '@tabler/icons-react'
+import { eliminarCuentaCorriente, listarCuentasCorrientes } from '../../api/cuentacorriente'
+import { mensajeDeError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import ListaCrud from '../../components/ListaCrud'
 import type { CuentaCorriente } from '../../types/cuentacorriente'
@@ -16,6 +18,17 @@ export default function CuentasCorrientesPage() {
   const [modalDetalleAbierto, setModalDetalleAbierto] = useState(false)
   const [seleccionada, setSeleccionada] = useState<CuentaCorriente | null>(null)
   const [recarga, setRecarga] = useState(0)
+
+  const eliminar = async (c: CuentaCorriente) => {
+    try {
+      await eliminarCuentaCorriente(c.id)
+      notifications.show({ message: 'Cuenta corriente eliminada.', color: 'green' })
+      setRecarga((n) => n + 1)
+    } catch (err) {
+      const detalle = mensajeDeError(err)
+      notifications.show({ title: 'No se pudo eliminar', message: detalle, color: 'red' })
+    }
+  }
 
   return (
     <>
@@ -68,6 +81,11 @@ export default function CuentasCorrientesPage() {
                 }}
               >
                 <IconEdit size={16} />
+              </ActionIcon>
+            )}
+            {puedeEditar && (
+              <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(c)}>
+                <IconTrash size={16} />
               </ActionIcon>
             )}
           </>
