@@ -71,3 +71,35 @@ def test_imprimir_ticket_requiere_autenticacion(venta):
     response = client.get(f'/api/v1/venta/{venta.numero_ticket}/imprimir/')
 
     assert response.status_code in (401, 403)
+
+
+@pytest.mark.django_db
+def test_imprimir_ticket_con_cuenta_corriente_activa(venta):
+    from cuentacorriente.models import CuentaCorriente
+
+    CuentaCorriente.objects.create(cliente=venta.cliente)
+
+    client = APIClient()
+    client.force_authenticate(user=venta.usuario)
+    response = client.get(f'/api/v1/venta/{venta.numero_ticket}/imprimir/')
+
+    assert response.status_code == 200
+    assert response.content.startswith(b'%PDF')
+
+
+@pytest.mark.django_db
+def test_imprimir_ticket_con_cuenta_corriente_activa_duplicada(venta):
+    """Alta duplicada de cuenta corriente para el mismo cliente (dos filas `activa=True`,
+    posible desde el admin al no haber una restricción que lo impida): no debe romper la
+    impresión del ticket — ver el comentario en venta.api VentaViewSet.imprimir."""
+    from cuentacorriente.models import CuentaCorriente
+
+    CuentaCorriente.objects.create(cliente=venta.cliente)
+    CuentaCorriente.objects.create(cliente=venta.cliente)
+
+    client = APIClient()
+    client.force_authenticate(user=venta.usuario)
+    response = client.get(f'/api/v1/venta/{venta.numero_ticket}/imprimir/')
+
+    assert response.status_code == 200
+    assert response.content.startswith(b'%PDF')

@@ -281,10 +281,13 @@ class VentaViewSet(viewsets.ReadOnlyModelViewSet):
         exige sesión de Django, no el Bearer token de la API), así que quedaba huérfana."""
         venta = self.get_object()
         articulos_venta = VentaArticulo.objects.filter(venta=venta)
-        try:
-            cuenta_corriente = CuentaCorriente.objects.get(cliente_id=venta.cliente_id, activa=True)
+        # .first() en vez de .get(): un cliente puede terminar con más de una cuenta corriente
+        # "activa" (alta duplicada desde el admin) y .get() no tolera eso — rompía la impresión
+        # del ticket con un 500 (MultipleObjectsReturned) para esos clientes puntuales.
+        cuenta_corriente = CuentaCorriente.objects.filter(cliente_id=venta.cliente_id, activa=True).first()
+        if cuenta_corriente is not None:
             saldo_cc = calcular_saldo_cc(cuenta_corriente)
-        except CuentaCorriente.DoesNotExist:
+        else:
             saldo_cc = '--'
         monto_descuento = sum(
             (articulo.precio_unitario - articulo.precio_promocion for articulo in articulos_venta),
