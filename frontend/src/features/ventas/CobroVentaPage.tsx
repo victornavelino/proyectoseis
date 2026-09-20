@@ -763,11 +763,15 @@ function MetodoBoton({
       color={activo ? 'blue' : 'gray'}
       disabled={deshabilitado}
       onClick={onClick}
-      styles={{ root: { height: 68, paddingInline: 6 }, label: { whiteSpace: 'normal' } }}
+      styles={{
+        root: { height: 68, paddingInline: 6, minWidth: 0 },
+        inner: { minWidth: 0 },
+        label: { whiteSpace: 'normal', overflowWrap: 'break-word', minWidth: 0 },
+      }}
     >
-      <Stack gap={4} align="center">
+      <Stack gap={4} align="center" style={{ minWidth: 0, width: '100%' }}>
         {icono}
-        <Text fw={600} size="xs" ta="center" style={{ lineHeight: 1.15 }}>
+        <Text fw={600} size="xs" ta="center" style={{ lineHeight: 1.15, overflowWrap: 'anywhere' }}>
           {titulo}
         </Text>
         <Kbd size="xs">{atajo}</Kbd>
