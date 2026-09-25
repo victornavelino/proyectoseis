@@ -17,26 +17,15 @@
     <div class="fila"><span class="etiqueta">Cliente</span><span>{{ venta.cliente }}</span></div>
 
     <div class="divisor">Artículos</div>
-    <table class="articulos">
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th class="num">Cant.</th>
-          <th class="num">P. Unit.</th>
-          <th class="num">Importe</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for articulo in articulos %}
-        <tr>
-          <td class="nombre-articulo">{{ articulo.nombre_articulo }}</td>
-          <td class="num">{{ articulo.cantidad_peso|floatformat:"-2" }}</td>
-          <td class="num">{{ articulo.precio_unitario|moneda }}</td>
-          <td class="num">{{ articulo.total_articulo|moneda }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% for articulo in articulos %}
+    <div class="articulo">
+      <div class="articulo-fila">
+        <span class="nombre-articulo">{{ articulo.nombre_articulo }}</span>
+        <span class="articulo-importe">{{ articulo.total_articulo|moneda }}</span>
+      </div>
+      <div class="articulo-detalle">{{ articulo.cantidad_peso|floatformat:"-2" }} x {{ articulo.precio_unitario|moneda }}</div>
+    </div>
+    {% endfor %}
 
     <div class="divisor"></div>
     {% if monto_descuento %}
