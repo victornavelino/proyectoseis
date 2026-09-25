@@ -57,7 +57,10 @@ class VentaArticulo(models.Model):
     cantidad_peso = models.DecimalField(max_digits=12, decimal_places=2)
     precio_promocion = models.DecimalField(max_digits=12, decimal_places=2)
     precio_unitario = models.DecimalField(max_digits=12, decimal_places=2)
-    nombre_articulo = models.CharField(max_length=30, verbose_name='Nombre de Articulo', null=False)
+    # Debe soportar como mínimo el mismo largo que Articulo.nombre (60) — se copia tal cual al
+    # cobrar la venta, y un nombre más corto acá rompía el guardado si el artículo tenía un
+    # nombre largo.
+    nombre_articulo = models.CharField(max_length=60, verbose_name='Nombre de Articulo', null=False)
     articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE, verbose_name='Articulo', null=False)
     codigo_articulo = models.CharField(max_length=10, verbose_name='Codigo de Articulo', null=False)
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE, null=True, verbose_name='Venta')

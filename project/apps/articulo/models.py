@@ -63,8 +63,8 @@ class Articulo(SoftDeleteObject):
         verbose_name_plural = 'Artículos'
         ordering = ['-id']
 
-    nombre = models.CharField(max_length=50, verbose_name='Nombre', unique=True, help_text='Ejemplo: Vacío especial')
-    abreviatura = models.CharField(max_length=10, verbose_name='Abreviatura', help_text='Ejemplo: VACÍO ESP.')
+    nombre = models.CharField(max_length=60, verbose_name='Nombre', unique=True, help_text='Ejemplo: Vacío especial')
+    abreviatura = models.CharField(max_length=20, verbose_name='Abreviatura', help_text='Ejemplo: VACÍO ESP.')
     codigo = models.CharField(max_length=10, verbose_name='Código de barras',
                               help_text='Ingrese el código de barras del artículo', unique=True)
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, verbose_name='Categoría')
