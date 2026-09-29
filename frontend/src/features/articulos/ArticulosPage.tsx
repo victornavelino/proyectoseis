@@ -2,8 +2,14 @@ import { useEffect, useState } from 'react'
 import { ActionIcon, Badge, Button, Container, Group, Paper, Table, Text, TextInput, Title } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { IconEdit, IconPlus, IconSearch, IconX } from '@tabler/icons-react'
-import { ARTICULOS_POR_PAGINA, listarArticulos, listarCategorias, listarUnidadesMedida } from '../../api/articulo'
+import { IconEdit, IconPlus, IconSearch, IconTrash, IconX } from '@tabler/icons-react'
+import {
+  ARTICULOS_POR_PAGINA,
+  eliminarArticulo,
+  listarArticulos,
+  listarCategorias,
+  listarUnidadesMedida,
+} from '../../api/articulo'
 import { mensajeDeError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import EstadoVacio from '../../components/EstadoVacio'
@@ -60,6 +66,16 @@ export default function ArticulosPage() {
   const abrirEdicion = (articulo: Articulo) => {
     setArticuloEditando(articulo)
     setModalAbierto(true)
+  }
+
+  const eliminar = async (articulo: Articulo) => {
+    try {
+      await eliminarArticulo(articulo.id)
+      notifications.show({ message: 'Artículo eliminado.', color: 'green' })
+      cargarArticulos()
+    } catch (err) {
+      notifications.show({ title: 'No se pudo eliminar', message: mensajeDeError(err), color: 'red' })
+    }
   }
 
   return (
@@ -125,9 +141,19 @@ export default function ArticulosPage() {
                 </Table.Td>
                 {puedeEditar && (
                   <Table.Td>
-                    <ActionIcon variant="subtle" onClick={() => abrirEdicion(articulo)} aria-label="Editar">
-                      <IconEdit size={16} />
-                    </ActionIcon>
+                    <Group gap="xs" wrap="nowrap">
+                      <ActionIcon variant="subtle" onClick={() => abrirEdicion(articulo)} aria-label="Editar">
+                        <IconEdit size={16} />
+                      </ActionIcon>
+                      <ActionIcon
+                        color="red"
+                        variant="subtle"
+                        onClick={() => void eliminar(articulo)}
+                        aria-label="Eliminar"
+                      >
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Group>
                   </Table.Td>
                 )}
               </Table.Tr>
