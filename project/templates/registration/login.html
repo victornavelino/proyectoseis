@@ -26,6 +26,12 @@
       border-radius: 12px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06);
     }
+    .logo {
+      display: block;
+      max-width: 160px;
+      max-height: 72px;
+      margin: 0 auto 16px;
+    }
     h1 {
       margin: 0 0 4px;
       font-size: 1.05rem;
@@ -84,6 +90,9 @@
 </head>
 <body>
   <div class="tarjeta">
+    {% if LOGO_URL %}
+      <img class="logo" src="{{ LOGO_URL }}" alt="{{ PROJECT_NAME_TITLE }}">
+    {% endif %}
     <h1>{{ PROJECT_NAME_TITLE }}</h1>
     <p class="subtitulo">Ingresá con tu usuario para continuar</p>
 

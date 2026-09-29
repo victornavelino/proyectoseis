@@ -39,6 +39,10 @@ DEBUG = env.bool('DJANGO_DEBUG', True)
 # PROJECT
 PROJECT_NAME_HEADER = env('PROJECT_NAME_HEADER', default='SISTEMA DE GESTION CARNICERIA VIRGEN DEL VALLE')
 PROJECT_NAME_TITLE = env('PROJECT_NAME_TITLE', default='CARNICERIA VIRGEN DEL VALLE')
+# URL del logo del negocio (ya subido a algún lado: un static/, un CDN, etc.) para la pantalla de
+# login. Vacío por defecto -> el login no muestra ningún logo. No es un archivo del repo para que
+# cada instancia (carnicería/verdulería/pollería) pueda tener el suyo sin tocar código.
+LOGO_URL = env('LOGO_URL', default='')
 
 ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=['*'])  # noqa
 

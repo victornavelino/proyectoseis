@@ -6,6 +6,7 @@ import {
   Avatar,
   Burger,
   Group,
+  Image,
   Menu,
   ScrollArea,
   Text,
@@ -123,6 +124,7 @@ const NAV: { titulo: string; items: ItemNav[] }[] = [
 const TODOS_LOS_ITEMS = NAV.flatMap((grupo) => grupo.items)
 
 const NOMBRE_NEGOCIO = import.meta.env.VITE_BUSINESS_NAME || 'Sistema de Gestión'
+const LOGO_URL = import.meta.env.VITE_LOGO_URL
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const [opened, { toggle }] = useDisclosure()
@@ -142,6 +144,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
           <Group gap="xs" wrap="nowrap">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+            {LOGO_URL && <Image src={LOGO_URL} alt="" h={28} w="auto" fit="contain" />}
             <div>
               <Text fw={700} size="sm" lh={1.1}>
                 Sistema de Gestión
