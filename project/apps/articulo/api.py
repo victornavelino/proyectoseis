@@ -1,5 +1,6 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, viewsets
+from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from articulo.models import Articulo, Categoria, ListaPrecio, Precio, TipoIva, UnidadMedida
 from articulo.serializers import (
@@ -10,7 +11,10 @@ from articulo.serializers import (
     TipoIvaSerializer,
     UnidadMedidaSerializer,
 )
+from inventario.models import MovimientoInternoArticulo
+from promocion.models import PromocionArticulo
 from util.permissions import IsStaffOrReadOnly
+from venta.models import VentaArticulo
 
 
 class TipoIvaViewSet(viewsets.ModelViewSet):
@@ -56,6 +60,25 @@ class ArticuloViewSet(viewsets.ModelViewSet):
     filterset_fields = ('categoria', 'unidad_medida', 'es_por_peso')
     search_fields = ('nombre', 'codigo', 'abreviatura')
     ordering_fields = ('nombre', 'codigo')
+
+    def destroy(self, request, *args, **kwargs):
+        # django-softdelete cascadea el borrado de un SoftDeleteObject a TODAS sus relaciones
+        # reversas, sin importar si el modelo relacionado también es soft-delete. VentaArticulo,
+        # MovimientoInternoArticulo y PromocionArticulo son Model comunes (no SoftDeleteObject),
+        # así que la librería termina llamando su .delete() real y borra de verdad ese detalle
+        # histórico (ver softdelete.models.SoftDeleteObject._do_delete). Se bloquea el borrado
+        # si el artículo tiene algún registro de esos, para no perder historial de ventas ya
+        # facturadas, movimientos de inventario o promociones.
+        instance = self.get_object()
+        if VentaArticulo.objects.filter(articulo=instance).exists():
+            raise DRFValidationError('No se puede eliminar: el artículo tiene ventas registradas.')
+        if MovimientoInternoArticulo.objects.filter(articulo=instance).exists():
+            raise DRFValidationError(
+                'No se puede eliminar: el artículo tiene movimientos de inventario registrados.'
+            )
+        if PromocionArticulo.objects.filter(articulo=instance).exists():
+            raise DRFValidationError('No se puede eliminar: el artículo está incluido en una promoción.')
+        return super().destroy(request, *args, **kwargs)
 
 
 class PrecioViewSet(viewsets.ModelViewSet):
