@@ -11,6 +11,7 @@ from articulo.serializers import (
     TipoIvaSerializer,
     UnidadMedidaSerializer,
 )
+from cliente.models import Cliente
 from inventario.models import MovimientoInternoArticulo
 from promocion.models import PromocionArticulo
 from util.permissions import IsStaffOrReadOnly
@@ -24,6 +25,15 @@ class TipoIvaViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('nombre',)
 
+    def destroy(self, request, *args, **kwargs):
+        # TipoIva es un Model común (no soft-delete) y Categoria.tipo_iva es on_delete=CASCADE:
+        # sin este chequeo, borrar un tipo de IVA borraría de verdad (cascada real de Django, no
+        # borrado lógico) todas las categorías que lo usan, y transitivamente sus artículos.
+        instance = self.get_object()
+        if Categoria.objects.filter(tipo_iva=instance).exists():
+            raise DRFValidationError('No se puede eliminar: el tipo de IVA tiene categorías asociadas.')
+        return super().destroy(request, *args, **kwargs)
+
 
 class UnidadMedidaViewSet(viewsets.ModelViewSet):
     queryset = UnidadMedida.objects.all()
@@ -31,6 +41,14 @@ class UnidadMedidaViewSet(viewsets.ModelViewSet):
     permission_classes = (IsStaffOrReadOnly,)
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('nombre', 'abreviatura')
+
+    def destroy(self, request, *args, **kwargs):
+        # Igual riesgo que TipoIva: Articulo.unidad_medida es on_delete=CASCADE y UnidadMedida no
+        # es soft-delete -> borrar una unidad borraría de verdad todos los artículos que la usan.
+        instance = self.get_object()
+        if Articulo.objects.filter(unidad_medida=instance).exists():
+            raise DRFValidationError('No se puede eliminar: la unidad de medida tiene artículos asociados.')
+        return super().destroy(request, *args, **kwargs)
 
 
 class CategoriaViewSet(viewsets.ModelViewSet):
@@ -41,6 +59,17 @@ class CategoriaViewSet(viewsets.ModelViewSet):
     filterset_fields = ('nodo_padre', 'tipo_iva')
     search_fields = ('nombre',)
 
+    def destroy(self, request, *args, **kwargs):
+        # Categoria no es soft-delete: Articulo.categoria y Categoria.nodo_padre son
+        # on_delete=CASCADE reales -> borrar una categoría con artículos o subcategorías las
+        # borraría de verdad a ellas también (y transitivamente ventas, precios, etc.).
+        instance = self.get_object()
+        if Articulo.objects.filter(categoria=instance).exists():
+            raise DRFValidationError('No se puede eliminar: la categoría tiene artículos asociados.')
+        if Categoria.objects.filter(nodo_padre=instance).exists():
+            raise DRFValidationError('No se puede eliminar: la categoría tiene subcategorías.')
+        return super().destroy(request, *args, **kwargs)
+
 
 class ListaPrecioViewSet(viewsets.ModelViewSet):
     queryset = ListaPrecio.objects.all()
@@ -48,6 +77,17 @@ class ListaPrecioViewSet(viewsets.ModelViewSet):
     permission_classes = (IsStaffOrReadOnly,)
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('nombre',)
+
+    def destroy(self, request, *args, **kwargs):
+        # ListaPrecio no es soft-delete: Cliente.lista_precio y Precio.lista_precio son
+        # on_delete=CASCADE reales -> borrar una lista de precios en uso borraría de verdad esos
+        # clientes (!) o precios.
+        instance = self.get_object()
+        if Cliente.objects.filter(lista_precio=instance).exists():
+            raise DRFValidationError('No se puede eliminar: la lista de precios está asignada a uno o más clientes.')
+        if Precio.objects.filter(lista_precio=instance).exists():
+            raise DRFValidationError('No se puede eliminar: la lista de precios tiene precios cargados.')
+        return super().destroy(request, *args, **kwargs)
 
 
 class ArticuloViewSet(viewsets.ModelViewSet):

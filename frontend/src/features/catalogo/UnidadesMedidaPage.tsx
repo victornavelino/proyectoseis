@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { ActionIcon, Button, Group, Modal, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
-import { IconEdit } from '@tabler/icons-react'
-import { actualizarUnidadMedida, crearUnidadMedida, listarUnidadesMedidaPag } from '../../api/articulo'
+import { IconEdit, IconTrash } from '@tabler/icons-react'
+import { actualizarUnidadMedida, crearUnidadMedida, eliminarUnidadMedida, listarUnidadesMedidaPag } from '../../api/articulo'
 import { mensajeDeError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import ListaCrud from '../../components/ListaCrud'
@@ -67,6 +67,16 @@ export default function UnidadesMedidaPage() {
   const [editando, setEditando] = useState<UnidadMedida | null>(null)
   const [recarga, setRecarga] = useState(0)
 
+  const eliminar = async (unidad: UnidadMedida) => {
+    try {
+      await eliminarUnidadMedida(unidad.id)
+      notifications.show({ message: 'Unidad de medida eliminada.', color: 'green' })
+      setRecarga((n) => n + 1)
+    } catch (err) {
+      notifications.show({ title: 'No se pudo eliminar', message: mensajeDeError(err), color: 'red' })
+    }
+  }
+
   return (
     <>
       <ListaCrud<UnidadMedida>
@@ -90,16 +100,21 @@ export default function UnidadesMedidaPage() {
         accionesHeader={
           puedeEditar
             ? (u) => (
-                <ActionIcon
-                  variant="subtle"
-                  aria-label="Editar"
-                  onClick={() => {
-                    setEditando(u)
-                    setModalAbierto(true)
-                  }}
-                >
-                  <IconEdit size={16} />
-                </ActionIcon>
+                <Group gap="xs" wrap="nowrap">
+                  <ActionIcon
+                    variant="subtle"
+                    aria-label="Editar"
+                    onClick={() => {
+                      setEditando(u)
+                      setModalAbierto(true)
+                    }}
+                  >
+                    <IconEdit size={16} />
+                  </ActionIcon>
+                  <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(u)}>
+                    <IconTrash size={16} />
+                  </ActionIcon>
+                </Group>
               )
             : undefined
         }

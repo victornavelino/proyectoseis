@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { ActionIcon } from '@mantine/core'
+import { ActionIcon, Group } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconEdit } from '@tabler/icons-react'
-import { listarListasPrecioPag, listarPrecios } from '../../api/articulo'
+import { IconEdit, IconTrash } from '@tabler/icons-react'
+import { eliminarPrecio, listarListasPrecioPag, listarPrecios } from '../../api/articulo'
+import { mensajeDeError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import ListaCrud from '../../components/ListaCrud'
 import type { ListaPrecio, Precio } from '../../types/articulo'
@@ -22,6 +23,16 @@ export default function PreciosPage() {
       .then((r) => setListasPrecio(r.results))
       .catch(() => notifications.show({ message: 'No se pudieron cargar las listas de precio.', color: 'red' }))
   }, [])
+
+  const eliminar = async (precio: Precio) => {
+    try {
+      await eliminarPrecio(precio.id)
+      notifications.show({ message: 'Precio eliminado.', color: 'green' })
+      setRecarga((n) => n + 1)
+    } catch (err) {
+      notifications.show({ title: 'No se pudo eliminar', message: mensajeDeError(err), color: 'red' })
+    }
+  }
 
   return (
     <>
@@ -48,16 +59,21 @@ export default function PreciosPage() {
         accionesHeader={
           puedeEditar
             ? (p) => (
-                <ActionIcon
-                  variant="subtle"
-                  aria-label="Editar"
-                  onClick={() => {
-                    setEditando(p)
-                    setModalAbierto(true)
-                  }}
-                >
-                  <IconEdit size={16} />
-                </ActionIcon>
+                <Group gap="xs" wrap="nowrap">
+                  <ActionIcon
+                    variant="subtle"
+                    aria-label="Editar"
+                    onClick={() => {
+                      setEditando(p)
+                      setModalAbierto(true)
+                    }}
+                  >
+                    <IconEdit size={16} />
+                  </ActionIcon>
+                  <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(p)}>
+                    <IconTrash size={16} />
+                  </ActionIcon>
+                </Group>
               )
             : undefined
         }

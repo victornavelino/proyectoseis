@@ -52,6 +52,9 @@ export function crearTipoIva(datos: TipoIvaInput) {
 export function actualizarTipoIva(id: number, datos: TipoIvaInput) {
   return apiFetch<TipoIva>(`api/v1/tipoiva/${id}/`, { method: 'PUT', body: datos })
 }
+export function eliminarTipoIva(id: number) {
+  return apiFetch<void>(`api/v1/tipoiva/${id}/`, { method: 'DELETE' })
+}
 
 // --- Unidad de medida ---
 export function listarUnidadesMedidaPag(opciones: { search?: string; pagina?: number } = {}) {
@@ -67,6 +70,9 @@ export function crearUnidadMedida(datos: UnidadMedidaInput) {
 }
 export function actualizarUnidadMedida(id: number, datos: UnidadMedidaInput) {
   return apiFetch<UnidadMedida>(`api/v1/unidadmedida/${id}/`, { method: 'PUT', body: datos })
+}
+export function eliminarUnidadMedida(id: number) {
+  return apiFetch<void>(`api/v1/unidadmedida/${id}/`, { method: 'DELETE' })
 }
 
 // --- Categoría ---
@@ -84,6 +90,9 @@ export function crearCategoria(datos: CategoriaInput) {
 export function actualizarCategoria(id: number, datos: CategoriaInput) {
   return apiFetch<Categoria>(`api/v1/categoria/${id}/`, { method: 'PUT', body: datos })
 }
+export function eliminarCategoria(id: number) {
+  return apiFetch<void>(`api/v1/categoria/${id}/`, { method: 'DELETE' })
+}
 
 // --- Lista de precios ---
 export function listarListasPrecioPag(opciones: { search?: string; pagina?: number } = {}) {
@@ -96,6 +105,9 @@ export function crearListaPrecio(datos: ListaPrecioInput) {
 }
 export function actualizarListaPrecio(id: number, datos: ListaPrecioInput) {
   return apiFetch<ListaPrecio>(`api/v1/listaprecio/${id}/`, { method: 'PUT', body: datos })
+}
+export function eliminarListaPrecio(id: number) {
+  return apiFetch<void>(`api/v1/listaprecio/${id}/`, { method: 'DELETE' })
 }
 
 // --- Precio ---
