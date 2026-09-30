@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Alert, Button, Divider, Group, Modal, Select, Stack, Text, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
-import { crearCliente, listarListasPrecio } from '../../api/cliente'
+import { actualizarCliente, crearCliente, listarListasPrecio } from '../../api/cliente'
 import { mensajeDeError } from '../../api/client'
 import { buscarPersonaPorDocumento, crearPersona, obtenerPersona } from '../../api/persona'
 import type { Cliente, CondicionIva } from '../../types/cliente'
@@ -13,6 +13,10 @@ interface Props {
   opened: boolean
   onClose: () => void
   onGuardado: () => void
+  /** Si viene un cliente, el modal edita su condición de IVA y lista de precios en vez de dar
+   * de alta uno nuevo — cambiar quién es la persona detrás de un cliente ya existente no es
+   * un caso de uso real, así que en edición esos datos se muestran de sólo lectura. */
+  cliente?: Cliente | null
 }
 
 const CONDICIONES_IVA: { value: CondicionIva; label: string }[] = [
@@ -49,8 +53,10 @@ const VALORES_VACIOS: FormValores = {
 
 /** Alta de cliente: primero busca si ya existe una Persona con ese documento (reutiliza el
  * mismo patrón que usuario.api.RegistroUsuarioAPIView.crear_persona del backend — no duplicar
- * personas por el mismo documento); si no existe, la crea de cero. */
-export default function ClienteFormModal({ opened, onClose, onGuardado }: Props) {
+ * personas por el mismo documento); si no existe, la crea de cero. En edición se salta toda esa
+ * búsqueda: la persona ya está fijada, sólo se tocan los campos propios de Cliente. */
+export default function ClienteFormModal({ opened, onClose, onGuardado, cliente = null }: Props) {
+  const editando = cliente !== null
   const [listasPrecio, setListasPrecio] = useState<ListaPrecio[]>([])
   const [personaEncontrada, setPersonaEncontrada] = useState<Persona | null>(null)
   const [buscando, setBuscando] = useState(false)
@@ -59,9 +65,9 @@ export default function ClienteFormModal({ opened, onClose, onGuardado }: Props)
   const form = useForm<FormValores>({
     initialValues: VALORES_VACIOS,
     validate: {
-      documento_identidad: (v) => (v.trim() ? null : 'Requerido'),
-      nombre: (v, valores) => (!personaEncontradaDe(valores) && !v.trim() ? 'Requerido' : null),
-      apellido: (v, valores) => (!personaEncontradaDe(valores) && !v.trim() ? 'Requerido' : null),
+      documento_identidad: (v) => (editando || v.trim() ? null : 'Requerido'),
+      nombre: (v, valores) => (editando || personaEncontradaDe(valores) || v.trim() ? null : 'Requerido'),
+      apellido: (v, valores) => (editando || personaEncontradaDe(valores) || v.trim() ? null : 'Requerido'),
     },
   })
 
@@ -73,7 +79,18 @@ export default function ClienteFormModal({ opened, onClose, onGuardado }: Props)
 
   useEffect(() => {
     if (opened) {
-      form.setValues(VALORES_VACIOS)
+      if (cliente) {
+        form.setValues({
+          ...VALORES_VACIOS,
+          documento_identidad: cliente.persona_detalle.documento_identidad,
+          nombre: cliente.persona_detalle.nombre,
+          apellido: cliente.persona_detalle.apellido,
+          condicion_iva: cliente.condicion_iva,
+          lista_precio: cliente.lista_precio,
+        })
+      } else {
+        form.setValues(VALORES_VACIOS)
+      }
       setPersonaEncontrada(null)
       setYaBuscado(false)
       listarListasPrecio()
@@ -81,7 +98,7 @@ export default function ClienteFormModal({ opened, onClose, onGuardado }: Props)
         .catch(() => notifications.show({ message: 'No se pudieron cargar las listas de precio.', color: 'red' }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [opened])
+  }, [opened, cliente])
 
   const buscarPersona = async () => {
     const documento = form.values.documento_identidad.trim()
@@ -116,25 +133,36 @@ export default function ClienteFormModal({ opened, onClose, onGuardado }: Props)
 
   const guardar = form.onSubmit(async (valores) => {
     try {
-      let personaId = personaEncontrada?.id
-      if (!personaId) {
-        const nuevaPersona = await crearPersona({
-          nombre: valores.nombre,
-          apellido: valores.apellido,
-          documento_identidad: valores.documento_identidad,
-          fecha_nacimiento: valores.fecha_nacimiento || null,
-          domicilio: valores.domicilio || null,
-          correo_electronico: valores.correo_electronico || null,
-          telefonos: valores.telefono ? [{ tipo: 'celular', numero: valores.telefono }] : [],
+      if (editando && cliente) {
+        await actualizarCliente(cliente.id, {
+          condicion_iva: valores.condicion_iva,
+          lista_precio: valores.lista_precio,
         })
-        personaId = nuevaPersona.id
+        notifications.show({ message: 'Cliente actualizado.', color: 'green' })
+      } else {
+        let personaId = personaEncontrada?.id
+        if (!personaId) {
+          const nuevaPersona = await crearPersona({
+            nombre: valores.nombre,
+            apellido: valores.apellido,
+            documento_identidad: valores.documento_identidad,
+            fecha_nacimiento: valores.fecha_nacimiento || null,
+            domicilio: valores.domicilio || null,
+            correo_electronico: valores.correo_electronico || null,
+            telefonos: valores.telefono ? [{ tipo: 'celular', numero: valores.telefono }] : [],
+          })
+          personaId = nuevaPersona.id
+        }
+        const clienteCreado: Cliente = await crearCliente({
+          persona: personaId,
+          condicion_iva: valores.condicion_iva,
+          lista_precio: valores.lista_precio,
+        })
+        notifications.show({
+          message: `Cliente "${clienteCreado.persona_detalle.apellido}, ${clienteCreado.persona_detalle.nombre}" creado.`,
+          color: 'green',
+        })
       }
-      const cliente: Cliente = await crearCliente({
-        persona: personaId,
-        condicion_iva: valores.condicion_iva,
-        lista_precio: valores.lista_precio,
-      })
-      notifications.show({ message: `Cliente "${cliente.persona_detalle.apellido}, ${cliente.persona_detalle.nombre}" creado.`, color: 'green' })
       onGuardado()
       onClose()
     } catch (err) {
@@ -144,44 +172,57 @@ export default function ClienteFormModal({ opened, onClose, onGuardado }: Props)
   })
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Nuevo cliente" size="md">
+    <Modal opened={opened} onClose={onClose} title={editando ? 'Editar cliente' : 'Nuevo cliente'} size="md">
       <form onSubmit={guardar}>
-        <Group align="flex-end">
-          <TextInput
-            label="Documento de identidad"
-            withAsterisk
-            style={{ flex: 1 }}
-            {...form.getInputProps('documento_identidad')}
-          />
-          <Button variant="light" loading={buscando} onClick={() => void buscarPersona()} type="button">
-            Buscar
-          </Button>
-        </Group>
-
-        {yaBuscado && personaEncontrada && (
-          <Alert color="blue" mt="sm">
-            Ya existe una persona con ese documento: <strong>{personaEncontrada.apellido}, {personaEncontrada.nombre}</strong>.
-            Se va a usar esa persona para el cliente nuevo.
-          </Alert>
-        )}
-        {yaBuscado && !personaEncontrada && (
-          <Text size="sm" c="dimmed" mt="sm">
-            No existe ninguna persona con ese documento — completá los datos para crearla.
+        {editando && cliente && (
+          <Text size="sm" mb="sm">
+            <strong>
+              {cliente.persona_detalle.apellido}, {cliente.persona_detalle.nombre}
+            </strong>{' '}
+            — Doc. {cliente.persona_detalle.documento_identidad}
           </Text>
         )}
 
-        {yaBuscado && !personaEncontrada && (
-          <Stack gap="sm" mt="sm">
-            <TextInput label="Nombre" withAsterisk {...form.getInputProps('nombre')} />
-            <TextInput label="Apellido" withAsterisk {...form.getInputProps('apellido')} />
-            <TextInput label="Fecha de nacimiento" type="date" {...form.getInputProps('fecha_nacimiento')} />
-            <TextInput label="Domicilio" {...form.getInputProps('domicilio')} />
-            <TextInput label="Correo electrónico" {...form.getInputProps('correo_electronico')} />
-            <TextInput label="Teléfono" {...form.getInputProps('telefono')} />
-          </Stack>
+        {!editando && (
+          <>
+            <Group align="flex-end">
+              <TextInput
+                label="Documento de identidad"
+                withAsterisk
+                style={{ flex: 1 }}
+                {...form.getInputProps('documento_identidad')}
+              />
+              <Button variant="light" loading={buscando} onClick={() => void buscarPersona()} type="button">
+                Buscar
+              </Button>
+            </Group>
+
+            {yaBuscado && personaEncontrada && (
+              <Alert color="blue" mt="sm">
+                Ya existe una persona con ese documento: <strong>{personaEncontrada.apellido}, {personaEncontrada.nombre}</strong>.
+                Se va a usar esa persona para el cliente nuevo.
+              </Alert>
+            )}
+            {yaBuscado && !personaEncontrada && (
+              <Text size="sm" c="dimmed" mt="sm">
+                No existe ninguna persona con ese documento — completá los datos para crearla.
+              </Text>
+            )}
+
+            {yaBuscado && !personaEncontrada && (
+              <Stack gap="sm" mt="sm">
+                <TextInput label="Nombre" withAsterisk {...form.getInputProps('nombre')} />
+                <TextInput label="Apellido" withAsterisk {...form.getInputProps('apellido')} />
+                <TextInput label="Fecha de nacimiento" type="date" {...form.getInputProps('fecha_nacimiento')} />
+                <TextInput label="Domicilio" {...form.getInputProps('domicilio')} />
+                <TextInput label="Correo electrónico" {...form.getInputProps('correo_electronico')} />
+                <TextInput label="Teléfono" {...form.getInputProps('telefono')} />
+              </Stack>
+            )}
+          </>
         )}
 
-        {yaBuscado && (
+        {(editando || yaBuscado) && (
           <>
             <Divider my="md" />
             <Select
@@ -205,7 +246,7 @@ export default function ClienteFormModal({ opened, onClose, onGuardado }: Props)
           <Button variant="default" onClick={onClose} type="button">
             Cancelar
           </Button>
-          <Button type="submit" color="red" disabled={!yaBuscado}>
+          <Button type="submit" color="red" disabled={!editando && !yaBuscado}>
             Guardar
           </Button>
         </Group>

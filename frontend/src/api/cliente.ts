@@ -21,6 +21,10 @@ export function actualizarCliente(id: number, datos: Partial<ClienteInput>) {
   return apiFetch<Cliente>(`api/v1/cliente/${id}/`, { method: 'PATCH', body: datos })
 }
 
+export function eliminarCliente(id: number) {
+  return apiFetch<void>(`api/v1/cliente/${id}/`, { method: 'DELETE' })
+}
+
 export function listarListasPrecio() {
   return apiFetch<PaginatedResponse<ListaPrecio>>('api/v1/listaprecio/', { params: { page_size: 200 } })
 }

@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react'
-import { Button, Container, Group, Paper, Table, Text, TextInput, Title } from '@mantine/core'
+import { ActionIcon, Button, Container, Group, Paper, Table, Text, TextInput, Title } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { IconPlus, IconSearch, IconX } from '@tabler/icons-react'
-import { CLIENTES_POR_PAGINA, listarClientes } from '../../api/cliente'
+import { IconEdit, IconPlus, IconSearch, IconTrash, IconX } from '@tabler/icons-react'
+import { CLIENTES_POR_PAGINA, eliminarCliente, listarClientes } from '../../api/cliente'
 import { mensajeDeError } from '../../api/client'
+import { useAuth } from '../../auth/AuthContext'
 import EstadoVacio from '../../components/EstadoVacio'
 import Paginador from '../../components/Paginador'
 import type { Cliente } from '../../types/cliente'
 import ClienteFormModal from './ClienteFormModal'
 
 export default function ClientesPage() {
+  const { perfil } = useAuth()
+  const puedeEliminar = perfil?.is_staff ?? false
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [total, setTotal] = useState(0)
   const [pagina, setPagina] = useState(1)
@@ -18,6 +21,7 @@ export default function ClientesPage() {
   const [busquedaDebounced] = useDebouncedValue(busqueda, 300)
   const [cargando, setCargando] = useState(true)
   const [modalAbierto, setModalAbierto] = useState(false)
+  const [editando, setEditando] = useState<Cliente | null>(null)
 
   useEffect(() => {
     setPagina(1)
@@ -36,6 +40,26 @@ export default function ClientesPage() {
 
   useEffect(cargarClientes, [busquedaDebounced, pagina])
 
+  const abrirNuevo = () => {
+    setEditando(null)
+    setModalAbierto(true)
+  }
+
+  const abrirEdicion = (cliente: Cliente) => {
+    setEditando(cliente)
+    setModalAbierto(true)
+  }
+
+  const eliminar = async (cliente: Cliente) => {
+    try {
+      await eliminarCliente(cliente.id)
+      notifications.show({ message: 'Cliente eliminado.', color: 'green' })
+      cargarClientes()
+    } catch (err) {
+      notifications.show({ title: 'No se pudo eliminar', message: mensajeDeError(err), color: 'red' })
+    }
+  }
+
   return (
     <Container size="lg" py="md">
       <Group justify="space-between" mb="md">
@@ -45,7 +69,7 @@ export default function ClientesPage() {
             Registro y consulta de clientes
           </Text>
         </div>
-        <Button color="red" leftSection={<IconPlus size={16} />} onClick={() => setModalAbierto(true)}>
+        <Button color="red" leftSection={<IconPlus size={16} />} onClick={abrirNuevo}>
           Nuevo cliente
         </Button>
       </Group>
@@ -79,6 +103,7 @@ export default function ClientesPage() {
               <Table.Th>Nombre</Table.Th>
               <Table.Th>Condición IVA</Table.Th>
               <Table.Th>Lista de precios</Table.Th>
+              <Table.Th />
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -90,6 +115,23 @@ export default function ClientesPage() {
                 </Table.Td>
                 <Table.Td>{cliente.condicion_iva_display}</Table.Td>
                 <Table.Td>{cliente.lista_precio_nombre ?? '—'}</Table.Td>
+                <Table.Td>
+                  <Group gap="xs" wrap="nowrap">
+                    <ActionIcon variant="subtle" aria-label="Editar" onClick={() => abrirEdicion(cliente)}>
+                      <IconEdit size={16} />
+                    </ActionIcon>
+                    {puedeEliminar && (
+                      <ActionIcon
+                        color="red"
+                        variant="subtle"
+                        aria-label="Eliminar"
+                        onClick={() => void eliminar(cliente)}
+                      >
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    )}
+                  </Group>
+                </Table.Td>
               </Table.Tr>
             ))}
           </Table.Tbody>
@@ -107,7 +149,12 @@ export default function ClientesPage() {
         )}
       </Paper>
 
-      <ClienteFormModal opened={modalAbierto} onClose={() => setModalAbierto(false)} onGuardado={cargarClientes} />
+      <ClienteFormModal
+        opened={modalAbierto}
+        onClose={() => setModalAbierto(false)}
+        onGuardado={cargarClientes}
+        cliente={editando}
+      />
     </Container>
   )
 }
