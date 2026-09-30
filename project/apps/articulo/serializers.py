@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 from articulo.models import Articulo, Categoria, ListaPrecio, Precio, TipoIva, UnidadMedida
 
@@ -46,6 +47,28 @@ class ArticuloSerializer(serializers.ModelSerializer):
             'unidad_medida_nombre',
             'es_por_peso',
         )
+        # nombre/codigo ya no son unique=True a nivel de campo (ver Articulo.Meta.constraints):
+        # la restricción real en la base es condicional (solo entre artículos activos, para que
+        # borrar uno libere su nombre/código). DRF arma igual un UniqueValidator a partir de la
+        # UniqueConstraint, pero con el mensaje genérico de DRF y sin enterarse de la condición
+        # -> se lo pisa acá explícitamente, igual que en CuentaCorrienteSerializer.cliente.
+        # `Articulo.objects` (el manager con soft-delete) ya excluye los borrados por su cuenta,
+        # así que el queryset da el mismo resultado que la condición de la base.
+        extra_kwargs = {
+            'nombre': {
+                'validators': [
+                    UniqueValidator(queryset=Articulo.objects.all(), message='Ya existe un artículo con ese nombre.')
+                ]
+            },
+            'codigo': {
+                'validators': [
+                    UniqueValidator(
+                        queryset=Articulo.objects.all(),
+                        message='Ya existe un artículo con ese código de barras.',
+                    )
+                ]
+            },
+        }
 
 
 class PrecioSerializer(serializers.ModelSerializer):
