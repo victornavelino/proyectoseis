@@ -1,24 +1,20 @@
-from rest_framework.permissions import SAFE_METHODS, BasePermission
+from rest_framework.permissions import BasePermission, DjangoModelPermissions
 
 
-class IsStaffOrReadOnly(BasePermission):
-    """Cualquier usuario autenticado puede leer (list/retrieve); sólo el
-    staff (mismo criterio que el acceso a Django Admin, `is_staff`) puede
-    crear/editar/borrar.
+class TienePermisoDeModelo(DjangoModelPermissions):
+    """Cualquier autenticado puede leer (list/retrieve); para crear/editar/eliminar exige el
+    permiso Django del modelo (`<app>.add_<modelo>`, `<app>.change_<modelo>`,
+    `<app>.delete_<modelo>`) en vez de exigir `is_staff` a secas.
 
-    Pensado para catálogos sensibles (artículos, precios, categorías) donde
-    el mostrador necesita consultar para vender pero no debería poder
-    modificar precios/artículos vía API — ver especificaciones.md §15
-    (nunca confiar en el frontend para datos críticos, y acotar quién puede
-    tocar precios/stock).
+    Reemplaza al viejo `IsStaffOrReadOnly` (que sólo distinguía "staff" vs "no staff"). Estos
+    permisos se otorgan por grupo desde /admin -> Autenticación y autorización -> Grupos, así se
+    pueden armar roles (ej. "Cajero", "Encargado de stock") que ven sólo lo que necesitan, sin
+    tener que ser staff completo ni tocar cuenta por cuenta. Superusuario tiene todos los
+    permisos automáticamente (comportamiento estándar de Django). Las cuentas `is_staff` que ya
+    existían antes de este esquema quedaron en el grupo "Acceso completo (staff)" -ver
+    usuario.migrations.0018_grupo_acceso_completo_staff- así conservan exactamente el mismo
+    acceso que tenían con `IsStaffOrReadOnly`.
     """
-
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.method in SAFE_METHODS:
-            return True
-        return bool(request.user.is_staff)
 
 
 class EsEncargadoDeSucursal(BasePermission):

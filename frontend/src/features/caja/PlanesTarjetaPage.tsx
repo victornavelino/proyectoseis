@@ -91,8 +91,8 @@ function PlanFormModal({
 }
 
 export default function PlanesTarjetaPage() {
-  const { perfil } = useAuth()
-  const puedeEditar = perfil?.is_staff ?? false
+  const { puedeEscribir } = useAuth()
+  const puedeEditar = puedeEscribir('caja.plantarjetadecredito')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<PlanTarjetaDeCredito | null>(null)
   const [recarga, setRecarga] = useState(0)

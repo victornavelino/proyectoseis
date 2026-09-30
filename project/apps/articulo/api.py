@@ -14,14 +14,14 @@ from articulo.serializers import (
 from cliente.models import Cliente
 from inventario.models import MovimientoInternoArticulo
 from promocion.models import PromocionArticulo
-from util.permissions import IsStaffOrReadOnly
+from util.permissions import TienePermisoDeModelo
 from venta.models import VentaArticulo
 
 
 class TipoIvaViewSet(viewsets.ModelViewSet):
     queryset = TipoIva.objects.all()
     serializer_class = TipoIvaSerializer
-    permission_classes = (IsStaffOrReadOnly,)
+    permission_classes = (TienePermisoDeModelo,)
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('nombre',)
 
@@ -38,7 +38,7 @@ class TipoIvaViewSet(viewsets.ModelViewSet):
 class UnidadMedidaViewSet(viewsets.ModelViewSet):
     queryset = UnidadMedida.objects.all()
     serializer_class = UnidadMedidaSerializer
-    permission_classes = (IsStaffOrReadOnly,)
+    permission_classes = (TienePermisoDeModelo,)
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('nombre', 'abreviatura')
 
@@ -54,7 +54,7 @@ class UnidadMedidaViewSet(viewsets.ModelViewSet):
 class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
-    permission_classes = (IsStaffOrReadOnly,)
+    permission_classes = (TienePermisoDeModelo,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filterset_fields = ('nodo_padre', 'tipo_iva')
     search_fields = ('nombre',)
@@ -74,7 +74,7 @@ class CategoriaViewSet(viewsets.ModelViewSet):
 class ListaPrecioViewSet(viewsets.ModelViewSet):
     queryset = ListaPrecio.objects.all()
     serializer_class = ListaPrecioSerializer
-    permission_classes = (IsStaffOrReadOnly,)
+    permission_classes = (TienePermisoDeModelo,)
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('nombre',)
 
@@ -95,7 +95,7 @@ class ArticuloViewSet(viewsets.ModelViewSet):
     # (deleted_at no nulo) y `.delete()` hace soft-delete, no borrado físico.
     queryset = Articulo.objects.all()
     serializer_class = ArticuloSerializer
-    permission_classes = (IsStaffOrReadOnly,)
+    permission_classes = (TienePermisoDeModelo,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filterset_fields = ('categoria', 'unidad_medida', 'es_por_peso')
     search_fields = ('nombre', 'codigo', 'abreviatura')
@@ -124,7 +124,7 @@ class ArticuloViewSet(viewsets.ModelViewSet):
 class PrecioViewSet(viewsets.ModelViewSet):
     queryset = Precio.objects.select_related('articulo', 'sucursal', 'lista_precio').all()
     serializer_class = PrecioSerializer
-    permission_classes = (IsStaffOrReadOnly,)
+    permission_classes = (TienePermisoDeModelo,)
     filter_backends = (DjangoFilterBackend,)
     # Uso típico del mostrador: GET /api/v1/precio/?articulo=<id>&sucursal=<id>&lista_precio=<id>
     filterset_fields = ('articulo', 'sucursal', 'lista_precio')

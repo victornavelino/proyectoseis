@@ -11,8 +11,8 @@ import type { Promocion } from '../../types/promocion'
 import PromocionFormModal from './PromocionFormModal'
 
 export default function PromocionesPage() {
-  const { perfil } = useAuth()
-  const puedeEditar = perfil?.is_staff ?? false
+  const { puedeEscribir } = useAuth()
+  const puedeEditar = puedeEscribir('promocion.promocion')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<Promocion | null>(null)
   const [recarga, setRecarga] = useState(0)

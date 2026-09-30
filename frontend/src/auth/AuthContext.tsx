@@ -8,10 +8,20 @@ interface AuthContextValue {
   autenticado: boolean
   /** true mientras se resuelve el estado inicial de sesión (evita un parpadeo a "login"). */
   cargando: boolean
-  /** Perfil del usuario autenticado (incluye `is_staff`, usado para mostrar/ocultar acciones
-   * de escritura en pantallas que el backend restringe a staff — ver util.permissions.
-   * IsStaffOrReadOnly en el backend). null hasta que se resuelve el fetch. */
+  /** Perfil del usuario autenticado (incluye `permisos`, usado para mostrar/ocultar acciones
+   * de escritura según el permiso Django puntual que el backend exige — ver util.permissions.
+   * TienePermisoDeModelo). null hasta que se resuelve el fetch. */
   perfil: Perfil | null
+  /** ¿Tiene el usuario el permiso Django `codename` (ej. "articulo.delete_articulo")? Primitiva
+   * de base — normalmente conviene usar `puedeEscribir`/`puedeBorrar` en su lugar. */
+  tienePermiso: (codename: string) => boolean
+  /** ¿Puede crear Y editar instancias de `<app_label>.<modelo>` (ej. "articulo.categoria")? El
+   * front conjuga alta+edición en un solo botón/flujo, así que exige ambos permisos
+   * (add_/change_) a la vez — evita mostrar "Nuevo" a alguien que después el backend rechaza
+   * con 403 por no tener add_<modelo>. */
+  puedeEscribir: (appModelo: string) => boolean
+  /** ¿Puede eliminar instancias de `<app_label>.<modelo>`? */
+  puedeBorrar: (appModelo: string) => boolean
   login: () => Promise<void>
   logout: () => Promise<void>
   /** Llamar después de que AuthCallback complete el intercambio de tokens. */
@@ -44,6 +54,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(() => setPerfil(null))
   }, [autenticado])
 
+  const tienePermiso = useCallback((codename: string) => perfil?.permisos.includes(codename) ?? false, [perfil])
+
+  const puedeEscribir = useCallback(
+    (appModelo: string) => {
+      const [app, modelo] = appModelo.split('.')
+      return tienePermiso(`${app}.add_${modelo}`) && tienePermiso(`${app}.change_${modelo}`)
+    },
+    [tienePermiso],
+  )
+
+  const puedeBorrar = useCallback(
+    (appModelo: string) => {
+      const [app, modelo] = appModelo.split('.')
+      return tienePermiso(`${app}.delete_${modelo}`)
+    },
+    [tienePermiso],
+  )
+
   const login = useCallback(async () => {
     await iniciarLogin()
   }, [])
@@ -54,8 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ autenticado, cargando, perfil, login, logout, refrescarEstado }),
-    [autenticado, cargando, perfil, login, logout, refrescarEstado],
+    () => ({ autenticado, cargando, perfil, tienePermiso, puedeEscribir, puedeBorrar, login, logout, refrescarEstado }),
+    [autenticado, cargando, perfil, tienePermiso, puedeEscribir, puedeBorrar, login, logout, refrescarEstado],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from rest_framework.test import APIClient
 
 from articulo.models import Articulo, Categoria, TipoIva, UnidadMedida
@@ -20,10 +21,13 @@ def categoria_y_unidad():
 
 @pytest.fixture
 def usuario_staff():
+    # Ver comentario equivalente en test_eliminar_catalogo.py: is_staff ya no alcanza solo.
     sucursal = Sucursal.objects.create(nombre='Casa Central', domicilio='Calle Falsa 123')
-    return Usuario.objects.create_user(
+    usuario = Usuario.objects.create_user(
         username='admin', password='password', sucursal=sucursal, is_staff=True,
     )
+    usuario.groups.add(Group.objects.get(name='Acceso completo (staff)'))
+    return usuario
 
 
 def _datos_articulo(categoria, unidad_medida, **overrides):

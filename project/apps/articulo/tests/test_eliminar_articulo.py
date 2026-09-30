@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -26,10 +27,13 @@ def articulo():
 
 @pytest.fixture
 def usuario_staff():
+    # Ver comentario equivalente en test_eliminar_catalogo.py: is_staff ya no alcanza solo.
     sucursal = Sucursal.objects.create(nombre='Casa Central', domicilio='Calle Falsa 123')
-    return Usuario.objects.create_user(
+    usuario = Usuario.objects.create_user(
         username='admin', password='password', sucursal=sucursal, is_staff=True,
     )
+    usuario.groups.add(Group.objects.get(name='Acceso completo (staff)'))
+    return usuario
 
 
 @pytest.mark.django_db

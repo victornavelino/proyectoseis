@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from rest_framework.test import APIClient
 
 from articulo.models import Articulo, Categoria, ListaPrecio, Precio, TipoIva, UnidadMedida
@@ -14,10 +15,16 @@ Usuario = get_user_model()
 
 @pytest.fixture
 def usuario_staff():
+    # `is_staff=True` a secas ya no alcanza para escribir en estos modelos (ver
+    # util.permissions.TienePermisoDeModelo) -> el grupo "Acceso completo (staff)" (creado en
+    # usuario.migrations.0018_grupo_acceso_completo_staff) le da los mismos permisos que
+    # tendría cualquier cuenta staff ya existente en producción.
     sucursal = Sucursal.objects.create(nombre='Casa Central', domicilio='Calle Falsa 123')
-    return Usuario.objects.create_user(
+    usuario = Usuario.objects.create_user(
         username='admin', password='password', sucursal=sucursal, is_staff=True,
     )
+    usuario.groups.add(Group.objects.get(name='Acceso completo (staff)'))
+    return usuario
 
 
 # --- TipoIva ---

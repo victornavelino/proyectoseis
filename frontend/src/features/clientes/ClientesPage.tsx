@@ -12,8 +12,8 @@ import type { Cliente } from '../../types/cliente'
 import ClienteFormModal from './ClienteFormModal'
 
 export default function ClientesPage() {
-  const { perfil } = useAuth()
-  const puedeEliminar = perfil?.is_staff ?? false
+  const { puedeBorrar } = useAuth()
+  const puedeEliminar = puedeBorrar('cliente.cliente')
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [total, setTotal] = useState(0)
   const [pagina, setPagina] = useState(1)

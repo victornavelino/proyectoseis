@@ -11,6 +11,13 @@ export interface Perfil {
    * preseleccionar al vendedor logueado. null si el usuario no tiene un Empleado asociado. */
   empleado: number | null
   groups: { id: number; name: string }[]
+  /** Codenames "app_label.accion_modelo" (ej. "articulo.delete_articulo") de TODOS los permisos
+   * Django del usuario — individuales + de sus grupos, superusuario ya resuelto a "todos" (ver
+   * usuario.serializers.UsuarioSerializer.get_permisos). Usar junto con useAuth().tienePermiso
+   * en vez de comparar contra `is_staff` para decidir qué botones de alta/edición/borrado
+   * mostrar — ver util.permissions.TienePermisoDeModelo en el backend, que exige exactamente
+   * estos mismos permisos. */
+  permisos: string[]
 }
 
 /** Usuario operativo de la propia sucursal del encargado — ver

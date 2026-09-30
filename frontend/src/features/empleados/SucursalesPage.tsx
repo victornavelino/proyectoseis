@@ -61,8 +61,8 @@ function SucursalFormModal({
 }
 
 export default function SucursalesPage() {
-  const { perfil } = useAuth()
-  const puedeEditar = perfil?.is_staff ?? false
+  const { puedeEscribir } = useAuth()
+  const puedeEditar = puedeEscribir('empleado.sucursal')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<Sucursal | null>(null)
   const [recarga, setRecarga] = useState(0)

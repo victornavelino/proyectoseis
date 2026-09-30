@@ -16,6 +16,7 @@ class GroupSerializer(serializers.ModelSerializer):
 class UsuarioSerializer(serializers.ModelSerializer):
     groups = GroupSerializer(many=True, read_only=True)
     sucursal_nombre = serializers.CharField(source='sucursal.nombre', read_only=True, default=None)
+    permisos = serializers.SerializerMethodField()
 
     class Meta:
         model = Usuario
@@ -30,6 +31,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
             'sucursal_nombre',
             'empleado',
             'groups',
+            'permisos',
         )
         # is_staff/sucursal/empleado de sólo lectura: este endpoint también acepta PATCH del
         # propio usuario autenticado (UsuarioViewSet.get_object() siempre devuelve request.user)
@@ -38,6 +40,15 @@ class UsuarioSerializer(serializers.ModelSerializer):
         # vendedor logueado en el punto de venta (VentaNuevaPage) — la asignación en sí sigue
         # siendo sólo por /admin.
         read_only_fields = ('is_staff', 'sucursal', 'empleado')
+
+    def get_permisos(self, usuario):
+        # get_all_permissions() ya combina permisos individuales + de todos los grupos del
+        # usuario, y para is_superuser devuelve automáticamente TODOS los permisos existentes
+        # (comportamiento estándar de ModelBackend) — no hace falta un caso especial acá. El
+        # frontend usa estos codenames ("app_label.accion_modelo") para mostrar/ocultar botones
+        # de alta/edición/borrado sin tener que ser is_staff (ver util.permissions.
+        # TienePermisoDeModelo, que exige exactamente estos mismos permisos en el backend).
+        return sorted(usuario.get_all_permissions())
 
 
 class RegistroUsuarioSerializer(serializers.ModelSerializer):

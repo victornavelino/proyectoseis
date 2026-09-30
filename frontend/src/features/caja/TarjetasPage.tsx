@@ -64,8 +64,8 @@ function TarjetaFormModal({
 }
 
 export default function TarjetasPage() {
-  const { perfil } = useAuth()
-  const puedeEditar = perfil?.is_staff ?? false
+  const { puedeEscribir } = useAuth()
+  const puedeEditar = puedeEscribir('caja.tarjetadecredito')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<TarjetaDeCredito | null>(null)
   const [recarga, setRecarga] = useState(0)

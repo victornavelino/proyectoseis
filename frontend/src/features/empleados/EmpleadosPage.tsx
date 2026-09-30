@@ -8,8 +8,8 @@ import type { Empleado } from '../../types/empleado'
 import EmpleadoFormModal from './EmpleadoFormModal'
 
 export default function EmpleadosPage() {
-  const { perfil } = useAuth()
-  const puedeEditar = perfil?.is_staff ?? false
+  const { puedeEscribir } = useAuth()
+  const puedeEditar = puedeEscribir('empleado.empleado')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<Empleado | null>(null)
   const [recarga, setRecarga] = useState(0)

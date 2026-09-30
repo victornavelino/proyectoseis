@@ -12,8 +12,9 @@ import CuentaCorrienteFormModal from './CuentaCorrienteFormModal'
 import { formatearMonto } from '../ventas/dinero'
 
 export default function CuentasCorrientesPage() {
-  const { perfil } = useAuth()
-  const puedeEditar = perfil?.is_staff ?? false
+  const { puedeEscribir, puedeBorrar } = useAuth()
+  const puedeEditar = puedeEscribir('cuentacorriente.cuentacorriente')
+  const puedeEliminar = puedeBorrar('cuentacorriente.cuentacorriente')
   const [modalFormAbierto, setModalFormAbierto] = useState(false)
   const [modalDetalleAbierto, setModalDetalleAbierto] = useState(false)
   const [seleccionada, setSeleccionada] = useState<CuentaCorriente | null>(null)
@@ -83,7 +84,7 @@ export default function CuentasCorrientesPage() {
                 <IconEdit size={16} />
               </ActionIcon>
             )}
-            {puedeEditar && (
+            {puedeEliminar && (
               <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(c)}>
                 <IconTrash size={16} />
               </ActionIcon>

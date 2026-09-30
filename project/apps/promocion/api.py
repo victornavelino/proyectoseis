@@ -9,13 +9,13 @@ from promocion.serializers import (
     PromocionSerializer,
 )
 from util.mixins import TranslateDjangoValidationErrorMixin
-from util.permissions import IsStaffOrReadOnly
+from util.permissions import TienePermisoDeModelo
 
 
 class DiasSemanaViewSet(viewsets.ModelViewSet):
     queryset = DiasSemana.objects.all()
     serializer_class = DiasSemanaSerializer
-    permission_classes = (IsStaffOrReadOnly,)
+    permission_classes = (TienePermisoDeModelo,)
 
 
 class PromocionViewSet(TranslateDjangoValidationErrorMixin, viewsets.ModelViewSet):
@@ -24,7 +24,7 @@ class PromocionViewSet(TranslateDjangoValidationErrorMixin, viewsets.ModelViewSe
     # 400 en vez de dejarlos escapar como 500. Ver promocion/serializers.py.
     queryset = Promocion.objects.select_related('sucursal', 'dias_semana').prefetch_related('promocionarticulo_set')
     serializer_class = PromocionSerializer
-    permission_classes = (IsStaffOrReadOnly,)
+    permission_classes = (TienePermisoDeModelo,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     # Uso típico del punto de venta: GET /api/v1/promocion/?sucursal=<id>&habilitada=true
     filterset_fields = ('sucursal', 'habilitada', 'es_por_precio')
@@ -35,7 +35,7 @@ class PromocionViewSet(TranslateDjangoValidationErrorMixin, viewsets.ModelViewSe
 class PromocionArticuloViewSet(viewsets.ModelViewSet):
     queryset = PromocionArticulo.objects.select_related('articulo', 'promocion').all()
     serializer_class = PromocionArticuloSerializer
-    permission_classes = (IsStaffOrReadOnly,)
+    permission_classes = (TienePermisoDeModelo,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('promocion', 'articulo')
 
@@ -43,6 +43,6 @@ class PromocionArticuloViewSet(viewsets.ModelViewSet):
 class DescuentoViewSet(viewsets.ModelViewSet):
     queryset = Descuento.objects.all()
     serializer_class = DescuentoSerializer
-    permission_classes = (IsStaffOrReadOnly,)
+    permission_classes = (TienePermisoDeModelo,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('nombre',)

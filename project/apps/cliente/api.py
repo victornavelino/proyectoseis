@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from cliente.models import Cliente
 from cliente.serializers import ClienteSerializer
-from util.permissions import IsStaffOrReadOnly
+from util.permissions import TienePermisoDeModelo
 from venta.models import Venta
 
 
@@ -29,11 +29,11 @@ class ClienteViewSet(
 
     def get_permissions(self):
         # Crear/editar un cliente es operación normal de mostrador (cualquier autenticado, ver
-        # arriba), pero eliminarlo es una acción más delicada -> sólo staff, mismo criterio que
-        # el resto del catálogo (artículos, categorías, etc.). IsStaffOrReadOnly sirve acá porque
-        # DELETE no es un método "seguro", así que exige staff sin afectar list/retrieve.
+        # arriba), pero eliminarlo es una acción más delicada -> exige el permiso Django
+        # `cliente.delete_cliente` (otorgable por grupo desde /admin), mismo criterio que el
+        # resto del catálogo (artículos, categorías, etc.).
         if self.action == 'destroy':
-            return [IsStaffOrReadOnly()]
+            return [TienePermisoDeModelo()]
         return super().get_permissions()
 
     def destroy(self, request, *args, **kwargs):

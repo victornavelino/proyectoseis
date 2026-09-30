@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from cuentacorriente.serializers import CuentaCorrienteSerializer, MovimientoCuentaCorrienteSerializer
-from util.permissions import IsStaffOrReadOnly
+from util.permissions import TienePermisoDeModelo
 
 
 class CuentaCorrienteViewSet(viewsets.ModelViewSet):
@@ -13,7 +13,7 @@ class CuentaCorrienteViewSet(viewsets.ModelViewSet):
     # operación de mostrador del día a día -> igual criterio que articulo: sólo staff escribe.
     queryset = CuentaCorriente.objects.select_related('cliente__persona')
     serializer_class = CuentaCorrienteSerializer
-    permission_classes = (IsStaffOrReadOnly,)
+    permission_classes = (TienePermisoDeModelo,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_fields = ('cliente', 'activa')
     search_fields = (

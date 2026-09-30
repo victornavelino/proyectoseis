@@ -11,8 +11,9 @@ import PrecioFormModal from './PrecioFormModal'
 import { formatearMonto } from '../ventas/dinero'
 
 export default function PreciosPage() {
-  const { perfil } = useAuth()
-  const puedeEditar = perfil?.is_staff ?? false
+  const { puedeEscribir, puedeBorrar } = useAuth()
+  const puedeEditar = puedeEscribir('articulo.precio')
+  const puedeEliminar = puedeBorrar('articulo.precio')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<Precio | null>(null)
   const [recarga, setRecarga] = useState(0)
@@ -57,22 +58,26 @@ export default function PreciosPage() {
           { header: 'Precio', render: (p) => formatearMonto(p.precio) },
         ]}
         accionesHeader={
-          puedeEditar
+          puedeEditar || puedeEliminar
             ? (p) => (
                 <Group gap="xs" wrap="nowrap">
-                  <ActionIcon
-                    variant="subtle"
-                    aria-label="Editar"
-                    onClick={() => {
-                      setEditando(p)
-                      setModalAbierto(true)
-                    }}
-                  >
-                    <IconEdit size={16} />
-                  </ActionIcon>
-                  <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(p)}>
-                    <IconTrash size={16} />
-                  </ActionIcon>
+                  {puedeEditar && (
+                    <ActionIcon
+                      variant="subtle"
+                      aria-label="Editar"
+                      onClick={() => {
+                        setEditando(p)
+                        setModalAbierto(true)
+                      }}
+                    >
+                      <IconEdit size={16} />
+                    </ActionIcon>
+                  )}
+                  {puedeEliminar && (
+                    <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(p)}>
+                      <IconTrash size={16} />
+                    </ActionIcon>
+                  )}
                 </Group>
               )
             : undefined

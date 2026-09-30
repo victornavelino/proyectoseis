@@ -18,8 +18,9 @@ import type { Articulo, Categoria, UnidadMedida } from '../../types/articulo'
 import ArticuloFormModal from './ArticuloFormModal'
 
 export default function ArticulosPage() {
-  const { perfil } = useAuth()
-  const puedeEditar = perfil?.is_staff ?? false
+  const { puedeEscribir, puedeBorrar } = useAuth()
+  const puedeEditar = puedeEscribir('articulo.articulo')
+  const puedeEliminar = puedeBorrar('articulo.articulo')
 
   const [articulos, setArticulos] = useState<Articulo[]>([])
   const [total, setTotal] = useState(0)
@@ -124,7 +125,7 @@ export default function ArticulosPage() {
               <Table.Th>Categoría</Table.Th>
               <Table.Th>Unidad</Table.Th>
               <Table.Th>Por peso</Table.Th>
-              {puedeEditar && <Table.Th />}
+              {(puedeEditar || puedeEliminar) && <Table.Th />}
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -139,20 +140,24 @@ export default function ArticulosPage() {
                     {articulo.es_por_peso ? 'Sí' : 'No'}
                   </Badge>
                 </Table.Td>
-                {puedeEditar && (
+                {(puedeEditar || puedeEliminar) && (
                   <Table.Td>
                     <Group gap="xs" wrap="nowrap">
-                      <ActionIcon variant="subtle" onClick={() => abrirEdicion(articulo)} aria-label="Editar">
-                        <IconEdit size={16} />
-                      </ActionIcon>
-                      <ActionIcon
-                        color="red"
-                        variant="subtle"
-                        onClick={() => void eliminar(articulo)}
-                        aria-label="Eliminar"
-                      >
-                        <IconTrash size={16} />
-                      </ActionIcon>
+                      {puedeEditar && (
+                        <ActionIcon variant="subtle" onClick={() => abrirEdicion(articulo)} aria-label="Editar">
+                          <IconEdit size={16} />
+                        </ActionIcon>
+                      )}
+                      {puedeEliminar && (
+                        <ActionIcon
+                          color="red"
+                          variant="subtle"
+                          onClick={() => void eliminar(articulo)}
+                          aria-label="Eliminar"
+                        >
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      )}
                     </Group>
                   </Table.Td>
                 )}

@@ -60,8 +60,8 @@ function TipoGastoFormModal({
 }
 
 export default function TiposGastoPage() {
-  const { perfil } = useAuth()
-  const puedeEditar = perfil?.is_staff ?? false
+  const { puedeEscribir } = useAuth()
+  const puedeEditar = puedeEscribir('caja.tipogasto')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<TipoGasto | null>(null)
   const [recarga, setRecarga] = useState(0)

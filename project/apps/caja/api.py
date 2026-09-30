@@ -51,13 +51,13 @@ from caja.utils import (
     calcular_total_ingresos,
 )
 from util.pdf import render_pdf_response
-from util.permissions import IsStaffOrReadOnly
+from util.permissions import TienePermisoDeModelo
 
 
 class TarjetaDeCreditoViewSet(viewsets.ModelViewSet):
     queryset = TarjetaDeCredito.objects.all()
     serializer_class = TarjetaDeCreditoSerializer
-    permission_classes = (IsStaffOrReadOnly,)
+    permission_classes = (TienePermisoDeModelo,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('nombre', 'banco')
 
@@ -65,7 +65,7 @@ class TarjetaDeCreditoViewSet(viewsets.ModelViewSet):
 class PlanTarjetaDeCreditoViewSet(viewsets.ModelViewSet):
     queryset = PlanTarjetaDeCredito.objects.select_related('tarjeta')
     serializer_class = PlanTarjetaDeCreditoSerializer
-    permission_classes = (IsStaffOrReadOnly,)
+    permission_classes = (TienePermisoDeModelo,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('tarjeta',)
 
@@ -73,7 +73,7 @@ class PlanTarjetaDeCreditoViewSet(viewsets.ModelViewSet):
 class TipoIngresoViewSet(viewsets.ModelViewSet):
     queryset = TipoIngreso.objects.all()
     serializer_class = TipoIngresoSerializer
-    permission_classes = (IsStaffOrReadOnly,)
+    permission_classes = (TienePermisoDeModelo,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('descripcion',)
 
@@ -81,7 +81,7 @@ class TipoIngresoViewSet(viewsets.ModelViewSet):
 class TipoGastoViewSet(viewsets.ModelViewSet):
     queryset = TipoGasto.objects.all()
     serializer_class = TipoGastoSerializer
-    permission_classes = (IsStaffOrReadOnly,)
+    permission_classes = (TienePermisoDeModelo,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('descripcion',)
 

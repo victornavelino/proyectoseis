@@ -68,8 +68,9 @@ function TipoIvaFormModal({
 }
 
 export default function TiposIvaPage() {
-  const { perfil } = useAuth()
-  const puedeEditar = perfil?.is_staff ?? false
+  const { puedeEscribir, puedeBorrar } = useAuth()
+  const puedeEditar = puedeEscribir('articulo.tipoiva')
+  const puedeEliminar = puedeBorrar('articulo.tipoiva')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<TipoIva | null>(null)
   const [recarga, setRecarga] = useState(0)
@@ -105,22 +106,26 @@ export default function TiposIvaPage() {
           { header: 'Porcentaje', render: (t) => `${t.porcentaje}%` },
         ]}
         accionesHeader={
-          puedeEditar
+          puedeEditar || puedeEliminar
             ? (t) => (
                 <Group gap="xs" wrap="nowrap">
-                  <ActionIcon
-                    variant="subtle"
-                    aria-label="Editar"
-                    onClick={() => {
-                      setEditando(t)
-                      setModalAbierto(true)
-                    }}
-                  >
-                    <IconEdit size={16} />
-                  </ActionIcon>
-                  <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(t)}>
-                    <IconTrash size={16} />
-                  </ActionIcon>
+                  {puedeEditar && (
+                    <ActionIcon
+                      variant="subtle"
+                      aria-label="Editar"
+                      onClick={() => {
+                        setEditando(t)
+                        setModalAbierto(true)
+                      }}
+                    >
+                      <IconEdit size={16} />
+                    </ActionIcon>
+                  )}
+                  {puedeEliminar && (
+                    <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(t)}>
+                      <IconTrash size={16} />
+                    </ActionIcon>
+                  )}
                 </Group>
               )
             : undefined

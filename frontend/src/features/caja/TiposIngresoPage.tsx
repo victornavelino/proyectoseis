@@ -60,8 +60,8 @@ function TipoIngresoFormModal({
 }
 
 export default function TiposIngresoPage() {
-  const { perfil } = useAuth()
-  const puedeEditar = perfil?.is_staff ?? false
+  const { puedeEscribir } = useAuth()
+  const puedeEditar = puedeEscribir('caja.tipoingreso')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<TipoIngreso | null>(null)
   const [recarga, setRecarga] = useState(0)

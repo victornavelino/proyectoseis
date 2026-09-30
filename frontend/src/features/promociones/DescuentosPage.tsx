@@ -75,8 +75,8 @@ function DescuentoFormModal({
 }
 
 export default function DescuentosPage() {
-  const { perfil } = useAuth()
-  const puedeEditar = perfil?.is_staff ?? false
+  const { puedeEscribir } = useAuth()
+  const puedeEditar = puedeEscribir('promocion.descuento')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<Descuento | null>(null)
   const [recarga, setRecarga] = useState(0)

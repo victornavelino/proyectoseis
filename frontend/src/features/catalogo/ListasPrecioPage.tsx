@@ -60,8 +60,9 @@ function ListaPrecioFormModal({
 }
 
 export default function ListasPrecioPage() {
-  const { perfil } = useAuth()
-  const puedeEditar = perfil?.is_staff ?? false
+  const { puedeEscribir, puedeBorrar } = useAuth()
+  const puedeEditar = puedeEscribir('articulo.listaprecio')
+  const puedeEliminar = puedeBorrar('articulo.listaprecio')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<ListaPrecio | null>(null)
   const [recarga, setRecarga] = useState(0)
@@ -94,22 +95,26 @@ export default function ListasPrecioPage() {
         disparadorRecarga={recarga}
         columnas={[{ header: 'Nombre', render: (l) => l.nombre }]}
         accionesHeader={
-          puedeEditar
+          puedeEditar || puedeEliminar
             ? (l) => (
                 <Group gap="xs" wrap="nowrap">
-                  <ActionIcon
-                    variant="subtle"
-                    aria-label="Editar"
-                    onClick={() => {
-                      setEditando(l)
-                      setModalAbierto(true)
-                    }}
-                  >
-                    <IconEdit size={16} />
-                  </ActionIcon>
-                  <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(l)}>
-                    <IconTrash size={16} />
-                  </ActionIcon>
+                  {puedeEditar && (
+                    <ActionIcon
+                      variant="subtle"
+                      aria-label="Editar"
+                      onClick={() => {
+                        setEditando(l)
+                        setModalAbierto(true)
+                      }}
+                    >
+                      <IconEdit size={16} />
+                    </ActionIcon>
+                  )}
+                  {puedeEliminar && (
+                    <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(l)}>
+                      <IconTrash size={16} />
+                    </ActionIcon>
+                  )}
                 </Group>
               )
             : undefined
