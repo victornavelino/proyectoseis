@@ -43,6 +43,11 @@ PROJECT_NAME_TITLE = env('PROJECT_NAME_TITLE', default='CARNICERIA VIRGEN DEL VA
 # login. Vacío por defecto -> el login no muestra ningún logo. No es un archivo del repo para que
 # cada instancia (carnicería/verdulería/pollería) pueda tener el suyo sin tocar código.
 LOGO_URL = env('LOGO_URL', default='')
+# Ancho real del rollo de la ticketera térmica, en mm (ver admin/_ticket_estilos.html). 58 es el
+# estándar más común, pero no todas las instancias usan el mismo papel/impresora (ej. la
+# pollería imprime en un papel de 48mm) -> configurable por variable de entorno en vez de
+# hardcodeado, para no tener que tocar código por cada instancia con una impresora distinta.
+TICKET_ANCHO_MM = env.int('TICKET_ANCHO_MM', default=58)
 
 ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=['*'])  # noqa
 

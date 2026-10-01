@@ -8,13 +8,18 @@
 <style>
   @page {
     /* Sin `size`, WeasyPrint arma la página en A4 (210mm) y la impresora térmica la achica
-       para entrar en el rollo -> el ticket sale minúsculo. Poné acá el ancho real del rollo
-       (58mm o 80mm son los anchos estándar de ticketeras térmicas). El alto no puede ser
-       "auto" (WeasyPrint no lo soporta y lo ignora en silencio, volviendo a A4) — se pone uno
-       bien grande de sobra, así nunca corta el contenido a una segunda página; el driver de
-       la impresora térmica corta el rollo donde termina el contenido real. `.ticket` ocupa el
-       100% del ancho de página, así no hay que tocar nada más al cambiar el ancho acá. */
-    size: 58mm 1000mm;
+       para entrar en el rollo -> el ticket sale minúsculo. TICKET_ANCHO_MM (settings.
+       TICKET_ANCHO_MM, expuesto por core.context_processors.nombre_negocio) es el ancho real
+       del rollo de ESTA instancia — no todas usan el mismo papel/impresora (58mm es lo más
+       común, pero hay instancias con 48mm), así que no puede ir hardcodeado: si el valor
+       asume más ancho del que la impresora realmente tiene, el contenido alineado contra el
+       borde derecho (precios, total) quedaría fuera del papel físico y la impresora lo corta.
+       El alto no puede ser "auto" (WeasyPrint no lo soporta y lo ignora en silencio, volviendo
+       a A4) — se pone uno bien grande de sobra, así nunca corta el contenido a una segunda
+       página; el driver de la impresora térmica corta el rollo donde termina el contenido
+       real. `.ticket` ocupa el 100% del ancho de página, así no hay que tocar nada más al
+       cambiar TICKET_ANCHO_MM. */
+    size: {{ TICKET_ANCHO_MM }}mm 1000mm;
     margin: 2mm 0;
   }
   * { box-sizing: border-box; }
@@ -25,11 +30,11 @@
     color: #000;
   }
   .ticket {
-    /* Padding grande a propósito: el ancho imprimible real del cabezal de una ticketera de
-       58mm suele ser bastante menor a los 58mm físicos del papel (queda margen mecánico a
-       cada lado que el cabezal no cubre). Si el contenido usa casi todo el ancho lógico, las
+    /* Padding grande a propósito: el ancho imprimible real del cabezal de una ticketera suele
+       ser bastante menor al ancho físico del papel (queda margen mecánico a cada lado que el
+       cabezal no cubre). Si el contenido usa casi todo el ancho lógico (TICKET_ANCHO_MM), las
        líneas más largas se cortan del lado derecho al imprimir de verdad, aunque en el PDF se
-       vean bien. Este padding deja el área de contenido en ~50mm, con margen de sobra. */
+       vean bien. Este padding deja ~8mm de margen de sobra entre los dos lados. */
     width: 100%;
     padding: 0 4mm;
   }
