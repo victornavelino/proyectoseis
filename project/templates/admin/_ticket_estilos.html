@@ -105,9 +105,14 @@
   .total .etiqueta { font-size: 10px; color: #000; font-weight: 700; letter-spacing: .03em; }
   .total .importe { font-size: 18px; font-weight: 800; }
   .pie {
+    /* margin-bottom grande a propósito: la impresora térmica corta el rollo apenas detecta que
+       el contenido terminó (la página sigue en blanco hasta los 1000mm de `@page`, ver arriba),
+       y sin este margen el corte caía justo sobre esta línea (alcanzaba a imprimir el TOTAL
+       pero no "Gracias por su compra") — hace falta dejarle al rodillo distancia de sobra para
+       que la línea termine de salir del todo antes de que la cuchilla corte. */
     text-align: center;
     color: #000;
     font-size: 8px;
-    margin: 18px 0 0;
+    margin: 18px 0 20mm;
   }
 </style>
