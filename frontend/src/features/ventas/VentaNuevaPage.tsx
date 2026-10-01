@@ -16,7 +16,6 @@ import {
   Text,
   Title,
 } from '@mantine/core'
-import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { useAuth } from '../../auth/AuthContext'
 import { leerPesoBalanza } from '../../api/balanza'
@@ -123,29 +122,57 @@ export default function VentaNuevaPage() {
     setClaveAEnfocar(null)
   }, [claveAEnfocar])
 
-  const [carritoDebounced] = useDebouncedValue(carrito, 400)
+  // Throttle (no debounce): mientras se está pesando, `carrito` cambia cada 300ms (ver
+  // leerPesoBalanza más arriba) — un debounce clásico (esperar a que termine de cambiar)
+  // nunca llega a dispararse ahí, así que Precio/Subtotal quedaban congelados hasta soltar la
+  // balanza. Con throttle, como mucho una llamada cada RETRASO_MIN_MS, se sigue viendo el
+  // precio actualizarse en vivo mientras se pesa, y al soltar la balanza el último peso
+  // siempre termina mandándose (el `setTimeout` pendiente).
+  const ultimoEnvioPreviewRef = useRef(0)
+  const previewPendienteRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    const items = carritoDebounced.filter((i) => Number(i.cantidadPeso) > 0)
+    if (previewPendienteRef.current) {
+      clearTimeout(previewPendienteRef.current)
+      previewPendienteRef.current = null
+    }
+
+    const items = carrito.filter((i) => Number(i.cantidadPeso) > 0)
     if (!cliente || items.length === 0) {
       setPrevisualizacion(null)
       setErrorPreview(null)
       return
     }
-    previsualizarVenta(
-      cliente.id,
-      items.map((i) => ({ articulo: i.articuloId, cantidad_peso: i.cantidadPeso })),
-    )
-      .then((r) => {
-        setPrevisualizacion(r)
-        setErrorPreview(null)
-      })
-      .catch((err: unknown) => {
-        setPrevisualizacion(null)
-        setErrorPreview(mensajeDeError(err))
-      })
+
+    const pedirPreview = () => {
+      ultimoEnvioPreviewRef.current = Date.now()
+      previsualizarVenta(
+        cliente.id,
+        items.map((i) => ({ articulo: i.articuloId, cantidad_peso: i.cantidadPeso })),
+      )
+        .then((r) => {
+          setPrevisualizacion(r)
+          setErrorPreview(null)
+        })
+        .catch((err: unknown) => {
+          setPrevisualizacion(null)
+          setErrorPreview(mensajeDeError(err))
+        })
+    }
+
+    const RETRASO_MIN_MS = 400
+    const transcurrido = Date.now() - ultimoEnvioPreviewRef.current
+    if (transcurrido >= RETRASO_MIN_MS) {
+      pedirPreview()
+    } else {
+      previewPendienteRef.current = setTimeout(pedirPreview, RETRASO_MIN_MS - transcurrido)
+    }
+
+    return () => {
+      if (previewPendienteRef.current) clearTimeout(previewPendienteRef.current)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [carritoDebounced, cliente])
+  }, [carrito, cliente])
 
   const agregarArticulo = (articulo: Articulo) => {
     const clave = nuevaClave()
