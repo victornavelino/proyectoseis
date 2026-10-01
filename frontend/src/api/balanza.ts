@@ -8,7 +8,11 @@
 const URL_BALANZA = 'http://localhost:4700'
 
 export async function leerPesoBalanza(): Promise<string> {
-  const response = await fetch(URL_BALANZA)
+  // `cache: 'no-store'`: sin esto, al pedir la misma URL cada 300ms (VentaNuevaPage la relee en
+  // loop mientras se pesa) el navegador puede servir la respuesta cacheada de la primera lectura
+  // en vez de volver a golpear el servidor local — el síntoma es exactamente "toma bien el peso
+  // la primera vez pero no se entera si después le agregás o sacás mercadería".
+  const response = await fetch(URL_BALANZA, { cache: 'no-store' })
   if (!response.ok) {
     throw new Error('No se pudo leer la balanza.')
   }
