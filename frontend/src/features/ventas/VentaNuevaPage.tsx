@@ -321,6 +321,7 @@ export default function VentaNuevaPage() {
                 <Table.Tr>
                   <Table.Th>Artículo</Table.Th>
                   <Table.Th>Cantidad / Peso</Table.Th>
+                  <Table.Th>Precio</Table.Th>
                   <Table.Th>Subtotal</Table.Th>
                   <Table.Th />
                 </Table.Tr>
@@ -351,6 +352,10 @@ export default function VentaNuevaPage() {
                           w={110}
                         />
                       </Table.Td>
+                      {/* Precio final por unidad (ya con la promoción aplicada si corresponde) —
+                         mismo valor que se usa para calcular el Subtotal de al lado, para que la
+                         cuenta "precio x cantidad = subtotal" siempre cierre a simple vista. */}
+                      <Table.Td>{precio ? formatearMonto(precio.precio_promocion) : '—'}</Table.Td>
                       <Table.Td>{precio ? formatearMonto(precio.total_articulo) : '—'}</Table.Td>
                       <Table.Td>
                         <ActionIcon color="red" variant="subtle" onClick={() => quitarItem(item.clave)} aria-label="Quitar">
@@ -362,7 +367,7 @@ export default function VentaNuevaPage() {
                 })}
                 {carrito.length === 0 && (
                   <Table.Tr>
-                    <Table.Td colSpan={4}>
+                    <Table.Td colSpan={5}>
                       <Text c="dimmed">Buscá un artículo para agregarlo.</Text>
                     </Table.Td>
                   </Table.Tr>
