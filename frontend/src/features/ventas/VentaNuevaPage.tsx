@@ -55,6 +55,12 @@ export default function VentaNuevaPage() {
   // sola vez al agregar el artículo y quedaba congelado). Se corta en cuanto el usuario toca ese
   // campo a mano, le da Enter, lo deja de enfocar, o se quita el ítem del carrito.
   const [claveEnBalanza, setClaveEnBalanza] = useState<string | null>(null)
+  // Mientras se está agregando/sacando mercadería la balanza puede devolver un valor no
+  // numérico por un instante (todavía inestable, antes de asentarse) — eso es normal y se
+  // resuelve solo en la próxima lectura, 300ms después. Sólo avisamos si falla de forma
+  // sostenida (varias lecturas seguidas), para no mostrar un aviso de error cada vez que se
+  // toca la balanza.
+  const fallosSeguidosRef = useRef(0)
   const errorBalanzaMostradoRef = useRef(false)
   const empleadoInputRef = useRef<HTMLInputElement>(null)
   const articuloInputRef = useRef<HTMLInputElement>(null)
@@ -64,15 +70,19 @@ export default function VentaNuevaPage() {
     setClaveEnBalanza((actual) => (actual === clave ? null : actual))
   }
 
+  const UMBRAL_FALLOS_BALANZA = 5
+
   useEffect(() => {
     if (!claveEnBalanza) return
     const intervalo = setInterval(() => {
       leerPesoBalanza()
         .then((peso) => {
+          fallosSeguidosRef.current = 0
           setCarrito((actual) => actual.map((i) => (i.clave === claveEnBalanza ? { ...i, cantidadPeso: peso } : i)))
         })
         .catch(() => {
-          if (errorBalanzaMostradoRef.current) return
+          fallosSeguidosRef.current += 1
+          if (fallosSeguidosRef.current < UMBRAL_FALLOS_BALANZA || errorBalanzaMostradoRef.current) return
           errorBalanzaMostradoRef.current = true
           notifications.show({
             message: 'No se pudo leer la balanza. Ingresá el peso manualmente.',
@@ -152,6 +162,7 @@ export default function VentaNuevaPage() {
     ])
     setClaveAEnfocar(clave)
     if (articulo.es_por_peso) {
+      fallosSeguidosRef.current = 0
       errorBalanzaMostradoRef.current = false
       setClaveEnBalanza(clave)
     }
