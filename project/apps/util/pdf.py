@@ -16,4 +16,8 @@ def render_pdf_response(request, template, context=None, filename='documento.pdf
     disposition = 'inline' if show_content_in_browser else 'attachment'
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = f'{disposition}; filename="{filename}"'
+    # Sin esto, reimprimir el mismo ticket/cierre de caja (misma URL) puede devolver el PDF
+    # cacheado por el navegador o por el proxy (Traefik, en Dokploy) en vez del generado de
+    # nuevo en esta request — ver api.client.apiFetchBlob en el frontend.
+    response['Cache-Control'] = 'no-store'
     return response

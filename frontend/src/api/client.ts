@@ -108,7 +108,12 @@ export async function apiFetchBlob(path: string, options: ApiFetchOptions = {}):
   const headers: Record<string, string> = {}
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`
 
-  const response = await fetch(url.toString(), { method: options.method ?? 'GET', headers })
+  // `cache: 'no-store'`: sin esto, reimprimir el mismo ticket pega siempre a la misma URL
+  // (/api/v1/venta/<numero_ticket>/imprimir/) y el navegador puede servir el PDF cacheado de
+  // la primera vez en vez de pedirlo de nuevo — mismo problema que con la balanza (ver
+  // api/balanza.ts). Especialmente importante acá: un cambio de ancho de ticket (TICKET_ANCHO_MM)
+  // no se vería nunca si el navegador sigue devolviendo el PDF viejo.
+  const response = await fetch(url.toString(), { method: options.method ?? 'GET', headers, cache: 'no-store' })
 
   if (!response.ok) {
     const esJson = response.headers.get('Content-Type')?.includes('application/json') ?? false
