@@ -49,9 +49,39 @@ export default function VentaNuevaPage() {
   const [confirmando, setConfirmando] = useState(false)
   const [ticketPreview, setTicketPreview] = useState<{ numeroTicket: number; url: string } | null>(null)
   const [claveAEnfocar, setClaveAEnfocar] = useState<string | null>(null)
+  // Clave del ítem que se está pesando en este momento — mientras no sea null, se vuelve a leer
+  // la balanza en loop y se pisa su cantidadPeso con cada lectura, para que el campo seguir el
+  // peso en tiempo real a medida que se agrega/saca mercadería de la balanza (antes se leía una
+  // sola vez al agregar el artículo y quedaba congelado). Se corta en cuanto el usuario toca ese
+  // campo a mano, le da Enter, lo deja de enfocar, o se quita el ítem del carrito.
+  const [claveEnBalanza, setClaveEnBalanza] = useState<string | null>(null)
+  const errorBalanzaMostradoRef = useRef(false)
   const empleadoInputRef = useRef<HTMLInputElement>(null)
   const articuloInputRef = useRef<HTMLInputElement>(null)
   const cantidadRefs = useRef(new Map<string, HTMLInputElement>())
+
+  const dejarDeLeerBalanza = (clave: string) => {
+    setClaveEnBalanza((actual) => (actual === clave ? null : actual))
+  }
+
+  useEffect(() => {
+    if (!claveEnBalanza) return
+    const intervalo = setInterval(() => {
+      leerPesoBalanza()
+        .then((peso) => {
+          setCarrito((actual) => actual.map((i) => (i.clave === claveEnBalanza ? { ...i, cantidadPeso: peso } : i)))
+        })
+        .catch(() => {
+          if (errorBalanzaMostradoRef.current) return
+          errorBalanzaMostradoRef.current = true
+          notifications.show({
+            message: 'No se pudo leer la balanza. Ingresá el peso manualmente.',
+            color: 'yellow',
+          })
+        })
+    }, 300)
+    return () => clearInterval(intervalo)
+  }, [claveEnBalanza])
 
   useEffect(() => {
     listarEmpleadosActivos()
@@ -107,7 +137,7 @@ export default function VentaNuevaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [carritoDebounced, cliente])
 
-  const agregarArticulo = async (articulo: Articulo) => {
+  const agregarArticulo = (articulo: Articulo) => {
     const clave = nuevaClave()
     setCarrito((actual) => [
       ...actual,
@@ -122,24 +152,21 @@ export default function VentaNuevaPage() {
     ])
     setClaveAEnfocar(clave)
     if (articulo.es_por_peso) {
-      try {
-        const peso = await leerPesoBalanza()
-        setCarrito((actual) => actual.map((i) => (i.clave === clave ? { ...i, cantidadPeso: peso } : i)))
-      } catch {
-        notifications.show({
-          message: 'No se pudo leer la balanza. Ingresá el peso manualmente.',
-          color: 'yellow',
-        })
-      }
+      errorBalanzaMostradoRef.current = false
+      setClaveEnBalanza(clave)
     }
   }
 
   const actualizarCantidad = (clave: string, valor: string) => {
     setCarrito((actual) => actual.map((i) => (i.clave === clave ? { ...i, cantidadPeso: valor } : i)))
+    // El usuario tocó el campo a mano — a partir de acá su valor manda, no lo vuelve a pisar la
+    // próxima lectura de la balanza.
+    dejarDeLeerBalanza(clave)
   }
 
   const quitarItem = (clave: string) => {
     setCarrito((actual) => actual.filter((i) => i.clave !== clave))
+    dejarDeLeerBalanza(clave)
   }
 
   // Deja la página lista para la siguiente venta sin pasar por /cobrar: el carnicero solo carga
@@ -265,7 +292,7 @@ export default function VentaNuevaPage() {
             <BuscadorLista<Articulo>
               placeholder="Buscar artículo por nombre o código…"
               buscar={(q) => listarArticulos({ search: q }).then((r) => r.results)}
-              onSeleccionar={(a) => void agregarArticulo(a)}
+              onSeleccionar={agregarArticulo}
               inputRef={articuloInputRef}
               clave={(a) => a.id}
               renderItem={(a) => (
@@ -301,12 +328,14 @@ export default function VentaNuevaPage() {
                           }}
                           value={item.cantidadPeso}
                           onChange={(v) => actualizarCantidad(item.clave, String(v))}
+                          onBlur={() => dejarDeLeerBalanza(item.clave)}
                           onKeyDown={(e) => {
                             if (e.key !== 'Enter') return
                             e.preventDefault()
+                            dejarDeLeerBalanza(item.clave)
                             articuloInputRef.current?.focus()
                           }}
-                          decimalScale={2}
+                          decimalScale={3}
                           min={0}
                           w={110}
                         />

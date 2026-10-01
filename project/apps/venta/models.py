@@ -54,7 +54,9 @@ class VentaArticulo(models.Model):
         ordering = ['-id']
 
     total_articulo = models.DecimalField(max_digits=12, decimal_places=2)
-    cantidad_peso = models.DecimalField(max_digits=12, decimal_places=2)
+    # 3 decimales (no 2): la balanza del mostrador reporta con precisión de gramos
+    # (0.001 kg) — ver frontend/src/api/balanza.ts.
+    cantidad_peso = models.DecimalField(max_digits=12, decimal_places=3)
     precio_promocion = models.DecimalField(max_digits=12, decimal_places=2)
     precio_unitario = models.DecimalField(max_digits=12, decimal_places=2)
     # Debe soportar como mínimo el mismo largo que Articulo.nombre (60) — se copia tal cual al

@@ -23,7 +23,7 @@
         <span class="nombre-articulo">{{ articulo.nombre_articulo }}</span>
         <span class="articulo-importe">{{ articulo.total_articulo|moneda }}</span>
       </div>
-      <div class="articulo-detalle">{{ articulo.cantidad_peso|floatformat:"-2" }} x {{ articulo.precio_unitario|moneda }}</div>
+      <div class="articulo-detalle">{{ articulo.cantidad_peso|floatformat:"-3" }} x {{ articulo.precio_unitario|moneda }}</div>
     </div>
     {% endfor %}
 

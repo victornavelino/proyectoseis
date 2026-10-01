@@ -17,5 +17,6 @@ export async function leerPesoBalanza(): Promise<string> {
   if (Number.isNaN(valor)) {
     throw new Error(`La balanza devolvió un valor inesperado: "${texto}"`)
   }
-  return valor.toFixed(2)
+  // 3 decimales: precisión de gramos (0.001 kg) — ver VentaArticulo.cantidad_peso en el backend.
+  return valor.toFixed(3)
 }

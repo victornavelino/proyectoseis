@@ -62,8 +62,9 @@ class VentaSerializer(serializers.ModelSerializer):
 class ItemVentaInputSerializer(serializers.Serializer):
     articulo = serializers.PrimaryKeyRelatedField(queryset=Articulo.objects.all())
     # El peso/cantidad sí viene del frontend (lo lee la balanza física del mostrador, PEND-F); lo
-    # que NUNCA viene del frontend es el precio — eso se recalcula en servidor.
-    cantidad_peso = serializers.DecimalField(max_digits=12, decimal_places=2)
+    # que NUNCA viene del frontend es el precio — eso se recalcula en servidor. 3 decimales:
+    # precisión de gramos (ver VentaArticulo.cantidad_peso).
+    cantidad_peso = serializers.DecimalField(max_digits=12, decimal_places=3)
 
     def validate_cantidad_peso(self, value):
         if value <= 0:
@@ -98,7 +99,7 @@ class PrevisualizarVentaInputSerializer(serializers.Serializer):
 class ItemPrevisualizadoSerializer(serializers.Serializer):
     articulo = serializers.IntegerField()
     articulo_nombre = serializers.CharField()
-    cantidad_peso = serializers.DecimalField(max_digits=12, decimal_places=2)
+    cantidad_peso = serializers.DecimalField(max_digits=12, decimal_places=3)
     precio_unitario = serializers.DecimalField(max_digits=12, decimal_places=2)
     precio_promocion = serializers.DecimalField(max_digits=12, decimal_places=2)
     total_articulo = serializers.DecimalField(max_digits=12, decimal_places=2)
