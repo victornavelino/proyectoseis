@@ -193,10 +193,20 @@ def es_empleado(persona):
     return result
 
 
+# Índice = datetime.weekday() (lunes=0 ... domingo=6) -> nombre del campo booleano en
+# promocion.models.DiasSemana. Antes esta función no miraba `dias_semana` para nada: una
+# promoción cargada sólo para "Sábado y Domingo" se aplicaba igual un martes, porque el único
+# filtro era habilitada + rango de fechas + sucursal.
+DIAS_SEMANA_CAMPOS = ('lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo')
+
+
 def get_promociones_activas(sucursal):
     hoy = datetime.now()
-    promociones = Promocion.objects.filter(habilitada=True, sucursal=sucursal, fecha_inicio__lte=hoy,
-                                           fecha_fin__gte=hoy).order_by('prioridad')
+    campo_dia_hoy = DIAS_SEMANA_CAMPOS[hoy.weekday()]
+    promociones = Promocion.objects.filter(
+        habilitada=True, sucursal=sucursal, fecha_inicio__lte=hoy, fecha_fin__gte=hoy,
+        **{f'dias_semana__{campo_dia_hoy}': True},
+    ).order_by('prioridad')
     return promociones
 
 
