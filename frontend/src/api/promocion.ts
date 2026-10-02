@@ -23,6 +23,9 @@ export function crearPromocion(datos: PromocionInput) {
 export function actualizarPromocion(id: number, datos: PromocionInput) {
   return apiFetch<Promocion>(`api/v1/promocion/${id}/`, { method: 'PUT', body: datos })
 }
+export function eliminarPromocion(id: number) {
+  return apiFetch<void>(`api/v1/promocion/${id}/`, { method: 'DELETE' })
+}
 
 export function crearDiasSemana(datos: DiasSemanaInput) {
   return apiFetch<{ id: number }>('api/v1/diassemana/', { method: 'POST', body: datos })
