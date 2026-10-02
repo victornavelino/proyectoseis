@@ -32,19 +32,19 @@ import CobroVentaPage from './features/ventas/CobroVentaPage'
 import VentaNuevaPage from './features/ventas/VentaNuevaPage'
 import VentasListPage from './features/ventas/VentasListPage'
 
-function Privada({ children }: { children: ReactNode }) {
+function Privada({ children, requierePermiso }: { children: ReactNode; requierePermiso?: string }) {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requierePermiso={requierePermiso}>
       <AppLayout>{children}</AppLayout>
     </ProtectedRoute>
   )
 }
 
-const RUTAS: { path: string; element: ReactNode }[] = [
+const RUTAS: { path: string; element: ReactNode; requierePermiso?: string }[] = [
   { path: '/', element: <InicioPage /> },
   { path: '/ventas', element: <VentasListPage /> },
-  { path: '/ventas/nueva', element: <VentaNuevaPage /> },
-  { path: '/ventas/:numeroTicket/cobrar', element: <CobroVentaPage /> },
+  { path: '/ventas/nueva', element: <VentaNuevaPage />, requierePermiso: 'venta.add_venta' },
+  { path: '/ventas/:numeroTicket/cobrar', element: <CobroVentaPage />, requierePermiso: 'caja.add_cobroventa' },
   { path: '/articulos', element: <ArticulosPage /> },
   { path: '/articulos/categorias', element: <CategoriasPage /> },
   { path: '/articulos/unidades-medida', element: <UnidadesMedidaPage /> },
@@ -77,7 +77,11 @@ export default function App() {
         <Routes>
           <Route path="/auth/callback" element={<AuthCallback />} />
           {RUTAS.map((ruta) => (
-            <Route key={ruta.path} path={ruta.path} element={<Privada>{ruta.element}</Privada>} />
+            <Route
+              key={ruta.path}
+              path={ruta.path}
+              element={<Privada requierePermiso={ruta.requierePermiso}>{ruta.element}</Privada>}
+            />
           ))}
         </Routes>
       </AuthProvider>

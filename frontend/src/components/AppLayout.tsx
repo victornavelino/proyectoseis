@@ -54,6 +54,10 @@ interface ItemNav {
    * muestra sólo cuando cambia respecto al ítem anterior, para agrupar visualmente sin abrir
    * un nuevo `titulo` de sección. */
   subgrupo?: string
+  /** Codename Django que hace falta para ver este ítem en el menú (ej. "venta.add_venta" para
+   * "Nueva venta") — ver ProtectedRoute.requierePermiso, que además bloquea la ruta en sí. Sin
+   * esto el ítem siempre se muestra (igual que hasta ahora). */
+  requierePermiso?: string
 }
 
 const NAV: { titulo: string; items: ItemNav[] }[] = [
@@ -61,7 +65,13 @@ const NAV: { titulo: string; items: ItemNav[] }[] = [
   {
     titulo: 'Ventas',
     items: [
-      { to: '/ventas/nueva', label: 'Nueva venta', icon: IconShoppingCart, seccion: 'Ventas' },
+      {
+        to: '/ventas/nueva',
+        label: 'Nueva venta',
+        icon: IconShoppingCart,
+        seccion: 'Ventas',
+        requierePermiso: 'venta.add_venta',
+      },
       { to: '/ventas', label: 'Ventas', icon: IconReceipt2, seccion: 'Ventas' },
     ],
   },
@@ -128,7 +138,7 @@ const LOGO_URL = import.meta.env.VITE_LOGO_URL
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const [opened, { toggle }] = useDisclosure()
-  const { perfil, logout } = useAuth()
+  const { perfil, logout, tienePermiso } = useAuth()
   const location = useLocation()
 
   const itemActual = TODOS_LOS_ITEMS.find((item) => item.to === location.pathname)
@@ -212,15 +222,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </Group>
         </AppShell.Section>
         <AppShell.Section grow component={ScrollArea} px="sm">
-          {NAV.map((grupo) => (
+          {NAV.map((grupo) => {
+            const items = grupo.items.filter((item) => !item.requierePermiso || tienePermiso(item.requierePermiso))
+            if (items.length === 0) return null
+            return (
             <div key={grupo.titulo} style={{ marginBottom: 12 }}>
               <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="xs" mb={4}>
                 {grupo.titulo}
               </Text>
-              {grupo.items.map((item, indice) => {
+              {items.map((item, indice) => {
                 const activo = location.pathname === item.to
                 const IconItem = item.icon
-                const mostrarSubgrupo = item.subgrupo && item.subgrupo !== grupo.items[indice - 1]?.subgrupo
+                const mostrarSubgrupo = item.subgrupo && item.subgrupo !== items[indice - 1]?.subgrupo
                 return (
                   <div key={item.to}>
                     {mostrarSubgrupo && (
@@ -252,7 +265,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 )
               })}
             </div>
-          ))}
+            )
+          })}
         </AppShell.Section>
       </AppShell.Navbar>
 

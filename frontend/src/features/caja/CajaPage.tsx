@@ -32,7 +32,9 @@ import { formatearMonto } from '../ventas/dinero'
 import { abrirResumenCajaParaImprimir } from './imprimirTicketCaja'
 
 export default function CajaPage() {
-  const { perfil } = useAuth()
+  const { perfil, tienePermiso } = useAuth()
+  const puedeAbrir = tienePermiso('caja.add_caja')
+  const puedeCerrar = tienePermiso('caja.change_caja')
   const [cajaAbierta, setCajaAbierta] = useState<Caja | null>(null)
   const [historial, setHistorial] = useState<Caja[]>([])
   const [cargando, setCargando] = useState(true)
@@ -152,16 +154,20 @@ export default function CajaPage() {
                 {formatearMonto(cajaAbierta.saldo_actual)}
               </Text>
             </div>
-            <Button size="lg" color="red" loading={procesando} onClick={() => void handleAbrirCierre()}>
-              Cerrar caja
-            </Button>
+            {puedeCerrar && (
+              <Button size="lg" color="red" loading={procesando} onClick={() => void handleAbrirCierre()}>
+                Cerrar caja
+              </Button>
+            )}
           </Group>
         ) : (
           <Group justify="space-between" align="center">
             <Text>No hay una caja abierta en esta sucursal.</Text>
-            <Button size="lg" color="red" loading={procesando} onClick={() => void handleAbrir()}>
-              Abrir caja
-            </Button>
+            {puedeAbrir && (
+              <Button size="lg" color="red" loading={procesando} onClick={() => void handleAbrir()}>
+                Abrir caja
+              </Button>
+            )}
           </Group>
         )}
       </Paper>

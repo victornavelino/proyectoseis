@@ -15,17 +15,21 @@ import { abrirTicketParaImprimir } from './imprimirTicket'
 
 type Accion = 'cobrar' | 'imprimir' | 'anular'
 
-/** Acciones disponibles para una venta: anular sólo antes de cobrarla (y sólo para staff, ver
- * venta.api.VentaViewSet.anular en el backend); si ya está cobrada o anulada, sólo se puede
+/** Acciones disponibles para una venta: cobrar exige el permiso caja.add_cobroventa (ver
+ * util.permissions.TienePermiso en el backend); anular sólo antes de cobrarla (y sólo para
+ * staff, ver venta.api.VentaViewSet.anular); si ya está cobrada o anulada, sólo se puede
  * reimprimir. */
-function accionesDisponibles(venta: Venta, puedeAnular: boolean): Accion[] {
+function accionesDisponibles(venta: Venta, puedeAnular: boolean, puedeCobrar: boolean): Accion[] {
   if (venta.anulado || venta.cobrada) return ['imprimir']
-  return puedeAnular ? ['cobrar', 'imprimir', 'anular'] : ['cobrar', 'imprimir']
+  const acciones: Accion[] = puedeCobrar ? ['cobrar', 'imprimir'] : ['imprimir']
+  return puedeAnular ? [...acciones, 'anular'] : acciones
 }
 
 export default function VentasListPage() {
-  const { perfil } = useAuth()
+  const { perfil, tienePermiso } = useAuth()
   const puedeAnular = perfil?.is_staff ?? false
+  const puedeCobrar = tienePermiso('caja.add_cobroventa')
+  const puedeCargarVenta = tienePermiso('venta.add_venta')
 
   const [ventas, setVentas] = useState<Venta[]>([])
   const [total, setTotal] = useState(0)
@@ -61,7 +65,7 @@ export default function VentasListPage() {
 
   useEffect(() => {
     setFilaSeleccionada(0)
-    setAccion(ventas.length > 0 ? accionesDisponibles(ventas[0], puedeAnular)[0] : 'cobrar')
+    setAccion(ventas.length > 0 ? accionesDisponibles(ventas[0], puedeAnular, puedeCobrar)[0] : 'cobrar')
     if (ventas.length === 0) return
     // Si el cajero está tipeando en el buscador no le robamos el foco; en cualquier otro caso
     // (entrar a la página, cambiar de página) el foco va a la primera fila para poder navegar
@@ -104,10 +108,10 @@ export default function VentasListPage() {
       const nuevaFila =
         e.key === 'ArrowDown' ? Math.min(filaSeleccionada + 1, ventas.length - 1) : Math.max(filaSeleccionada - 1, 0)
       setFilaSeleccionada(nuevaFila)
-      setAccion(accionesDisponibles(ventas[nuevaFila], puedeAnular)[0])
+      setAccion(accionesDisponibles(ventas[nuevaFila], puedeAnular, puedeCobrar)[0])
     } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
       e.preventDefault()
-      const disponibles = accionesDisponibles(ventas[filaSeleccionada], puedeAnular)
+      const disponibles = accionesDisponibles(ventas[filaSeleccionada], puedeAnular, puedeCobrar)
       const idx = Math.max(disponibles.indexOf(accion), 0)
       const nuevoIdx = Math.min(Math.max(idx + (e.key === 'ArrowRight' ? 1 : -1), 0), disponibles.length - 1)
       setAccion(disponibles[nuevoIdx])
@@ -126,9 +130,11 @@ export default function VentasListPage() {
             Historial de ventas y cobros pendientes
           </Text>
         </div>
-        <Button component={Link} to="/ventas/nueva" color="red" leftSection={<IconPlus size={16} />}>
-          Nueva venta
-        </Button>
+        {puedeCargarVenta && (
+          <Button component={Link} to="/ventas/nueva" color="red" leftSection={<IconPlus size={16} />}>
+            Nueva venta
+          </Button>
+        )}
       </Group>
 
       <Paper withBorder p="md" mb="md">
@@ -167,14 +173,14 @@ export default function VentasListPage() {
             </Table.Thead>
             <Table.Tbody>
               {ventas.map((venta, i) => {
-                const disponibles = accionesDisponibles(venta, puedeAnular)
+                const disponibles = accionesDisponibles(venta, puedeAnular, puedeCobrar)
                 const seleccionada = i === filaSeleccionada
                 return (
                   <Table.Tr
                     key={venta.numero_ticket}
                     onClick={() => {
                       setFilaSeleccionada(i)
-                      setAccion(accionesDisponibles(venta, puedeAnular)[0])
+                      setAccion(accionesDisponibles(venta, puedeAnular, puedeCobrar)[0])
                     }}
                     style={{
                       cursor: 'pointer',
