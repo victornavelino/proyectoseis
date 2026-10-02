@@ -67,3 +67,34 @@ def sincronizar_grupo_acceso_completo():
 
     if permisos:
         grupo.permissions.add(*permisos)
+
+
+NOMBRE_GRUPO_OPERATIVO = 'Acceso operativo (ventas y caja)'
+
+# (app_label, nombre de modelo, codename) — acá sí hace falta el nombre de modelo aparte del
+# codename porque `cobroventa` (modelo `CobroVenta`) no se puede derivar recortando el prefijo
+# `add_`/`change_` del codename de forma genérica como en MODELOS_ACCESO_COMPLETO.
+PERMISOS_OPERATIVO = (
+    ('venta', 'venta', 'add_venta'),
+    ('caja', 'caja', 'add_caja'),
+    ('caja', 'caja', 'change_caja'),
+    ('caja', 'cobroventa', 'add_cobroventa'),
+)
+
+
+def sincronizar_grupo_operativo():
+    from django.contrib.auth.models import Group, Permission
+    from django.contrib.contenttypes.models import ContentType
+
+    grupo, _ = Group.objects.get_or_create(name=NOMBRE_GRUPO_OPERATIVO)
+
+    permisos = []
+    for app_label, model_name, codename in PERMISOS_OPERATIVO:
+        try:
+            content_type = ContentType.objects.get(app_label=app_label, model=model_name)
+            permisos.append(Permission.objects.get(content_type=content_type, codename=codename))
+        except (ContentType.DoesNotExist, Permission.DoesNotExist):
+            continue
+
+    if permisos:
+        grupo.permissions.add(*permisos)

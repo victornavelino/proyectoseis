@@ -51,7 +51,7 @@ from caja.utils import (
     calcular_total_ingresos,
 )
 from util.pdf import render_pdf_response
-from util.permissions import TienePermisoDeModelo
+from util.permissions import TienePermiso, TienePermisoDeModelo
 
 
 class TarjetaDeCreditoViewSet(viewsets.ModelViewSet):
@@ -199,6 +199,23 @@ class CajaViewSet(viewsets.ReadOnlyModelViewSet):
         'sucursal': ['exact'],
         'fecha_fin': ['exact', 'isnull'],
     }
+
+    def get_permissions(self):
+        # abrir/cerrar/cobrar_venta son las acciones de negocio de este ViewSet -> cada una
+        # exige su propio permiso puntual (TienePermiso), así un rol "cajero" puede tener
+        # exactamente "abrir y cerrar caja y cobrar ventas" sin que eso le dé además permiso
+        # para cargar ventas (eso lo exige VentaViewSet.crear aparte). No se puede usar acá
+        # TienePermisoDeModelo: las tres acciones son POST, así que mapearía las tres al mismo
+        # permiso (`add_caja`) en vez de distinguirlas. Ver usuario.migrations.
+        # 0019_grupo_acceso_operativo para el backfill que conserva el acceso de las cuentas ya
+        # existentes (hoy cualquier autenticado puede hacer las tres).
+        if self.action == 'abrir':
+            return [TienePermiso('caja.add_caja')]
+        if self.action == 'cerrar':
+            return [TienePermiso('caja.change_caja')]
+        if self.action == 'cobrar_venta':
+            return [TienePermiso('caja.add_cobroventa')]
+        return super().get_permissions()
 
     @action(detail=False, methods=['post'])
     def abrir(self, request):

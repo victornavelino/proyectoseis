@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -18,7 +19,12 @@ def sucursal():
 
 @pytest.fixture
 def usuario(sucursal):
-    return Usuario.objects.create_user(username='cajera', password='password', sucursal=sucursal)
+    # Abrir caja ahora exige el permiso caja.add_caja (ver util.permissions.TienePermiso) — el
+    # grupo "Acceso operativo (ventas y caja)" lo sincroniza usuario.apps.UsuarioConfig.ready()
+    # en cada post_migrate (incluso bajo --nomigrations, ver usuario/permisos.py).
+    usuario = Usuario.objects.create_user(username='cajera', password='password', sucursal=sucursal)
+    usuario.groups.add(Group.objects.get(name='Acceso operativo (ventas y caja)'))
+    return usuario
 
 
 @pytest.mark.django_db

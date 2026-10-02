@@ -17,6 +17,26 @@ class TienePermisoDeModelo(DjangoModelPermissions):
     """
 
 
+class TienePermiso(BasePermission):
+    """Exige el permiso Django puntual `codename` (ej. `"venta.add_venta"`), fijo, sin
+    derivarlo del modelo del ViewSet ni del método HTTP.
+
+    A diferencia de `TienePermisoDeModelo` (pensada para ViewSets de CRUD genérico), esta sirve
+    para acciones de negocio (`@action`) que no son create/update/delete estándar -> ahí
+    `DjangoModelPermissions` no sirve porque mapea por MÉTODO HTTP, no por acción: dos acciones
+    POST del mismo ViewSet (ej. `CajaViewSet.abrir` y `.cerrar`) pedirían el mismo permiso
+    aunque representen operaciones distintas. Se instancia con el codename exacto que
+    corresponda a esa acción puntual, ej. `TienePermiso('caja.change_caja')` para `cerrar`.
+    """
+
+    def __init__(self, codename):
+        self.codename = codename
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and user.has_perm(self.codename))
+
+
 class EsEncargadoDeSucursal(BasePermission):
     """Gestión de usuarios operativos (no-staff) de una sucursal, para que un encargado no
     necesite acceso al /admin de Django (que además le daría manejo de TODOS los modelos del

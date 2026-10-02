@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from rest_framework.test import APIClient
 
 from caja.models import Caja, TipoIngreso
@@ -17,7 +18,11 @@ def sucursal():
 
 @pytest.fixture
 def usuario(sucursal):
-    return Usuario.objects.create_user(username='cajera', password='password', sucursal=sucursal)
+    # Cerrar caja ahora exige el permiso caja.change_caja (ver util.permissions.TienePermiso) —
+    # ver comentario equivalente en caja/tests/test_caja_abierta.py.
+    usuario = Usuario.objects.create_user(username='cajera', password='password', sucursal=sucursal)
+    usuario.groups.add(Group.objects.get(name='Acceso operativo (ventas y caja)'))
+    return usuario
 
 
 @pytest.fixture

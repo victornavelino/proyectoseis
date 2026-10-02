@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -19,7 +20,10 @@ Usuario = get_user_model()
 @pytest.fixture
 def contexto():
     sucursal = Sucursal.objects.create(nombre='Casa Central', domicilio='Calle Falsa 123')
+    # cobrar-venta ahora exige el permiso caja.add_cobroventa (ver util.permissions.
+    # TienePermiso) — ver comentario equivalente en caja/tests/test_caja_abierta.py.
     usuario = Usuario.objects.create_user(username='cajera', password='password', sucursal=sucursal)
+    usuario.groups.add(Group.objects.get(name='Acceso operativo (ventas y caja)'))
     persona_empleado = Persona.objects.create(nombre='Ana', apellido='Vendedora', documento_identidad='11111111')
     empleado = Empleado.objects.create(persona=persona_empleado, cuil='20111111112')
     persona_cliente = Persona.objects.create(nombre='Cliente', apellido='Perez', documento_identidad='30111222')

@@ -11,6 +11,7 @@ class UsuarioConfig(AppConfig):
 
 
 def _sincronizar_grupo_acceso_completo(**kwargs):
-    from usuario.permisos import sincronizar_grupo_acceso_completo
+    from usuario.permisos import sincronizar_grupo_acceso_completo, sincronizar_grupo_operativo
 
     sincronizar_grupo_acceso_completo()
+    sincronizar_grupo_operativo()

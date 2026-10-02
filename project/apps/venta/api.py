@@ -16,6 +16,7 @@ from cuentacorriente.constants import DEBITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from cuentacorriente.utils import calcular_saldo_cc
 from util.pdf import render_pdf_response
+from util.permissions import TienePermiso
 from venta.exceptions import (
     ArticuloSinPrecioError,
     CajaCerradaError,
@@ -68,6 +69,13 @@ class VentaViewSet(viewsets.ReadOnlyModelViewSet):
             # Anular reversa una venta -> mismo nivel de acceso que hoy tiene esa acción en
             # Django Admin (a él sólo llegan usuarios staff).
             return [permissions.IsAdminUser()]
+        if self.action == 'crear':
+            # Cargar una venta es la acción de negocio central del mostrador -> exige el permiso
+            # puntual `venta.add_venta` en vez de dejarla abierta a cualquier autenticado, así un
+            # rol "cajero" (sólo caja/cobro) no puede además cargar ventas si no se le dio este
+            # permiso aparte -ver TienePermiso y usuario.migrations.0019_grupo_acceso_operativo
+            # para el backfill que conserva el acceso de las cuentas ya existentes-.
+            return [TienePermiso('venta.add_venta')]
         return super().get_permissions()
 
     @action(detail=False, methods=['post'])
