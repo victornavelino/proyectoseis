@@ -52,3 +52,6 @@ export function crearDescuento(datos: DescuentoInput) {
 export function actualizarDescuento(id: number, datos: DescuentoInput) {
   return apiFetch<Descuento>(`api/v1/descuento/${id}/`, { method: 'PUT', body: datos })
 }
+export function eliminarDescuento(id: number) {
+  return apiFetch<void>(`api/v1/descuento/${id}/`, { method: 'DELETE' })
+}

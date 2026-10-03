@@ -102,8 +102,10 @@ def abrir_caja(*, usuario):
 def cerrar_caja(caja, *, arqueo):
     """Cierra la caja, pero sólo si el arqueo (conteo físico del efectivo, cargado a mano por el
     cajero) alcanza el monto calculado a partir de los movimientos — no se permite cerrar con un
-    faltante. Si sobra (arqueo > calculado) sí se permite: el excedente queda registrado en
-    `arqueo` para el reporte, sin bloquear el cierre."""
+    faltante. Si sobra (arqueo > calculado) sí se permite, y ese sobrante pasa a formar parte de
+    `caja_final` (el arqueo ES el efectivo real que queda en la caja, no el valor teórico
+    calculado) — así la próxima caja de la sucursal hereda el monto real contado, no el
+    calculado (ver `abrir_caja`, que usa `caja_final` de la última cerrada como `caja_inicial`)."""
     if caja.fecha_fin:
         raise CajaYaCerradaError('Esta caja ya está cerrada.')
     # A diferencia del legacy (`caja.views.cerrar_caja` y `CajaAdmin.cerrar_caja`, que cuentan
@@ -122,8 +124,12 @@ def cerrar_caja(caja, *, arqueo):
             f'El arqueo de caja (${arqueo}) es menor al monto calculado (${calculado}); no se puede '
             'cerrar la caja con un faltante.'
         )
+    # calcular_caja_final() devuelve el mismo valor que `calculado` (es la misma fórmula) — se
+    # sigue llamando por su efecto secundario (marcar los movimientos como cerrados), pero el
+    # valor que se guarda como caja_final es el arqueo, no lo calculado (ver docstring).
+    calcular_caja_final(caja)
     caja.fecha_fin = timezone.now()
-    caja.caja_final = calcular_caja_final(caja)
+    caja.caja_final = arqueo
     caja.arqueo = arqueo
     caja.save(update_fields=['fecha_fin', 'caja_final', 'arqueo'])
     caja.refresh_from_db()

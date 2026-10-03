@@ -236,10 +236,11 @@ class CajaViewSet(viewsets.ReadOnlyModelViewSet):
         data['egresos'] = calcular_egresos_caja(caja)
         data['total_egresos'] = calcular_total_egresos(caja)
         data['total_cuenta_corriente'] = calcular_total_compras_cc(caja)
-        # Ya cerrada: `caja_final` (fijado por cerrar_caja) ES el monto calculado — se expone
-        # también acá para que el frontend use siempre el mismo campo, esté la caja abierta
-        # (preview) o cerrada (ver `previsualizar_cierre`).
-        data['caja_final_calculado'] = data['caja_final']
+        # `caja_final` (fijado por cerrar_caja) es el arqueo real contado, no el teórico — para
+        # "Monto calculado" hay que recalcularlo aparte. calcular_saldo_caja() filtra sólo por
+        # caja_id (no por fecha), así que da el mismo resultado de siempre aunque la caja ya
+        # esté cerrada (sus movimientos no cambian después de cerrada).
+        data['caja_final_calculado'] = str(calcular_saldo_caja(caja))
         return data
 
     @action(detail=True, methods=['get'], url_path='previsualizar-cierre')

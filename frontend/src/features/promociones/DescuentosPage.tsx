@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { ActionIcon, Button, Group, Modal, NumberInput, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
-import { IconEdit } from '@tabler/icons-react'
-import { actualizarDescuento, crearDescuento, listarDescuentos } from '../../api/promocion'
+import { IconEdit, IconTrash } from '@tabler/icons-react'
+import { actualizarDescuento, crearDescuento, eliminarDescuento, listarDescuentos } from '../../api/promocion'
 import { mensajeDeError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import ListaCrud from '../../components/ListaCrud'
@@ -75,11 +75,22 @@ function DescuentoFormModal({
 }
 
 export default function DescuentosPage() {
-  const { puedeEscribir } = useAuth()
+  const { puedeEscribir, puedeBorrar } = useAuth()
   const puedeEditar = puedeEscribir('promocion.descuento')
+  const puedeEliminar = puedeBorrar('promocion.descuento')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<Descuento | null>(null)
   const [recarga, setRecarga] = useState(0)
+
+  const eliminar = async (descuento: Descuento) => {
+    try {
+      await eliminarDescuento(descuento.id)
+      notifications.show({ message: 'Descuento eliminado.', color: 'green' })
+      setRecarga((n) => n + 1)
+    } catch (err) {
+      notifications.show({ title: 'No se pudo eliminar', message: mensajeDeError(err), color: 'red' })
+    }
+  }
 
   return (
     <>
@@ -102,18 +113,27 @@ export default function DescuentosPage() {
           { header: 'Valor', render: (d) => `${d.valor}%` },
         ]}
         accionesHeader={
-          puedeEditar
+          puedeEditar || puedeEliminar
             ? (d) => (
-                <ActionIcon
-                  variant="subtle"
-                  aria-label="Editar"
-                  onClick={() => {
-                    setEditando(d)
-                    setModalAbierto(true)
-                  }}
-                >
-                  <IconEdit size={16} />
-                </ActionIcon>
+                <Group gap="xs" wrap="nowrap">
+                  {puedeEditar && (
+                    <ActionIcon
+                      variant="subtle"
+                      aria-label="Editar"
+                      onClick={() => {
+                        setEditando(d)
+                        setModalAbierto(true)
+                      }}
+                    >
+                      <IconEdit size={16} />
+                    </ActionIcon>
+                  )}
+                  {puedeEliminar && (
+                    <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(d)}>
+                      <IconTrash size={16} />
+                    </ActionIcon>
+                  )}
+                </Group>
               )
             : undefined
         }

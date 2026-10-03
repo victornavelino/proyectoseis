@@ -81,15 +81,33 @@ def test_cerrar_con_arqueo_igual_al_calculado_cierra(client, caja_abierta):
     caja_abierta.refresh_from_db()
     assert caja_abierta.fecha_fin is not None
     assert caja_abierta.arqueo == Decimal('100.00')
+    assert caja_abierta.caja_final == Decimal('100.00')
 
 
 @pytest.mark.django_db
-def test_cerrar_con_sobrante_cierra_igual(client, caja_abierta):
+def test_cerrar_con_sobrante_guarda_el_arqueo_como_caja_final(client, caja_abierta):
+    # Regresión: cerrar_caja() guardaba el monto TEÓRICO calculado como caja_final, ignorando el
+    # sobrante contado a mano — la próxima caja de la sucursal heredaba un monto inicial menor
+    # al efectivo real que había en el cajón.
     response = client.post(f'/api/v1/caja/{caja_abierta.id}/cerrar/', {'arqueo': '120.00'})
 
     assert response.status_code == 200
+    data = response.json()
+    assert data['caja_final_calculado'] == '100.00'
+    assert data['caja_final'] == '120.00'
     caja_abierta.refresh_from_db()
     assert caja_abierta.arqueo == Decimal('120.00')
+    assert caja_abierta.caja_final == Decimal('120.00')
+
+
+@pytest.mark.django_db
+def test_siguiente_caja_hereda_el_sobrante_contado_no_el_calculado(client, caja_abierta, sucursal, usuario):
+    client.post(f'/api/v1/caja/{caja_abierta.id}/cerrar/', {'arqueo': '120.00'})
+
+    response = client.post('/api/v1/caja/abrir/')
+
+    assert response.status_code == 201
+    assert response.json()['caja_inicial'] == '120.00'
 
 
 @pytest.mark.django_db
