@@ -256,8 +256,8 @@ class MovimientoCajaAdmin(ExportMixin, admin.ModelAdmin):
         return True
     
     def has_delete_permission(self, request, obj=None):
-        return False
-     
+        return request.user.is_superuser
+
     def save_model(self, request, obj, form, change):
         messages.error(request, 'No Puede modificar movimientos desde este panel')
         return False
