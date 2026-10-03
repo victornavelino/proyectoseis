@@ -25,6 +25,7 @@ import {
   previsualizarCierre,
 } from '../../api/caja'
 import { mensajeDeError } from '../../api/client'
+import { listarVentas } from '../../api/venta'
 import { useAuth } from '../../auth/AuthContext'
 import EstadoVacio from '../../components/EstadoVacio'
 import type { Caja, ResumenCierreCaja } from '../../types/caja'
@@ -43,14 +44,23 @@ export default function CajaPage() {
   // Sólo se completa mientras `resumen` es una previsualización (fecha_fin todavía null) — el
   // arqueo de caja (conteo físico) que el cajero carga a mano antes de confirmar el cierre.
   const [arqueo, setArqueo] = useState<number | ''>('')
+  // Mismo chequeo que hace cerrar_caja() en el backend (no se puede cerrar con ventas sin
+  // cobrar) — se muestra de entrada acá para que el cajero lo sepa antes de intentar cerrar, en
+  // vez de enterarse recién con el error al apretar el botón.
+  const [ventasSinCobrar, setVentasSinCobrar] = useState(0)
 
   const cargar = () => {
     if (!perfil?.sucursal) return
     setCargando(true)
-    Promise.all([cajaAbiertaActual(perfil.sucursal), listarCajas({ sucursal: perfil.sucursal })])
-      .then(([abierta, todas]) => {
+    Promise.all([
+      cajaAbiertaActual(perfil.sucursal),
+      listarCajas({ sucursal: perfil.sucursal }),
+      listarVentas({ sucursal: perfil.sucursal, cobrada: false, anulado: false, pagina: 1 }),
+    ])
+      .then(([abierta, todas, pendientes]) => {
         setCajaAbierta(abierta.results[0] ?? null)
         setHistorial(todas.results)
+        setVentasSinCobrar(pendientes.count)
       })
       .catch((err: unknown) => notifications.show({ title: 'Error', message: mensajeDeError(err), color: 'red' }))
       .finally(() => setCargando(false))
@@ -134,6 +144,13 @@ export default function CajaPage() {
       <Text c="dimmed" size="sm" mb="lg">
         {perfil.sucursal_nombre}
       </Text>
+
+      {!cargando && cajaAbierta && ventasSinCobrar > 0 && (
+        <Alert color="yellow" mb="lg" title="Hay ventas sin cobrar">
+          Hay {ventasSinCobrar} venta{ventasSinCobrar === 1 ? '' : 's'} sin cobrar en esta sucursal — hay que
+          cobrarla{ventasSinCobrar === 1 ? '' : 's'} antes de poder cerrar la caja.
+        </Alert>
+      )}
 
       <Paper withBorder p="lg" mb="lg">
         {cargando ? (
