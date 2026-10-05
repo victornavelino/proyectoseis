@@ -20,6 +20,17 @@ export interface Perfil {
   permisos: string[]
 }
 
+/** Resumen de la Persona/Empleado detrás de un UsuarioSucursal, para mostrar en el formulario
+ * de edición sin un round-trip aparte — ver usuario.serializers.UsuarioSucursalSerializer
+ * .get_empleado_detalle. null si el usuario no tiene un Empleado vinculado. */
+export interface EmpleadoDetalle {
+  persona: number
+  nombre: string
+  apellido: string
+  documento_identidad: string
+  cuil: string
+}
+
 /** Usuario operativo de la propia sucursal del encargado — ver
  * usuario.api.UsuarioSucursalViewSet. Sin is_staff/groups/user_permissions: ese endpoint no los
  * expone, la gestión de permisos avanzados sigue siendo exclusiva del /admin de Django. */
@@ -32,6 +43,8 @@ export interface UsuarioSucursal {
   is_active: boolean
   sucursal: number | null
   sucursal_nombre: string | null
+  empleado: number | null
+  empleado_detalle: EmpleadoDetalle | null
 }
 
 export interface UsuarioSucursalInput {
@@ -40,6 +53,7 @@ export interface UsuarioSucursalInput {
   first_name: string
   last_name: string
   is_active: boolean
+  empleado?: number | null
   /** Requerida al crear; se omite al editar (no hay reseteo de contraseña de otro usuario todavía). */
   password?: string
 }

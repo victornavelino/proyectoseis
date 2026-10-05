@@ -2,7 +2,8 @@ import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-from empleado.models import Sucursal
+from empleado.models import Empleado, Sucursal
+from persona.models import Persona
 
 Usuario = get_user_model()
 
@@ -102,6 +103,49 @@ def test_password_requerida_al_crear():
 
     assert response.status_code == 400
     assert 'password' in response.data
+
+
+@pytest.mark.django_db
+def test_encargado_puede_vincular_un_empleado_al_crear():
+    # El frontend arma Persona + Empleado + Usuario en una sola pantalla (ver
+    # UsuarioSucursalFormModal) — acá se simula el último paso, con el Empleado ya creado.
+    sucursal = crear_sucursal()
+    encargado = crear_encargado(sucursal)
+    persona = Persona.objects.create(nombre='Ana', apellido='Vendedora', documento_identidad='30111222')
+    empleado = Empleado.objects.create(persona=persona, cuil='20301112223')
+    client = APIClient()
+    client.force_authenticate(user=encargado)
+
+    response = client.post(ENDPOINT, {
+        'username': 'cajero3',
+        'password': 'una-contraseña-segura-123',
+        'empleado': empleado.id,
+    })
+
+    assert response.status_code == 201, response.data
+    usuario = Usuario.objects.get(username='cajero3')
+    assert usuario.empleado_id == empleado.id
+    assert response.data['empleado_detalle'] == {
+        'persona': persona.id,
+        'nombre': 'Ana',
+        'apellido': 'Vendedora',
+        'documento_identidad': '30111222',
+        'cuil': '20301112223',
+    }
+
+
+@pytest.mark.django_db
+def test_sin_empleado_vinculado_empleado_detalle_es_null():
+    sucursal = crear_sucursal()
+    encargado = crear_encargado(sucursal)
+    client = APIClient()
+    client.force_authenticate(user=encargado)
+
+    response = client.post(ENDPOINT, {'username': 'sin_empleado', 'password': 'una-contraseña-segura-123'})
+
+    assert response.status_code == 201, response.data
+    assert response.data['empleado'] is None
+    assert response.data['empleado_detalle'] is None
 
 
 @pytest.mark.django_db

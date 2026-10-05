@@ -24,6 +24,6 @@ class EmpleadoViewSet(viewsets.ModelViewSet):
     serializer_class = EmpleadoSerializer
     permission_classes = (TienePermisoDeModelo,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
-    filterset_fields = ('fecha_baja',)
+    filterset_fields = ('fecha_baja', 'persona')
     search_fields = ('persona__nombre', 'persona__apellido', 'cuil')
     ordering_fields = ('persona__apellido',)

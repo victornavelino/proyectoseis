@@ -102,10 +102,16 @@ class UsuarioSucursalSerializer(serializers.ModelSerializer):
     EsEncargadoDeSucursal). Deliberadamente no expone `is_staff`, `is_superuser`, `groups` ni
     `user_permissions`: quien crea desde acá nunca puede otorgarse ni otorgarle a otro más
     privilegio que "cuenta operativa de mi sucursal" — eso sigue siendo exclusivo del /admin.
+
+    `empleado` sí se expone (de lectura/escritura): el frontend arma Persona + Empleado + este
+    Usuario en una sola pantalla (ver UsuarioSucursalFormModal), para que dar de alta a alguien
+    no requiera pasar por /admin — a diferencia de is_staff/groups, vincular un Empleado no es
+    un privilegio de acceso al sistema, es sólo el dato de "quién es" detrás de la cuenta.
     """
 
     password = serializers.CharField(write_only=True, required=False, validators=[validate_password])
     sucursal_nombre = serializers.CharField(source='sucursal.nombre', read_only=True, default=None)
+    empleado_detalle = serializers.SerializerMethodField()
 
     class Meta:
         model = Usuario
@@ -119,8 +125,23 @@ class UsuarioSucursalSerializer(serializers.ModelSerializer):
             'is_active',
             'sucursal',
             'sucursal_nombre',
+            'empleado',
+            'empleado_detalle',
         )
         read_only_fields = ('sucursal',)
+        extra_kwargs = {'empleado': {'required': False, 'allow_null': True}}
+
+    def get_empleado_detalle(self, usuario):
+        empleado = usuario.empleado
+        if empleado is None:
+            return None
+        return {
+            'persona': empleado.persona_id,
+            'nombre': empleado.persona.nombre,
+            'apellido': empleado.persona.apellido,
+            'documento_identidad': empleado.persona.documento_identidad,
+            'cuil': empleado.cuil,
+        }
 
     def validate(self, attrs):
         # La contraseña es obligatoria al crear, pero no se edita desde acá (no hay pantalla de

@@ -100,7 +100,7 @@ class UsuarioSucursalViewSet(
     search_fields = ('username', 'first_name', 'last_name', 'email')
 
     def get_queryset(self):
-        queryset = Usuario.objects.filter(is_staff=False).order_by('username')
+        queryset = Usuario.objects.filter(is_staff=False).select_related('empleado__persona').order_by('username')
         user = self.request.user
         if user.is_superuser:
             return queryset
