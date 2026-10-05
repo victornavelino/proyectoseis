@@ -166,9 +166,15 @@ export default function UsuarioSucursalFormModal({ opened, onClose, onGuardado, 
         }
       } else if (tieneEmpleadoVinculado && usuario.empleado_detalle) {
         // Edición sin re-vincular: el nombre/apellido siguen siendo los de la Persona (de sólo
-        // lectura acá), no los que pudiera traer el form.
+        // lectura acá), no los que pudiera traer el form — pero el CUIL sí es editable acá
+        // (único campo del empleado que se puede tocar sin pasar por el buscador).
         nombre = usuario.empleado_detalle.nombre
         apellido = usuario.empleado_detalle.apellido
+        await actualizarEmpleado(usuario.empleado as number, {
+          persona: usuario.empleado_detalle.persona,
+          cuil: valores.cuil,
+          fecha_baja: null,
+        })
       }
 
       const datosUsuario = {

@@ -50,6 +50,16 @@ class PersonaSerializer(serializers.ModelSerializer):
 
 
 class DocumentoSerializer(serializers.ModelSerializer):
+    # Sólo valida la forma del payload de búsqueda ("obtener_persona" — ver persona.api
+    # .PersonaViewSet.obtener_persona_id), no crea ni actualiza nada. `documento_identidad` es
+    # unique=True en el modelo, así que un ModelSerializer sin este override le agrega
+    # automáticamente un UniqueValidator — que rechaza con 400 ("Ya existe Persona con este
+    # Documento Identidad") justo el caso que este endpoint existe para resolver: buscar una
+    # persona que YA existe. Bug real encontrado probando en el navegador el alta combinada de
+    # Persona+Empleado+Usuario (afecta también a Cliente/EmpleadoFormModal, que buscan por este
+    # mismo endpoint).
+    documento_identidad = serializers.CharField(max_length=12)
+
     class Meta:
         model = Persona
         fields = (
