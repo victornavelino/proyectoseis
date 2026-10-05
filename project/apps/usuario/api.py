@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
+from django.db.models import ProtectedError
 from rest_framework import filters, permissions, generics, viewsets, mixins, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 
@@ -84,13 +86,11 @@ class UsuarioSucursalViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
     # Alta de usuarios operativos por el encargado de sucursal — ver util.permissions.
     # EsEncargadoDeSucursal y UsuarioSucursalSerializer para las restricciones de seguridad.
-    #
-    # Sin destroy() a propósito, mismo criterio que Cliente/Empleado: se desactiva
-    # (is_active=False vía PATCH), nunca se borra una cuenta con historial de ventas asociado.
     #
     # `is_staff=False` en el queryset: este endpoint es sólo para las cuentas operativas que el
     # encargado da de alta, no para administrar cuentas de staff (eso sigue siendo /admin).
@@ -98,6 +98,20 @@ class UsuarioSucursalViewSet(
     permission_classes = (EsEncargadoDeSucursal,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username', 'first_name', 'last_name', 'email')
+
+    def destroy(self, request, *args, **kwargs):
+        # Caja/MovimientoCaja/Venta/CuentaCorriente.usuario son todos on_delete=PROTECT (a
+        # diferencia de Venta.cliente, que es CASCADE) — mismo criterio que
+        # cliente.api.ClienteViewSet.destroy: se puede borrar una cuenta sin usar, nunca una con
+        # historial real asociado. Para eso, desactivala en vez de borrarla (is_active=False
+        # vía PATCH, ver UsuarioSucursalFormModal/switch "Activo").
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            raise DRFValidationError(
+                'No se puede eliminar: el usuario tiene ventas, movimientos de caja o cuenta '
+                'corriente registrados. Desactivalo en vez de borrarlo.'
+            )
 
     def get_queryset(self):
         queryset = Usuario.objects.filter(is_staff=False).select_related('empleado__persona').order_by('username')

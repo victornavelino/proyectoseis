@@ -15,3 +15,9 @@ export function crearUsuarioSucursal(datos: UsuarioSucursalInput) {
 export function actualizarUsuarioSucursal(id: number, datos: Omit<UsuarioSucursalInput, 'password'>) {
   return apiFetch<UsuarioSucursal>(`api/v1/usuario-sucursal/${id}/`, { method: 'PATCH', body: datos })
 }
+/** Sólo permite borrar cuentas sin historial (ver usuario.api.UsuarioSucursalViewSet.destroy) —
+ * si tiene ventas/caja/cta. corriente asociados, el backend rechaza con 400; desactivala en vez
+ * de borrarla (switch "Activo" en UsuarioSucursalFormModal). */
+export function eliminarUsuarioSucursal(id: number) {
+  return apiFetch<void>(`api/v1/usuario-sucursal/${id}/`, { method: 'DELETE' })
+}

@@ -1,7 +1,10 @@
+from decimal import Decimal
+
 import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
+from caja.models import Caja
 from empleado.models import Empleado, Sucursal
 from persona.models import Persona
 
@@ -163,3 +166,34 @@ def test_encargado_solo_ve_usuarios_de_su_propia_sucursal():
     assert response.status_code == 200
     usernames = {u['username'] for u in response.data['results']}
     assert usernames == {'de_mi_sucursal'}
+
+
+@pytest.mark.django_db
+def test_encargado_puede_eliminar_un_usuario_sin_historial():
+    sucursal = crear_sucursal()
+    encargado = crear_encargado(sucursal)
+    sin_uso = Usuario.objects.create_user(username='sin_uso', password='password', sucursal=sucursal)
+    client = APIClient()
+    client.force_authenticate(user=encargado)
+
+    response = client.delete(f'{ENDPOINT}{sin_uso.id}/')
+
+    assert response.status_code == 204
+    assert not Usuario.objects.filter(id=sin_uso.id).exists()
+
+
+@pytest.mark.django_db
+def test_no_se_puede_eliminar_un_usuario_con_historial_de_caja():
+    # Caja.usuario es on_delete=PROTECT — borrar debe rechazarse con un mensaje claro, no un
+    # 500 crudo por ProtectedError (mismo criterio que cliente.api.ClienteViewSet.destroy).
+    sucursal = crear_sucursal()
+    encargado = crear_encargado(sucursal)
+    cajero = Usuario.objects.create_user(username='cajero_con_historial', password='password', sucursal=sucursal)
+    Caja.objects.create(sucursal=sucursal, usuario=cajero, caja_inicial=Decimal('0'))
+    client = APIClient()
+    client.force_authenticate(user=encargado)
+
+    response = client.delete(f'{ENDPOINT}{cajero.id}/')
+
+    assert response.status_code == 400
+    assert Usuario.objects.filter(id=cajero.id).exists()
