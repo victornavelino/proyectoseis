@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ActionIcon, Badge, Group } from '@mantine/core'
+import { ActionIcon, Badge, Button, Group, Modal, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconEdit, IconTrash } from '@tabler/icons-react'
 import { eliminarUsuarioSucursal, listarUsuariosSucursal } from '../../api/usuario'
@@ -18,14 +18,23 @@ export default function UsuariosPage() {
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<UsuarioSucursal | null>(null)
   const [recarga, setRecarga] = useState(0)
+  // Borrado permanente (ver usuario.api.UsuarioSucursalViewSet.destroy) — sin confirmación
+  // explícita es un click de más en una fila que elimina la cuenta de verdad, no un soft-delete.
+  const [aEliminar, setAEliminar] = useState<UsuarioSucursal | null>(null)
+  const [eliminando, setEliminando] = useState(false)
 
-  const eliminar = async (usuario: UsuarioSucursal) => {
+  const confirmarEliminar = async () => {
+    if (!aEliminar) return
+    setEliminando(true)
     try {
-      await eliminarUsuarioSucursal(usuario.id)
+      await eliminarUsuarioSucursal(aEliminar.id)
       notifications.show({ message: 'Usuario eliminado.', color: 'green' })
+      setAEliminar(null)
       setRecarga((n) => n + 1)
     } catch (err) {
       notifications.show({ title: 'No se pudo eliminar', message: mensajeDeError(err), color: 'red' })
+    } finally {
+      setEliminando(false)
     }
   }
 
@@ -72,7 +81,7 @@ export default function UsuariosPage() {
                   >
                     <IconEdit size={16} />
                   </ActionIcon>
-                  <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(u)}>
+                  <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => setAEliminar(u)}>
                     <IconTrash size={16} />
                   </ActionIcon>
                 </Group>
@@ -86,6 +95,20 @@ export default function UsuariosPage() {
         onGuardado={() => setRecarga((n) => n + 1)}
         usuario={editando}
       />
+      <Modal opened={aEliminar !== null} onClose={() => setAEliminar(null)} title="Eliminar usuario" centered>
+        <Text size="sm">
+          ¿Estás seguro de que querés eliminar al usuario <strong>{aEliminar?.username}</strong>? El usuario se
+          eliminará permanentemente — esta acción no se puede deshacer.
+        </Text>
+        <Group justify="flex-end" mt="lg">
+          <Button variant="default" onClick={() => setAEliminar(null)} disabled={eliminando}>
+            Cancelar
+          </Button>
+          <Button color="red" loading={eliminando} onClick={() => void confirmarEliminar()}>
+            Eliminar
+          </Button>
+        </Group>
+      </Modal>
     </>
   )
 }
