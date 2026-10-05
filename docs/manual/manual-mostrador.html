@@ -265,6 +265,7 @@
       <li><a href="#promociones">Promociones</a></li>
       <li><a href="#abrir-cerrar">Abrir y cerrar la caja</a></li>
       <li><a href="#movimientos-caja">Ingresos y egresos de caja</a></li>
+      <li><a href="#usuarios">Usuarios</a></li>
       <li><a href="#atajos">Atajos de teclado</a></li>
       <li><a href="#preguntas">Preguntas frecuentes</a></li>
     </ol>
@@ -523,9 +524,49 @@
     <p>Un movimiento se puede editar o borrar solo mientras la caja donde se cargó sigue abierta.</p>
   </section>
 
+  <!-- USUARIOS -->
+  <section id="usuarios">
+    <h2>10. Usuarios</h2>
+    <p class="lead">Menú <span class="path">Personal → Usuarios</span>.</p>
+    <p>Cuentas para que alguien pueda entrar al sistema (cajeros, vendedores, etc.) de tu propia sucursal.</p>
+
+    <div class="callout">
+      <span class="c-label">Sólo administradores</span>
+      <p>Esta pantalla sólo la ve un usuario administrador (encargado de sucursal). Al resto no le aparece "Usuarios" en el menú.</p>
+    </div>
+
+    <h3>Crear un usuario</h3>
+    <p>Un usuario nuevo queda armado con sus tres partes a la vez — la persona, su legajo de empleado y la cuenta para entrar — en una sola pantalla:</p>
+    <ol>
+      <li>Tocá <span class="field">Nuevo usuario</span>.</li>
+      <li>Cargá el <span class="field">Documento de identidad</span> y tocá <span class="field">Buscar</span>.</li>
+      <li>Si ya existe una persona con ese documento, se reutiliza (y si ya tiene un legajo de empleado, también se reutiliza). Si no existe, completá <strong>Nombre</strong>, <strong>Apellido</strong> y el resto de los datos para crearla.</li>
+      <li>Completá el <span class="field">CUIL</span>.</li>
+      <li>Completá <span class="field">Usuario</span>, <span class="field">Contraseña</span> y, si querés, <span class="field">Email</span>.</li>
+      <li>Tocá <span class="field">Guardar</span>.</li>
+    </ol>
+
+    <div class="callout tip">
+      <span class="c-label">Tip</span>
+      <p>Si la persona ya es empleado (por ejemplo, ya la cargaste en <span class="path">Personal → Empleados</span>), buscala por su documento y el sistema reutiliza ese mismo legajo — no hace falta cargar el CUIL de nuevo si no cambió.</p>
+    </div>
+
+    <h3>Editar un usuario</h3>
+    <p>Tocá el ícono de lápiz de la fila. Si la cuenta ya tiene un empleado vinculado, vas a ver su nombre y documento como referencia y vas a poder corregir el <strong>CUIL</strong>. Si todavía no tiene uno vinculado (cuentas viejas), aparece un aviso con el botón <span class="field">Vincular a un empleado</span> para asociarlo del mismo modo que al crear.</p>
+    <p>El switch <strong>Activo</strong> deshabilita la cuenta sin borrarla — usalo para alguien que dejó de trabajar pero tiene ventas o movimientos de caja a su nombre (ver más abajo).</p>
+
+    <h3>Eliminar un usuario</h3>
+    <p>Tocá el ícono de basura de la fila. Pide confirmación porque es un borrado permanente — no hay forma de deshacerlo.</p>
+
+    <div class="callout">
+      <span class="c-label">Importante</span>
+      <p>Sólo se puede eliminar una cuenta <strong>sin uso</strong>: si tiene ventas, movimientos de caja o cuenta corriente registrados a su nombre, el sistema no deja borrarla (para no perder ese historial). En ese caso, desactivala con el switch <strong>Activo</strong> en vez de eliminarla.</p>
+    </div>
+  </section>
+
   <!-- ATAJOS -->
   <section id="atajos">
-    <h2>10. Atajos de teclado</h2>
+    <h2>11. Atajos de teclado</h2>
     <p class="lead">Para cargar y cobrar ventas más rápido, sin usar el mouse.</p>
 
     <div class="table-wrap">
@@ -545,7 +586,7 @@
 
   <!-- FAQ -->
   <section id="preguntas">
-    <h2>11. Preguntas frecuentes</h2>
+    <h2>12. Preguntas frecuentes</h2>
 
     <h3>¿Por qué no puedo abrir la caja?</h3>
     <p>Tu usuario no tiene una sucursal asignada. Pedile a un administrador que te la asigne.</p>
