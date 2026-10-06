@@ -60,19 +60,16 @@ interface ItemNav {
   requierePermiso?: string
 }
 
-// Un único permiso "representativo" por sección entera (Dashboard/Catálogo/Personal/
-// Promociones/Caja): no existe un permiso Django dedicado a "ver esta sección del menú", así
-// que se reutiliza el permiso de escritura del modelo principal de cada una — ningún grupo
-// operativo (Cajeros, Vendedores) lo tiene salvo que se lo asignen a mano desde /admin, así que
-// alcanza para ocultar toda la sección. Dashboard reutiliza el mismo gate que Catálogo (misma
-// idea de "cuenta no operativa") en vez de tener uno propio — si en algún momento hace falta
-// separarlos (ej. un cajero que vea el Dashboard pero no el Catálogo), hay que darle su propio
-// codename.
-const GATE_DASHBOARD = 'articulo.add_articulo'
-const GATE_CATALOGO = 'articulo.add_articulo'
-const GATE_PERSONAL = 'empleado.add_empleado'
-const GATE_PROMOCIONES = 'promocion.add_promocion'
-const GATE_CAJA = 'caja.add_caja'
+// Un permiso dedicado por sección entera (ver usuario.models.Usuario.Meta.permissions) —
+// "puro", sin add_/change_/delete_ de ningún modelo real, así que ningún grupo lo tiene salvo
+// que se lo asignen a mano desde /admin. El grupo "Acceso completo (staff)" los recibe todos
+// automáticamente (ver usuario.permisos.sincronizar_grupo_acceso_completo); Cajeros/Vendedores
+// (o cualquier otro grupo operativo) necesitan que un admin les tilde el que corresponda.
+const GATE_DASHBOARD = 'usuario.ver_seccion_dashboard'
+const GATE_CATALOGO = 'usuario.ver_seccion_catalogo'
+const GATE_PERSONAL = 'usuario.ver_seccion_personal'
+const GATE_PROMOCIONES = 'usuario.ver_seccion_promociones'
+const GATE_CAJA = 'usuario.ver_seccion_caja'
 
 const NAV: { titulo: string; items: ItemNav[] }[] = [
   {

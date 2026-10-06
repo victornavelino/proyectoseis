@@ -41,6 +41,18 @@ MODELOS_ACCESO_COMPLETO = (
     ('cliente', 'cliente'),
 )
 
+# Los 5 permisos "ver_seccion_*" (usuario.models.Usuario.Meta.permissions) no siguen el patrón
+# add_/change_/delete_<modelo> de MODELOS_ACCESO_COMPLETO -> se listan a mano, mismo criterio
+# que PERMISOS_OPERATIVO más abajo. El grupo "Acceso completo (staff)" tiene que ver TODAS las
+# secciones del menú, no sólo poder escribir en esos modelos.
+PERMISOS_SECCIONES_MENU = (
+    ('usuario', 'usuario', 'ver_seccion_dashboard'),
+    ('usuario', 'usuario', 'ver_seccion_catalogo'),
+    ('usuario', 'usuario', 'ver_seccion_personal'),
+    ('usuario', 'usuario', 'ver_seccion_promociones'),
+    ('usuario', 'usuario', 'ver_seccion_caja'),
+)
+
 
 def sincronizar_grupo_acceso_completo():
     from django.contrib.auth.models import Group, Permission
@@ -64,6 +76,13 @@ def sincronizar_grupo_acceso_completo():
                 codename__in=[f'{accion}_{model_name}' for accion in ('add', 'change', 'delete')],
             )
         )
+
+    for app_label, model_name, codename in PERMISOS_SECCIONES_MENU:
+        try:
+            content_type = ContentType.objects.get(app_label=app_label, model=model_name)
+            permisos.append(Permission.objects.get(content_type=content_type, codename=codename))
+        except (ContentType.DoesNotExist, Permission.DoesNotExist):
+            continue
 
     if permisos:
         grupo.permissions.add(*permisos)

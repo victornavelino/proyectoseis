@@ -48,15 +48,14 @@ function Privada({
   )
 }
 
-// Mismos gates que components/AppLayout.tsx (NAV) — ahí está la explicación de por qué se
-// reutilizan permisos de escritura de otro modelo como proxy de "puede ver esta sección". Están
-// duplicados a propósito en vez de importados: este archivo no debería depender del menú para
-// saber qué rutas proteger, y viceversa.
-const GATE_DASHBOARD = 'articulo.add_articulo'
-const GATE_CATALOGO = 'articulo.add_articulo'
-const GATE_PERSONAL = 'empleado.add_empleado'
-const GATE_PROMOCIONES = 'promocion.add_promocion'
-const GATE_CAJA = 'caja.add_caja'
+// Mismos gates que components/AppLayout.tsx (NAV) — permisos dedicados por sección (ver
+// usuario.models.Usuario.Meta.permissions). Duplicados a propósito en vez de importados: este
+// archivo no debería depender del menú para saber qué rutas proteger, y viceversa.
+const GATE_DASHBOARD = 'usuario.ver_seccion_dashboard'
+const GATE_CATALOGO = 'usuario.ver_seccion_catalogo'
+const GATE_PERSONAL = 'usuario.ver_seccion_personal'
+const GATE_PROMOCIONES = 'usuario.ver_seccion_promociones'
+const GATE_CAJA = 'usuario.ver_seccion_caja'
 
 const RUTAS: { path: string; element: ReactNode; requierePermiso?: string; fallbackSiSinAcceso?: string }[] = [
   // Todo el mundo cae acá después de loguearse, tenga o no el permiso de Dashboard — por eso el

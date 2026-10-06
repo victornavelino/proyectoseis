@@ -4,7 +4,7 @@ from django.contrib.auth.models import Group
 from rest_framework.test import APIClient
 
 from empleado.models import Sucursal
-from usuario.permisos import MODELOS_ACCESO_COMPLETO, NOMBRE_GRUPO_ACCESO_COMPLETO
+from usuario.permisos import MODELOS_ACCESO_COMPLETO, NOMBRE_GRUPO_ACCESO_COMPLETO, PERMISOS_SECCIONES_MENU
 
 Usuario = get_user_model()
 
@@ -21,6 +21,7 @@ def test_grupo_acceso_completo_tiene_los_permisos_esperados():
         for app_label, model_name in MODELOS_ACCESO_COMPLETO
         for accion in ('add', 'change', 'delete')
     }
+    esperados |= {f'{app_label}.{codename}' for app_label, _, codename in PERMISOS_SECCIONES_MENU}
     assert esperados <= codenames
 
 
