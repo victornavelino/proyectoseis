@@ -5,6 +5,7 @@ from decimal import Decimal
 from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Sum, F
 from util.pdf import render_pdf_response
 
@@ -572,3 +573,27 @@ class BancoAdmin(admin.ModelAdmin):
     list_display = ('nombre',)
     search_fields = ('nombre',)
     list_per_page = 30
+    actions = ['fusionar_bancos']
+
+    @admin.action(description='Fusionar bancos seleccionados (duplicados) en uno solo')
+    @transaction.atomic
+    def fusionar_bancos(self, request, queryset):
+        # "banco" en PagoTransferencia/PagoQr es PROTECT -> un duplicado cargado por error (ej.
+        # "mercado pago" vs "Mercado Pago") no se puede borrar directo una vez que algún pago ya
+        # lo referencia. Esta acción junta todos los pagos de los bancos seleccionados en el más
+        # antiguo (menor id) y recién ahí borra el resto -> deja el catálogo prolijo sin perder
+        # ningún pago ya registrado.
+        bancos = list(queryset.order_by('id'))
+        if len(bancos) < 2:
+            self.message_user(request, 'Seleccioná al menos 2 bancos para fusionar.', level=messages.ERROR)
+            return
+        canonico, *duplicados = bancos
+        for duplicado in duplicados:
+            PagoTransferencia.objects.filter(banco=duplicado).update(banco=canonico)
+            PagoQr.objects.filter(banco=duplicado).update(banco=canonico)
+        ids_duplicados = [b.id for b in duplicados]
+        Banco.objects.filter(id__in=ids_duplicados).delete()
+        self.message_user(
+            request,
+            f"Se fusionaron {len(duplicados)} banco(s) en '{canonico.nombre}' (el de menor id de los seleccionados).",
+        )

@@ -44,6 +44,9 @@ export function crearBanco(datos: BancoInput) {
 export function actualizarBanco(id: number, datos: BancoInput) {
   return apiFetch<Banco>(`api/v1/banco/${id}/`, { method: 'PUT', body: datos })
 }
+export function eliminarBanco(id: number) {
+  return apiFetch<void>(`api/v1/banco/${id}/`, { method: 'DELETE' })
+}
 
 // --- Tarjetas y planes ---
 export function listarTarjetas(opciones: { search?: string; pagina?: number } = {}) {
