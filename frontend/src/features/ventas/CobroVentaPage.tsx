@@ -235,7 +235,7 @@ export default function CobroVentaPage() {
     cerrarPanel()
   }
   const aceptarQr = () => {
-    if (!(Number(qrStaging.importe) > 0)) {
+    if (!qrCompleto) {
       qrStagingRef.current?.focus()
       return
     }
@@ -245,6 +245,13 @@ export default function CobroVentaPage() {
 
   // Vuelto = lo que trae el cliente menos lo que se le está cobrando en esta línea de efectivo.
   const vuelto = pagaCon !== '' ? Number(pagaCon) - Number(efectivoImporte || 0) : null
+
+  // A diferencia de Transferencia (documento/banco opcionales), en QR el cajero tiene que poder
+  // identificar el pago sí o sí -> importe, documento Y banco son obligatorios para habilitar
+  // "Agregar" (antes sólo exigía el importe, y un documento vacío lo rechazaba recién al
+  // confirmar el cobro contra el backend).
+  const qrCompleto =
+    Number(qrStaging.importe) > 0 && qrStaging.documento.trim() !== '' && qrStaging.banco !== ''
 
   const confirmarCobro = async () => {
     if (!venta || !coincide) return
@@ -689,6 +696,7 @@ export default function CobroVentaPage() {
                   />
                   <TextInput
                     label="Documento del titular"
+                    withAsterisk
                     value={qrStaging.documento}
                     onChange={(e) => {
                       const documento = e.currentTarget.value
@@ -715,6 +723,7 @@ export default function CobroVentaPage() {
                   />
                   <Select
                     label="Banco"
+                    withAsterisk
                     placeholder="Seleccionar…"
                     data={bancos.map((b) => ({ value: String(b.id), label: b.nombre }))}
                     value={qrStaging.banco || null}
@@ -727,7 +736,7 @@ export default function CobroVentaPage() {
                   <Button variant="subtle" color="gray" onClick={cerrarPanel}>
                     Cancelar
                   </Button>
-                  <Button onClick={aceptarQr} disabled={!(Number(qrStaging.importe) > 0)}>
+                  <Button onClick={aceptarQr} disabled={!qrCompleto}>
                     Agregar
                   </Button>
                 </Group>
