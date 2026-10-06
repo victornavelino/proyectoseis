@@ -12,6 +12,13 @@ interface AuthContextValue {
    * de escritura según el permiso Django puntual que el backend exige — ver util.permissions.
    * TienePermisoDeModelo). null hasta que se resuelve el fetch. */
   perfil: Perfil | null
+  /** true una vez que se resolvió (éxito o error) el fetch de `perfil` — a diferencia de
+   * `cargando` (que sólo cubre si hay o no sesión), esto le permite a ProtectedRoute esperar a
+   * tener `perfil.permisos` antes de evaluar `requierePermiso`. Sin esto, justo después del
+   * login (perfil todavía null) `tienePermiso` devuelve false para TODO y una ruta protegida
+   * muestra "Sin acceso" un instante aunque el usuario sí tenga el permiso, hasta que el fetch
+   * resuelve y se vuelve a renderizar. */
+  perfilCargado: boolean
   /** ¿Tiene el usuario el permiso Django `codename` (ej. "articulo.delete_articulo")? Primitiva
    * de base — normalmente conviene usar `puedeEscribir`/`puedeBorrar` en su lugar. */
   tienePermiso: (codename: string) => boolean
@@ -34,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [autenticado, setAutenticado] = useState(false)
   const [cargando, setCargando] = useState(true)
   const [perfil, setPerfil] = useState<Perfil | null>(null)
+  const [perfilCargado, setPerfilCargado] = useState(false)
 
   const refrescarEstado = useCallback(() => {
     setAutenticado(!!getTokens() && isAccessTokenValid())
@@ -47,11 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!autenticado) {
       setPerfil(null)
+      setPerfilCargado(false)
       return
     }
+    setPerfilCargado(false)
     apiFetch<Perfil>('api/v1/usuario/me/')
       .then(setPerfil)
       .catch(() => setPerfil(null))
+      .finally(() => setPerfilCargado(true))
   }, [autenticado])
 
   const tienePermiso = useCallback((codename: string) => perfil?.permisos.includes(codename) ?? false, [perfil])
@@ -82,8 +93,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ autenticado, cargando, perfil, tienePermiso, puedeEscribir, puedeBorrar, login, logout, refrescarEstado }),
-    [autenticado, cargando, perfil, tienePermiso, puedeEscribir, puedeBorrar, login, logout, refrescarEstado],
+    () => ({
+      autenticado,
+      cargando,
+      perfil,
+      perfilCargado,
+      tienePermiso,
+      puedeEscribir,
+      puedeBorrar,
+      login,
+      logout,
+      refrescarEstado,
+    }),
+    [autenticado, cargando, perfil, perfilCargado, tienePermiso, puedeEscribir, puedeBorrar, login, logout, refrescarEstado],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

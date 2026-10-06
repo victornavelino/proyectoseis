@@ -32,42 +32,63 @@ import CobroVentaPage from './features/ventas/CobroVentaPage'
 import VentaNuevaPage from './features/ventas/VentaNuevaPage'
 import VentasListPage from './features/ventas/VentasListPage'
 
-function Privada({ children, requierePermiso }: { children: ReactNode; requierePermiso?: string }) {
+function Privada({
+  children,
+  requierePermiso,
+  fallbackSiSinAcceso,
+}: {
+  children: ReactNode
+  requierePermiso?: string
+  fallbackSiSinAcceso?: string
+}) {
   return (
-    <ProtectedRoute requierePermiso={requierePermiso}>
+    <ProtectedRoute requierePermiso={requierePermiso} fallbackSiSinAcceso={fallbackSiSinAcceso}>
       <AppLayout>{children}</AppLayout>
     </ProtectedRoute>
   )
 }
 
-const RUTAS: { path: string; element: ReactNode; requierePermiso?: string }[] = [
-  { path: '/', element: <InicioPage /> },
+// Mismos gates que components/AppLayout.tsx (NAV) — ahí está la explicación de por qué se
+// reutilizan permisos de escritura de otro modelo como proxy de "puede ver esta sección". Están
+// duplicados a propósito en vez de importados: este archivo no debería depender del menú para
+// saber qué rutas proteger, y viceversa.
+const GATE_DASHBOARD = 'articulo.add_articulo'
+const GATE_CATALOGO = 'articulo.add_articulo'
+const GATE_PERSONAL = 'empleado.add_empleado'
+const GATE_PROMOCIONES = 'promocion.add_promocion'
+const GATE_CAJA = 'caja.add_caja'
+
+const RUTAS: { path: string; element: ReactNode; requierePermiso?: string; fallbackSiSinAcceso?: string }[] = [
+  // Todo el mundo cae acá después de loguearse, tenga o no el permiso de Dashboard — por eso el
+  // fallback silencioso a "/ventas" (ruta sin gate, accesible para cualquier autenticado) en vez
+  // de la pantalla de "Sin acceso" (ver ProtectedRoute.fallbackSiSinAcceso).
+  { path: '/', element: <InicioPage />, requierePermiso: GATE_DASHBOARD, fallbackSiSinAcceso: '/ventas' },
   { path: '/ventas', element: <VentasListPage /> },
   { path: '/ventas/nueva', element: <VentaNuevaPage />, requierePermiso: 'venta.add_venta' },
   { path: '/ventas/:numeroTicket/cobrar', element: <CobroVentaPage />, requierePermiso: 'caja.add_cobroventa' },
-  { path: '/articulos', element: <ArticulosPage /> },
-  { path: '/articulos/categorias', element: <CategoriasPage /> },
-  { path: '/articulos/unidades-medida', element: <UnidadesMedidaPage /> },
-  { path: '/articulos/tipos-iva', element: <TiposIvaPage /> },
-  { path: '/articulos/listas-precio', element: <ListasPrecioPage /> },
-  { path: '/articulos/precios', element: <PreciosPage /> },
+  { path: '/articulos', element: <ArticulosPage />, requierePermiso: GATE_CATALOGO },
+  { path: '/articulos/categorias', element: <CategoriasPage />, requierePermiso: GATE_CATALOGO },
+  { path: '/articulos/unidades-medida', element: <UnidadesMedidaPage />, requierePermiso: GATE_CATALOGO },
+  { path: '/articulos/tipos-iva', element: <TiposIvaPage />, requierePermiso: GATE_CATALOGO },
+  { path: '/articulos/listas-precio', element: <ListasPrecioPage />, requierePermiso: GATE_CATALOGO },
+  { path: '/articulos/precios', element: <PreciosPage />, requierePermiso: GATE_CATALOGO },
   { path: '/clientes', element: <ClientesPage /> },
   { path: '/clientes/cuentas-corrientes', element: <CuentasCorrientesPage /> },
-  { path: '/empleados', element: <EmpleadosPage /> },
-  { path: '/empleados/sucursales', element: <SucursalesPage /> },
-  { path: '/empleados/usuarios', element: <UsuariosPage /> },
-  { path: '/promociones', element: <PromocionesPage /> },
-  { path: '/promociones/descuentos', element: <DescuentosPage /> },
-  { path: '/caja', element: <CajaPage /> },
-  { path: '/caja/ingresos', element: <IngresosPage /> },
-  { path: '/caja/sueldos', element: <SueldosPage /> },
-  { path: '/caja/adelantos', element: <AdelantosPage /> },
-  { path: '/caja/retiros-efectivo', element: <RetirosEfectivoPage /> },
-  { path: '/caja/gastos', element: <GastosPage /> },
-  { path: '/caja/tarjetas', element: <TarjetasPage /> },
-  { path: '/caja/planes-tarjeta', element: <PlanesTarjetaPage /> },
-  { path: '/caja/tipos-ingreso', element: <TiposIngresoPage /> },
-  { path: '/caja/tipos-gasto', element: <TiposGastoPage /> },
+  { path: '/empleados', element: <EmpleadosPage />, requierePermiso: GATE_PERSONAL },
+  { path: '/empleados/sucursales', element: <SucursalesPage />, requierePermiso: GATE_PERSONAL },
+  { path: '/empleados/usuarios', element: <UsuariosPage />, requierePermiso: GATE_PERSONAL },
+  { path: '/promociones', element: <PromocionesPage />, requierePermiso: GATE_PROMOCIONES },
+  { path: '/promociones/descuentos', element: <DescuentosPage />, requierePermiso: GATE_PROMOCIONES },
+  { path: '/caja', element: <CajaPage />, requierePermiso: GATE_CAJA },
+  { path: '/caja/ingresos', element: <IngresosPage />, requierePermiso: GATE_CAJA },
+  { path: '/caja/sueldos', element: <SueldosPage />, requierePermiso: GATE_CAJA },
+  { path: '/caja/adelantos', element: <AdelantosPage />, requierePermiso: GATE_CAJA },
+  { path: '/caja/retiros-efectivo', element: <RetirosEfectivoPage />, requierePermiso: GATE_CAJA },
+  { path: '/caja/gastos', element: <GastosPage />, requierePermiso: GATE_CAJA },
+  { path: '/caja/tarjetas', element: <TarjetasPage />, requierePermiso: GATE_CAJA },
+  { path: '/caja/planes-tarjeta', element: <PlanesTarjetaPage />, requierePermiso: GATE_CAJA },
+  { path: '/caja/tipos-ingreso', element: <TiposIngresoPage />, requierePermiso: GATE_CAJA },
+  { path: '/caja/tipos-gasto', element: <TiposGastoPage />, requierePermiso: GATE_CAJA },
 ]
 
 export default function App() {
@@ -80,7 +101,11 @@ export default function App() {
             <Route
               key={ruta.path}
               path={ruta.path}
-              element={<Privada requierePermiso={ruta.requierePermiso}>{ruta.element}</Privada>}
+              element={
+                <Privada requierePermiso={ruta.requierePermiso} fallbackSiSinAcceso={ruta.fallbackSiSinAcceso}>
+                  {ruta.element}
+                </Privada>
+              }
             />
           ))}
         </Routes>

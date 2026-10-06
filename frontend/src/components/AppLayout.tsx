@@ -60,8 +60,25 @@ interface ItemNav {
   requierePermiso?: string
 }
 
+// Un único permiso "representativo" por sección entera (Dashboard/Catálogo/Personal/
+// Promociones/Caja): no existe un permiso Django dedicado a "ver esta sección del menú", así
+// que se reutiliza el permiso de escritura del modelo principal de cada una — ningún grupo
+// operativo (Cajeros, Vendedores) lo tiene salvo que se lo asignen a mano desde /admin, así que
+// alcanza para ocultar toda la sección. Dashboard reutiliza el mismo gate que Catálogo (misma
+// idea de "cuenta no operativa") en vez de tener uno propio — si en algún momento hace falta
+// separarlos (ej. un cajero que vea el Dashboard pero no el Catálogo), hay que darle su propio
+// codename.
+const GATE_DASHBOARD = 'articulo.add_articulo'
+const GATE_CATALOGO = 'articulo.add_articulo'
+const GATE_PERSONAL = 'empleado.add_empleado'
+const GATE_PROMOCIONES = 'promocion.add_promocion'
+const GATE_CAJA = 'caja.add_caja'
+
 const NAV: { titulo: string; items: ItemNav[] }[] = [
-  { titulo: 'Inicio', items: [{ to: '/', label: 'Dashboard', icon: IconHome2, seccion: 'Inicio' }] },
+  {
+    titulo: 'Inicio',
+    items: [{ to: '/', label: 'Dashboard', icon: IconHome2, seccion: 'Inicio', requierePermiso: GATE_DASHBOARD }],
+  },
   {
     titulo: 'Ventas',
     items: [
@@ -78,12 +95,36 @@ const NAV: { titulo: string; items: ItemNav[] }[] = [
   {
     titulo: 'Catálogo',
     items: [
-      { to: '/articulos', label: 'Artículos', icon: IconBox, seccion: 'Catálogo' },
-      { to: '/articulos/precios', label: 'Precios', icon: IconTags, seccion: 'Catálogo' },
-      { to: '/articulos/categorias', label: 'Categorías', icon: IconCategory, seccion: 'Catálogo' },
-      { to: '/articulos/listas-precio', label: 'Listas de precio', icon: IconListDetails, seccion: 'Catálogo' },
-      { to: '/articulos/unidades-medida', label: 'Unidades de medida', icon: IconRuler, seccion: 'Catálogo' },
-      { to: '/articulos/tipos-iva', label: 'Tipos de IVA', icon: IconPercentage, seccion: 'Catálogo' },
+      { to: '/articulos', label: 'Artículos', icon: IconBox, seccion: 'Catálogo', requierePermiso: GATE_CATALOGO },
+      { to: '/articulos/precios', label: 'Precios', icon: IconTags, seccion: 'Catálogo', requierePermiso: GATE_CATALOGO },
+      {
+        to: '/articulos/categorias',
+        label: 'Categorías',
+        icon: IconCategory,
+        seccion: 'Catálogo',
+        requierePermiso: GATE_CATALOGO,
+      },
+      {
+        to: '/articulos/listas-precio',
+        label: 'Listas de precio',
+        icon: IconListDetails,
+        seccion: 'Catálogo',
+        requierePermiso: GATE_CATALOGO,
+      },
+      {
+        to: '/articulos/unidades-medida',
+        label: 'Unidades de medida',
+        icon: IconRuler,
+        seccion: 'Catálogo',
+        requierePermiso: GATE_CATALOGO,
+      },
+      {
+        to: '/articulos/tipos-iva',
+        label: 'Tipos de IVA',
+        icon: IconPercentage,
+        seccion: 'Catálogo',
+        requierePermiso: GATE_CATALOGO,
+      },
     ],
   },
   {
@@ -96,37 +137,108 @@ const NAV: { titulo: string; items: ItemNav[] }[] = [
   {
     titulo: 'Personal',
     items: [
-      { to: '/empleados', label: 'Empleados', icon: IconId, seccion: 'Personal' },
-      { to: '/empleados/sucursales', label: 'Sucursales', icon: IconMapPin, seccion: 'Personal' },
-      { to: '/empleados/usuarios', label: 'Usuarios', icon: IconUserPlus, seccion: 'Personal' },
+      { to: '/empleados', label: 'Empleados', icon: IconId, seccion: 'Personal', requierePermiso: GATE_PERSONAL },
+      {
+        to: '/empleados/sucursales',
+        label: 'Sucursales',
+        icon: IconMapPin,
+        seccion: 'Personal',
+        requierePermiso: GATE_PERSONAL,
+      },
+      {
+        to: '/empleados/usuarios',
+        label: 'Usuarios',
+        icon: IconUserPlus,
+        seccion: 'Personal',
+        requierePermiso: GATE_PERSONAL,
+      },
     ],
   },
   {
     titulo: 'Promociones',
     items: [
-      { to: '/promociones', label: 'Promociones', icon: IconDiscount2, seccion: 'Promociones' },
-      { to: '/promociones/descuentos', label: 'Descuentos', icon: IconGift, seccion: 'Promociones' },
+      {
+        to: '/promociones',
+        label: 'Promociones',
+        icon: IconDiscount2,
+        seccion: 'Promociones',
+        requierePermiso: GATE_PROMOCIONES,
+      },
+      {
+        to: '/promociones/descuentos',
+        label: 'Descuentos',
+        icon: IconGift,
+        seccion: 'Promociones',
+        requierePermiso: GATE_PROMOCIONES,
+      },
     ],
   },
   {
     titulo: 'Caja',
     items: [
-      { to: '/caja', label: 'Caja', icon: IconCash, seccion: 'Caja' },
-      { to: '/caja/ingresos', label: 'Ingresos varios', icon: IconTrendingUp, seccion: 'Caja', subgrupo: 'Ingresos' },
-      { to: '/caja/sueldos', label: 'Sueldos', icon: IconTrendingDown, seccion: 'Caja', subgrupo: 'Egresos' },
-      { to: '/caja/adelantos', label: 'Adelantos', icon: IconTrendingDown, seccion: 'Caja', subgrupo: 'Egresos' },
+      { to: '/caja', label: 'Caja', icon: IconCash, seccion: 'Caja', requierePermiso: GATE_CAJA },
+      {
+        to: '/caja/ingresos',
+        label: 'Ingresos varios',
+        icon: IconTrendingUp,
+        seccion: 'Caja',
+        subgrupo: 'Ingresos',
+        requierePermiso: GATE_CAJA,
+      },
+      {
+        to: '/caja/sueldos',
+        label: 'Sueldos',
+        icon: IconTrendingDown,
+        seccion: 'Caja',
+        subgrupo: 'Egresos',
+        requierePermiso: GATE_CAJA,
+      },
+      {
+        to: '/caja/adelantos',
+        label: 'Adelantos',
+        icon: IconTrendingDown,
+        seccion: 'Caja',
+        subgrupo: 'Egresos',
+        requierePermiso: GATE_CAJA,
+      },
       {
         to: '/caja/retiros-efectivo',
         label: 'Retiros de efectivo',
         icon: IconTrendingDown,
         seccion: 'Caja',
         subgrupo: 'Egresos',
+        requierePermiso: GATE_CAJA,
       },
-      { to: '/caja/gastos', label: 'Gastos', icon: IconTrendingDown, seccion: 'Caja', subgrupo: 'Egresos' },
-      { to: '/caja/tarjetas', label: 'Tarjetas', icon: IconCreditCard, seccion: 'Caja' },
-      { to: '/caja/planes-tarjeta', label: 'Planes de tarjeta', icon: IconListDetails, seccion: 'Caja' },
-      { to: '/caja/tipos-ingreso', label: 'Tipos de ingreso', icon: IconTags, seccion: 'Caja' },
-      { to: '/caja/tipos-gasto', label: 'Tipos de gasto', icon: IconTags, seccion: 'Caja' },
+      {
+        to: '/caja/gastos',
+        label: 'Gastos',
+        icon: IconTrendingDown,
+        seccion: 'Caja',
+        subgrupo: 'Egresos',
+        requierePermiso: GATE_CAJA,
+      },
+      { to: '/caja/tarjetas', label: 'Tarjetas', icon: IconCreditCard, seccion: 'Caja', requierePermiso: GATE_CAJA },
+      {
+        to: '/caja/planes-tarjeta',
+        label: 'Planes de tarjeta',
+        icon: IconListDetails,
+        seccion: 'Caja',
+        requierePermiso: GATE_CAJA,
+      },
+      {
+        to: '/caja/tipos-ingreso',
+        label: 'Tipos de ingreso',
+        icon: IconTags,
+        seccion: 'Caja',
+        requierePermiso: GATE_CAJA,
+      },
+      {
+        to: '/caja/tipos-gasto',
+        label: 'Tipos de gasto',
+        icon: IconTags,
+        seccion: 'Caja',
+        requierePermiso: GATE_CAJA,
+      },
     ],
   },
 ]
