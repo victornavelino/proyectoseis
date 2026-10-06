@@ -36,6 +36,7 @@ class VentaSerializer(serializers.ModelSerializer):
     usuario_username = serializers.CharField(source='usuario.username', read_only=True)
     sucursal_nombre = serializers.CharField(source='sucursal.nombre', read_only=True)
     articulos = VentaArticuloSerializer(source='ventaarticulo_set', many=True, read_only=True)
+    medios_pago = serializers.SerializerMethodField()
 
     class Meta:
         model = Venta
@@ -54,9 +55,27 @@ class VentaSerializer(serializers.ModelSerializer):
             'empleado_nombre',
             'usuario',
             'usuario_username',
+            'medios_pago',
             'articulos',
         )
         read_only_fields = fields
+
+    def get_medios_pago(self, venta):
+        # El cobro es combinado (venta.services.cobrar_venta: efectivo + tarjeta + cta.
+        # corriente + transferencia en la misma operación) -> una venta puede tener más de un
+        # medio a la vez. Mismos 4 códigos que venta.api.VentaViewSet.resumen_dashboard, para que
+        # el frontend los etiquete igual en todos lados. Lee de los `_set` prefetcheados por el
+        # ViewSet (ver su `queryset`) — nunca dispara una query acá, evita N+1 en el listado.
+        medios = []
+        if venta.cobroventa_set.all():
+            medios.append('efectivo')
+        if venta.cuponpagotarjeta_set.all():
+            medios.append('tarjeta')
+        if venta.movimientocuentacorriente_set.all():
+            medios.append('cuenta_corriente')
+        if venta.pagotransferencia_set.all():
+            medios.append('transferencia')
+        return medios
 
 
 class ItemVentaInputSerializer(serializers.Serializer):

@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Sum
+from django.db.models import Prefetch, Q, Sum
 from django.utils import timezone
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -41,7 +41,18 @@ class VentaViewSet(viewsets.ReadOnlyModelViewSet):
     # ReadOnlyModelViewSet (list/retrieve) + acciones explícitas `crear`/`anular`.
     queryset = Venta.objects.select_related(
         'cliente__persona', 'empleado__persona', 'usuario', 'sucursal'
-    ).prefetch_related('ventaarticulo_set')
+    ).prefetch_related(
+        'ventaarticulo_set',
+        # Sólo para VentaSerializer.get_medios_pago -> sólo hace falta saber si existe alguna
+        # fila por venta, no sus datos; `.only('venta_id')` evita traer columnas de más en un
+        # listado que puede tener muchas filas.
+        Prefetch('cobroventa_set', queryset=CobroVenta.objects.only('venta_id')),
+        Prefetch('cuponpagotarjeta_set', queryset=CuponPagoTarjeta.objects.only('venta_id')),
+        Prefetch('pagotransferencia_set', queryset=PagoTransferencia.objects.only('venta_id')),
+        Prefetch(
+            'movimientocuentacorriente_set', queryset=MovimientoCuentaCorriente.objects.only('venta_id'),
+        ),
+    )
     serializer_class = VentaSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)

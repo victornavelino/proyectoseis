@@ -8,6 +8,7 @@ import { mensajeDeError } from '../../api/client'
 import { obtenerResumenDashboard } from '../../api/venta'
 import type { ResumenDashboard } from '../../types/venta'
 import { formatearMonto } from '../ventas/dinero'
+import { MEDIOS_PAGO_INFO } from '../ventas/mediosPago'
 
 const ACCESOS: { to: string; label: string; descripcion: string; icon: Icon }[] = [
   { to: '/ventas/nueva', label: 'Nueva venta', descripcion: 'Punto de venta', icon: IconShoppingCart },
@@ -15,16 +16,6 @@ const ACCESOS: { to: string; label: string; descripcion: string; icon: Icon }[] 
   { to: '/articulos', label: 'Artículos', descripcion: 'Catálogo de productos', icon: IconBox },
   { to: '/clientes', label: 'Clientes', descripcion: 'Registro de clientes', icon: IconUsers },
 ]
-
-// Un color fijo por medio de pago (nunca reasignado según el monto) para que la torta de "Medios
-// de pago" siempre pinte igual cada medio — ver dataviz skill: "color follows the entity, never
-// its rank". Paleta categórica validada (CVD-safe) con scripts/validate_palette.js del skill.
-const MEDIOS_PAGO_INFO: Record<ResumenDashboard['medios_pago'][number]['medio'], { etiqueta: string; color: string }> = {
-  efectivo: { etiqueta: 'Efectivo', color: 'blue.6' },
-  tarjeta: { etiqueta: 'Tarjeta', color: 'teal.6' },
-  cuenta_corriente: { etiqueta: 'Cuenta corriente', color: 'orange.7' },
-  transferencia: { etiqueta: 'Transferencia', color: 'grape.6' },
-}
 
 /** "2026-08-29" -> "29/08", para no saturar el eje X del gráfico de evolución. */
 function formatearFechaCorta(fechaIso: string) {

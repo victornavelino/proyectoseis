@@ -10,6 +10,8 @@ export interface VentaArticulo {
   total_articulo: string
 }
 
+export type MedioDePago = 'efectivo' | 'tarjeta' | 'cuenta_corriente' | 'transferencia'
+
 export interface Venta {
   numero_ticket: number
   fecha: string
@@ -25,6 +27,9 @@ export interface Venta {
   empleado_nombre: string
   usuario: number
   usuario_username: string
+  /** Puede tener más de uno: el cobro admite combinar medios en la misma operación (ver
+   * venta.api.VentaViewSet.cobrar_venta). Vacío si todavía no se cobró. */
+  medios_pago: MedioDePago[]
   articulos: VentaArticulo[]
 }
 

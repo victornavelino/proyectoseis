@@ -12,6 +12,7 @@ import Paginador from '../../components/Paginador'
 import type { Venta } from '../../types/venta'
 import { formatearMonto } from './dinero'
 import { abrirTicketParaImprimir } from './imprimirTicket'
+import { MEDIOS_PAGO_INFO } from './mediosPago'
 
 type Accion = 'cobrar' | 'imprimir' | 'anular'
 
@@ -167,6 +168,7 @@ export default function VentasListPage() {
                 <Table.Th>Fecha</Table.Th>
                 <Table.Th>Cliente</Table.Th>
                 <Table.Th>Monto</Table.Th>
+                <Table.Th>Medio de pago</Table.Th>
                 <Table.Th>Estado</Table.Th>
                 <Table.Th />
               </Table.Tr>
@@ -191,6 +193,21 @@ export default function VentasListPage() {
                     <Table.Td>{new Date(venta.fecha).toLocaleString('es-AR')}</Table.Td>
                     <Table.Td>{venta.cliente_nombre}</Table.Td>
                     <Table.Td>{formatearMonto(venta.monto)}</Table.Td>
+                    <Table.Td>
+                      {venta.medios_pago.length === 0 ? (
+                        <Text size="sm" c="dimmed">
+                          —
+                        </Text>
+                      ) : (
+                        <Group gap={4} wrap="wrap">
+                          {venta.medios_pago.map((medio) => (
+                            <Badge key={medio} color={MEDIOS_PAGO_INFO[medio].color} variant="light">
+                              {MEDIOS_PAGO_INFO[medio].etiqueta}
+                            </Badge>
+                          ))}
+                        </Group>
+                      )}
+                    </Table.Td>
                     <Table.Td>
                       {venta.anulado && <Badge color="gray">Anulada</Badge>}
                       {!venta.anulado && venta.cobrada && <Badge color="green">Cobrada</Badge>}
