@@ -3,6 +3,8 @@ import type { PaginatedResponse } from '../types/api'
 import type {
   Adelanto,
   AdelantoInput,
+  Banco,
+  BancoInput,
   Caja,
   CobrarVentaInput,
   Gasto,
@@ -26,6 +28,22 @@ import type {
 import type { Venta } from '../types/venta'
 
 const POR_PAGINA = 10
+
+// --- Bancos (selector compartido por Transferencia y QR) ---
+export function listarBancos(opciones: { search?: string; pagina?: number } = {}) {
+  return apiFetch<PaginatedResponse<Banco>>('api/v1/banco/', {
+    params: { search: opciones.search, page: opciones.pagina ?? 1, page_size: POR_PAGINA },
+  })
+}
+export function listarTodosLosBancos() {
+  return apiFetch<PaginatedResponse<Banco>>('api/v1/banco/', { params: { page_size: 100 } })
+}
+export function crearBanco(datos: BancoInput) {
+  return apiFetch<Banco>('api/v1/banco/', { method: 'POST', body: datos })
+}
+export function actualizarBanco(id: number, datos: BancoInput) {
+  return apiFetch<Banco>(`api/v1/banco/${id}/`, { method: 'PUT', body: datos })
+}
 
 // --- Tarjetas y planes ---
 export function listarTarjetas(opciones: { search?: string; pagina?: number } = {}) {

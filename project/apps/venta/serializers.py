@@ -62,10 +62,10 @@ class VentaSerializer(serializers.ModelSerializer):
 
     def get_medios_pago(self, venta):
         # El cobro es combinado (venta.services.cobrar_venta: efectivo + tarjeta + cta.
-        # corriente + transferencia en la misma operación) -> una venta puede tener más de un
-        # medio a la vez. Mismos 4 códigos que venta.api.VentaViewSet.resumen_dashboard, para que
-        # el frontend los etiquete igual en todos lados. Lee de los `_set` prefetcheados por el
-        # ViewSet (ver su `queryset`) — nunca dispara una query acá, evita N+1 en el listado.
+        # corriente + transferencia + QR en la misma operación) -> una venta puede tener más de
+        # un medio a la vez. Mismos 5 códigos que venta.api.VentaViewSet.resumen_dashboard, para
+        # que el frontend los etiquete igual en todos lados. Lee de los `_set` prefetcheados por
+        # el ViewSet (ver su `queryset`) — nunca dispara una query acá, evita N+1 en el listado.
         medios = []
         if venta.cobroventa_set.all():
             medios.append('efectivo')
@@ -75,6 +75,8 @@ class VentaSerializer(serializers.ModelSerializer):
             medios.append('cuenta_corriente')
         if venta.pagotransferencia_set.all():
             medios.append('transferencia')
+        if venta.pagoqr_set.all():
+            medios.append('qr')
         return medios
 
 

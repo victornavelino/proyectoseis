@@ -10,7 +10,7 @@ export interface VentaArticulo {
   total_articulo: string
 }
 
-export type MedioDePago = 'efectivo' | 'tarjeta' | 'cuenta_corriente' | 'transferencia'
+export type MedioDePago = 'efectivo' | 'tarjeta' | 'cuenta_corriente' | 'transferencia' | 'qr'
 
 export interface Venta {
   numero_ticket: number
@@ -79,5 +79,5 @@ export interface ResumenDashboard {
   caja: { abierta: false } | { abierta: true; fecha_apertura: string; saldo: string }
   ventas_por_dia: { fecha: string; total: string }[]
   top_articulos: { articulo: number; nombre: string; cantidad: string; total: string }[]
-  medios_pago: { medio: 'efectivo' | 'tarjeta' | 'cuenta_corriente' | 'transferencia'; total: string }[]
+  medios_pago: { medio: MedioDePago; total: string }[]
 }

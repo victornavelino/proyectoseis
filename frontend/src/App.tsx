@@ -11,6 +11,7 @@ import PreciosPage from './features/catalogo/PreciosPage'
 import TiposIvaPage from './features/catalogo/TiposIvaPage'
 import UnidadesMedidaPage from './features/catalogo/UnidadesMedidaPage'
 import AdelantosPage from './features/caja/AdelantosPage'
+import BancosPage from './features/caja/BancosPage'
 import CajaPage from './features/caja/CajaPage'
 import GastosPage from './features/caja/GastosPage'
 import IngresosPage from './features/caja/IngresosPage'
@@ -88,6 +89,7 @@ const RUTAS: { path: string; element: ReactNode; requierePermiso?: string; fallb
   { path: '/caja/planes-tarjeta', element: <PlanesTarjetaPage />, requierePermiso: GATE_CAJA },
   { path: '/caja/tipos-ingreso', element: <TiposIngresoPage />, requierePermiso: GATE_CAJA },
   { path: '/caja/tipos-gasto', element: <TiposGastoPage />, requierePermiso: GATE_CAJA },
+  { path: '/caja/bancos', element: <BancosPage />, requierePermiso: GATE_CAJA },
 ]
 
 export default function App() {

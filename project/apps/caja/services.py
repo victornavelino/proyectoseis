@@ -23,7 +23,7 @@ from caja.exceptions import (
     VentasSinCobrarError,
 )
 from caja.constants import EGRESO, INGRESO
-from caja.models import Adelanto, Caja, CobroVenta, CuponPagoTarjeta, Gasto, Ingreso, PagoTransferencia, RetiroEfectivo, Sueldo
+from caja.models import Adelanto, Caja, CobroVenta, CuponPagoTarjeta, Gasto, Ingreso, PagoQr, PagoTransferencia, RetiroEfectivo, Sueldo
 from caja.utils import calcular_caja_final, calcular_saldo_caja
 from cuentacorriente.constants import DEBITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
@@ -144,9 +144,9 @@ def _total(pagos):
 
 
 @transaction.atomic
-def cobrar_venta(*, venta, pagos_efectivo, pagos_tarjeta, pagos_cuenta_corriente, pagos_transferencia, usuario):
-    """Cobro combinado de una venta (efectivo + tarjeta + cuenta corriente + transferencia en la
-    misma operación), reemplazando a `caja.views.cobrar_ticket` para el endpoint DRF nuevo.
+def cobrar_venta(*, venta, pagos_efectivo, pagos_tarjeta, pagos_cuenta_corriente, pagos_transferencia, pagos_qr, usuario):
+    """Cobro combinado de una venta (efectivo + tarjeta + cuenta corriente + transferencia + QR en
+    la misma operación), reemplazando a `caja.views.cobrar_ticket` para el endpoint DRF nuevo.
 
     Dos correcciones deliberadas respecto al legacy, sólo en este flujo nuevo:
     1. La venta sólo se marca `cobrada=True` si TODOS los medios de pago se registraron sin
@@ -169,7 +169,8 @@ def cobrar_venta(*, venta, pagos_efectivo, pagos_tarjeta, pagos_cuenta_corriente
         raise VentaFueraDeCajaError('La venta es anterior a la apertura de la caja actual.')
 
     total_pagado = (
-        _total(pagos_efectivo) + _total(pagos_tarjeta) + _total(pagos_cuenta_corriente) + _total(pagos_transferencia)
+        _total(pagos_efectivo) + _total(pagos_tarjeta) + _total(pagos_cuenta_corriente)
+        + _total(pagos_transferencia) + _total(pagos_qr)
     )
     if total_pagado != venta.monto:
         raise TotalPagosNoCoincideError(
@@ -219,6 +220,13 @@ def cobrar_venta(*, venta, pagos_efectivo, pagos_tarjeta, pagos_cuenta_corriente
 
         for pago in pagos_transferencia:
             PagoTransferencia.objects.create(
+                importe=pago['importe'], nombre=pago.get('nombre'), apellido=pago.get('apellido'),
+                documento_identidad=pago['documento_identidad'], banco=pago.get('banco'), venta=venta,
+                observaciones=pago.get('observaciones'),
+            )
+
+        for pago in pagos_qr:
+            PagoQr.objects.create(
                 importe=pago['importe'], nombre=pago.get('nombre'), apellido=pago.get('apellido'),
                 documento_identidad=pago['documento_identidad'], banco=pago.get('banco'), venta=venta,
                 observaciones=pago.get('observaciones'),

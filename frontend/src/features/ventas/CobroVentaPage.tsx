@@ -24,15 +24,16 @@ import {
   IconCash,
   IconCreditCard,
   IconPrinter,
+  IconQrcode,
   IconTransfer,
   IconTrash,
   IconX,
 } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { cobrarVenta, listarPlanesTarjeta } from '../../api/caja'
+import { cobrarVenta, listarPlanesTarjeta, listarTodosLosBancos } from '../../api/caja'
 import { mensajeDeError } from '../../api/client'
 import { obtenerVenta } from '../../api/venta'
-import type { PlanTarjetaDeCredito } from '../../types/caja'
+import type { Banco, PlanTarjetaDeCredito } from '../../types/caja'
 import type { Venta } from '../../types/venta'
 import { formatearMonto } from './dinero'
 import { abrirTicketParaImprimir } from './imprimirTicket'
@@ -61,8 +62,16 @@ interface PagoTransferencia {
   apellido: string
   banco: string
 }
+interface PagoQr {
+  clave: string
+  importe: string
+  documento: string
+  nombre: string
+  apellido: string
+  banco: string
+}
 
-type Metodo = 'efectivo' | 'tarjeta' | 'cc' | 'transferencia'
+type Metodo = 'efectivo' | 'tarjeta' | 'cc' | 'transferencia' | 'qr'
 
 function clave() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -82,6 +91,13 @@ const TRANSFERENCIA_STAGING_VACIA: Omit<PagoTransferencia, 'clave'> = {
   apellido: '',
   banco: '',
 }
+const QR_STAGING_VACIA: Omit<PagoQr, 'clave'> = {
+  importe: '',
+  documento: '',
+  nombre: '',
+  apellido: '',
+  banco: '',
+}
 
 export default function CobroVentaPage() {
   const { numeroTicket } = useParams<{ numeroTicket: string }>()
@@ -89,6 +105,7 @@ export default function CobroVentaPage() {
 
   const [venta, setVenta] = useState<Venta | null>(null)
   const [planes, setPlanes] = useState<PlanTarjetaDeCredito[]>([])
+  const [bancos, setBancos] = useState<Banco[]>([])
   const [cargando, setCargando] = useState(true)
   const [cobrando, setCobrando] = useState(false)
 
@@ -96,6 +113,7 @@ export default function CobroVentaPage() {
   const [tarjeta, setTarjeta] = useState<PagoTarjeta[]>([])
   const [cc, setCc] = useState<PagoCC[]>([])
   const [transferencia, setTransferencia] = useState<PagoTransferencia[]>([])
+  const [qr, setQr] = useState<PagoQr[]>([])
 
   // Sólo un método de pago "abierto" a la vez (o el modal de Tarjeta) — en vez de mostrar las 4
   // formas de cobro siempre expandidas, el cajero elige una con los botones grandes de arriba
@@ -109,10 +127,12 @@ export default function CobroVentaPage() {
   const [transferenciaStaging, setTransferenciaStaging] = useState<Omit<PagoTransferencia, 'clave'>>(
     TRANSFERENCIA_STAGING_VACIA,
   )
+  const [qrStaging, setQrStaging] = useState<Omit<PagoQr, 'clave'>>(QR_STAGING_VACIA)
   const [tarjetaModalAbierto, setTarjetaModalAbierto] = useState(false)
   const efectivoStagingRef = useRef<HTMLInputElement>(null)
   const ccStagingRef = useRef<HTMLInputElement>(null)
   const transferenciaStagingRef = useRef<HTMLInputElement>(null)
+  const qrStagingRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!numeroTicket) return
@@ -123,18 +143,21 @@ export default function CobroVentaPage() {
     listarPlanesTarjeta()
       .then((r) => setPlanes(r.results))
       .catch(() => notifications.show({ message: 'No se pudieron cargar los planes de tarjeta.', color: 'red' }))
+    listarTodosLosBancos()
+      .then((r) => setBancos(r.results))
+      .catch(() => notifications.show({ message: 'No se pudieron cargar los bancos.', color: 'red' }))
   }, [numeroTicket])
 
   const totalIngresado = useMemo(() => {
     const suma = (lista: { importe: string }[]) => lista.reduce((acc, p) => acc + (Number(p.importe) || 0), 0)
-    return suma(efectivo) + suma(tarjeta) + suma(cc) + suma(transferencia)
-  }, [efectivo, tarjeta, cc, transferencia])
+    return suma(efectivo) + suma(tarjeta) + suma(cc) + suma(transferencia) + suma(qr)
+  }, [efectivo, tarjeta, cc, transferencia, qr])
 
   const totalVenta = venta ? Number(venta.monto) : 0
   const saldoPendiente = totalVenta - totalIngresado
   const cobroCompleto = saldoPendiente <= 0.005
   const coincide = venta ? Math.abs(saldoPendiente) < 0.005 : false
-  const hayAlgunPago = efectivo.length + tarjeta.length + cc.length + transferencia.length > 0
+  const hayAlgunPago = efectivo.length + tarjeta.length + cc.length + transferencia.length + qr.length > 0
 
   // Abre el formulario del método elegido (o el modal, para Tarjeta) con el importe restante ya
   // cargado — el caso más común es pagar todo con un solo método, así el cajero sólo confirma.
@@ -156,6 +179,7 @@ export default function CobroVentaPage() {
     if (metodo === 'efectivo') setEfectivoImporte((v) => v || sugerido)
     if (metodo === 'cc') setCcImporte((v) => v || sugerido)
     if (metodo === 'transferencia') setTransferenciaStaging((s) => ({ ...s, importe: s.importe || sugerido }))
+    if (metodo === 'qr') setQrStaging((s) => ({ ...s, importe: s.importe || sugerido }))
   }
 
   const cerrarPanel = () => {
@@ -164,6 +188,7 @@ export default function CobroVentaPage() {
     setPagaCon('')
     setCcImporte('')
     setTransferenciaStaging(TRANSFERENCIA_STAGING_VACIA)
+    setQrStaging(QR_STAGING_VACIA)
   }
 
   // Apenas carga una venta cobrable, se abre directo el panel de Efectivo (el método más común)
@@ -209,6 +234,14 @@ export default function CobroVentaPage() {
     setTransferencia((a) => [...a, { clave: clave(), ...transferenciaStaging }])
     cerrarPanel()
   }
+  const aceptarQr = () => {
+    if (!(Number(qrStaging.importe) > 0)) {
+      qrStagingRef.current?.focus()
+      return
+    }
+    setQr((a) => [...a, { clave: clave(), ...qrStaging }])
+    cerrarPanel()
+  }
 
   // Vuelto = lo que trae el cliente menos lo que se le está cobrando en esta línea de efectivo.
   const vuelto = pagaCon !== '' ? Number(pagaCon) - Number(efectivoImporte || 0) : null
@@ -233,7 +266,14 @@ export default function CobroVentaPage() {
           documento_identidad: p.documento,
           nombre: p.nombre || undefined,
           apellido: p.apellido || undefined,
-          banco: p.banco || undefined,
+          banco: p.banco ? Number(p.banco) : undefined,
+        })),
+        pagos_qr: qr.map((p) => ({
+          importe: p.importe,
+          documento_identidad: p.documento,
+          nombre: p.nombre || undefined,
+          apellido: p.apellido || undefined,
+          banco: p.banco ? Number(p.banco) : undefined,
         })),
       })
       notifications.show({ message: `Venta #${actualizada.numero_ticket} cobrada.`, color: 'green' })
@@ -246,7 +286,7 @@ export default function CobroVentaPage() {
     }
   }
 
-  // Atajos de teclado del cobro: F1/F2/F3/F6 abren el formulario del método correspondiente
+  // Atajos de teclado del cobro: F1/F2/F3/F5/F6 abren el formulario del método correspondiente
   // (igual que tocar su botón) y F4 confirma el cobro — así el cajero no necesita el mouse. Van a
   // nivel de window (no de un input puntual) porque son teclas de función, no imprimibles: no
   // interfieren con lo que se esté tipeando en ese momento.
@@ -265,6 +305,10 @@ export default function CobroVentaPage() {
         case 'F3':
           e.preventDefault()
           abrirMetodo('cc')
+          break
+        case 'F5':
+          e.preventDefault()
+          abrirMetodo('qr')
           break
         case 'F6':
           e.preventDefault()
@@ -305,6 +349,8 @@ export default function CobroVentaPage() {
     </Table>
   )
 
+  const nombreBanco = (bancoId: string) => bancos.find((b) => String(b.id) === bancoId)?.nombre || null
+
   // Una sola lista de pagos ya cargados (en vez de una lista aparte por método) para que el
   // cajero vea de un vistazo todo lo que se cobró hasta ahora, y pueda quitar cualquier línea.
   const filasPago = [
@@ -339,9 +385,22 @@ export default function CobroVentaPage() {
     ...transferencia.map((p) => ({
       clave: p.clave,
       tipo: 'Transferencia',
-      detalle: [`${p.nombre} ${p.apellido}`.trim(), p.documento && `doc ${p.documento}`, p.banco].filter(Boolean).join(' · ') || '—',
+      detalle:
+        [`${p.nombre} ${p.apellido}`.trim(), p.documento && `doc ${p.documento}`, nombreBanco(p.banco)]
+          .filter(Boolean)
+          .join(' · ') || '—',
       importe: Number(p.importe),
       quitar: () => setTransferencia((a) => a.filter((x) => x.clave !== p.clave)),
+    })),
+    ...qr.map((p) => ({
+      clave: p.clave,
+      tipo: 'QR',
+      detalle:
+        [`${p.nombre} ${p.apellido}`.trim(), p.documento && `doc ${p.documento}`, nombreBanco(p.banco)]
+          .filter(Boolean)
+          .join(' · ') || '—',
+      importe: Number(p.importe),
+      quitar: () => setQr((a) => a.filter((x) => x.clave !== p.clave)),
     })),
   ]
 
@@ -425,6 +484,14 @@ export default function CobroVentaPage() {
                 activo={metodoAbierto === 'transferencia'}
                 deshabilitado={cobroCompleto}
                 onClick={() => abrirMetodo('transferencia')}
+              />
+              <MetodoBoton
+                icono={<IconQrcode size={20} />}
+                titulo="QR"
+                atajo="F5"
+                activo={metodoAbierto === 'qr'}
+                deshabilitado={cobroCompleto}
+                onClick={() => abrirMetodo('qr')}
               />
             </Group>
 
@@ -573,13 +640,14 @@ export default function CobroVentaPage() {
                       setTransferenciaStaging((s) => ({ ...s, apellido }))
                     }}
                   />
-                  <TextInput
+                  <Select
                     label="Banco"
-                    value={transferenciaStaging.banco}
-                    onChange={(e) => {
-                      const banco = e.currentTarget.value
-                      setTransferenciaStaging((s) => ({ ...s, banco }))
-                    }}
+                    placeholder="Seleccionar…"
+                    data={bancos.map((b) => ({ value: String(b.id), label: b.nombre }))}
+                    value={transferenciaStaging.banco || null}
+                    onChange={(v) => setTransferenciaStaging((s) => ({ ...s, banco: v || '' }))}
+                    searchable
+                    clearable
                   />
                 </Group>
                 <Group justify="flex-end" mt="sm">
@@ -587,6 +655,79 @@ export default function CobroVentaPage() {
                     Cancelar
                   </Button>
                   <Button onClick={aceptarTransferencia} disabled={!(Number(transferenciaStaging.importe) > 0)}>
+                    Agregar
+                  </Button>
+                </Group>
+              </Paper>
+            )}
+
+            {metodoAbierto === 'qr' && (
+              <Paper withBorder p="md">
+                <Group justify="space-between" mb="xs">
+                  <Text fw={600} size="sm">
+                    QR
+                  </Text>
+                  <ActionIcon variant="subtle" color="gray" aria-label="Cerrar" onClick={cerrarPanel}>
+                    <IconX size={16} />
+                  </ActionIcon>
+                </Group>
+                <Group grow>
+                  <NumberInput
+                    ref={qrStagingRef}
+                    label="Importe"
+                    value={qrStaging.importe}
+                    onChange={(v) => setQrStaging((s) => ({ ...s, importe: String(v) }))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        aceptarQr()
+                      }
+                    }}
+                    decimalScale={2}
+                    min={0}
+                    autoFocus
+                  />
+                  <TextInput
+                    label="Documento del titular"
+                    value={qrStaging.documento}
+                    onChange={(e) => {
+                      const documento = e.currentTarget.value
+                      setQrStaging((s) => ({ ...s, documento }))
+                    }}
+                  />
+                </Group>
+                <Group grow mt="xs">
+                  <TextInput
+                    label="Nombre"
+                    value={qrStaging.nombre}
+                    onChange={(e) => {
+                      const nombre = e.currentTarget.value
+                      setQrStaging((s) => ({ ...s, nombre }))
+                    }}
+                  />
+                  <TextInput
+                    label="Apellido"
+                    value={qrStaging.apellido}
+                    onChange={(e) => {
+                      const apellido = e.currentTarget.value
+                      setQrStaging((s) => ({ ...s, apellido }))
+                    }}
+                  />
+                  <Select
+                    label="Banco"
+                    placeholder="Seleccionar…"
+                    data={bancos.map((b) => ({ value: String(b.id), label: b.nombre }))}
+                    value={qrStaging.banco || null}
+                    onChange={(v) => setQrStaging((s) => ({ ...s, banco: v || '' }))}
+                    searchable
+                    clearable
+                  />
+                </Group>
+                <Group justify="flex-end" mt="sm">
+                  <Button variant="subtle" color="gray" onClick={cerrarPanel}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={aceptarQr} disabled={!(Number(qrStaging.importe) > 0)}>
                     Agregar
                   </Button>
                 </Group>

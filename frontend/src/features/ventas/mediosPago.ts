@@ -10,4 +10,5 @@ export const MEDIOS_PAGO_INFO: Record<MedioDePago, { etiqueta: string; color: st
   tarjeta: { etiqueta: 'Tarjeta', color: 'teal.6' },
   cuenta_corriente: { etiqueta: 'Cuenta corriente', color: 'orange.7' },
   transferencia: { etiqueta: 'Transferencia', color: 'grape.6' },
+  qr: { etiqueta: 'QR', color: 'pink.6' },
 }

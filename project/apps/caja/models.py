@@ -272,6 +272,18 @@ class CuponPagoTarjeta(models.Model):
     def __str__(self):
         return f'{self.cliente}'
     
+class Banco(models.Model):
+    class Meta:
+        verbose_name = 'Banco'
+        verbose_name_plural = 'Bancos'
+        ordering = ['nombre']
+
+    nombre = models.CharField(max_length=60, unique=True, verbose_name='Nombre')
+
+    def __str__(self):
+        return self.nombre
+
+
 class PagoTransferencia(models.Model):
     class Meta:
         verbose_name = 'Pago Con Tranferencia'
@@ -283,10 +295,29 @@ class PagoTransferencia(models.Model):
     nombre = models.CharField(max_length=40, null=True, blank=True, verbose_name='Nombre')
     apellido = models.CharField(max_length=30, null=True, blank=True, verbose_name='Apellido')
     documento_identidad = models.CharField(max_length=12, verbose_name='Documento Identidad')
-    banco = models.CharField(max_length=60, null=True, blank=True, verbose_name='Banco')
+    banco = models.ForeignKey(Banco, on_delete=models.PROTECT, null=True, blank=True, verbose_name='Banco')
     fecha = models.DateTimeField(auto_now=True, verbose_name='Fecha')
     venta = models.ForeignKey(Venta, on_delete=models.PROTECT, blank=True, null=True, verbose_name='Venta')
     observaciones = models.CharField(max_length=100, null=True, blank=True, verbose_name='Observaciones')
-    
+
+    def __str__(self):
+        return "{} {}".format(self.nombre, self.apellido)
+
+
+class PagoQr(models.Model):
+    class Meta:
+        verbose_name = 'Pago Con QR'
+        verbose_name_plural = 'Pagos Con QR'
+        ordering = ['-id']
+
+    importe = models.DecimalField(max_digits=12, decimal_places=2, default=0, null=False, verbose_name='Importe')
+    nombre = models.CharField(max_length=40, null=True, blank=True, verbose_name='Nombre')
+    apellido = models.CharField(max_length=30, null=True, blank=True, verbose_name='Apellido')
+    documento_identidad = models.CharField(max_length=12, verbose_name='Documento Identidad')
+    banco = models.ForeignKey(Banco, on_delete=models.PROTECT, null=True, blank=True, verbose_name='Banco')
+    fecha = models.DateTimeField(auto_now=True, verbose_name='Fecha')
+    venta = models.ForeignKey(Venta, on_delete=models.PROTECT, blank=True, null=True, verbose_name='Venta')
+    observaciones = models.CharField(max_length=100, null=True, blank=True, verbose_name='Observaciones')
+
     def __str__(self):
         return "{} {}".format(self.nombre, self.apellido)

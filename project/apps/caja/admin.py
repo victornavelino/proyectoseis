@@ -14,7 +14,7 @@ from django.shortcuts import render
 from psycopg2 import Date
 
 from caja.constants import EGRESO, INGRESO
-from caja.models import Caja, CobroVenta, PagoTransferencia, Sueldo, Ingreso, TipoIngreso, RetiroEfectivo, TipoGasto, Gasto, \
+from caja.models import Banco, Caja, CobroVenta, PagoQr, PagoTransferencia, Sueldo, Ingreso, TipoIngreso, RetiroEfectivo, TipoGasto, Gasto, \
     Adelanto, TarjetaDeCredito, PlanTarjetaDeCredito, CuponPagoTarjeta, MovimientoCaja
 from caja.utils import calcular_saldo_caja, calcular_caja_final, calcular_ingresos_caja, calcular_total_compras_transf, calcular_total_ingresos, \
     calcular_egresos_caja, calcular_total_egresos, calcular_total_compras_cc
@@ -557,4 +557,18 @@ class CuponPagoTarjetaAdmin(ExportMixin, admin.ModelAdmin):
 class PagoTransferenciaAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'apellido', 'documento_identidad','banco', 'fecha', 'venta', 'observaciones')
     search_fields = ('documento_identidad',)
+    list_per_page = 30
+
+
+@admin.register(PagoQr)
+class PagoQrAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'apellido', 'documento_identidad', 'banco', 'fecha', 'venta', 'observaciones')
+    search_fields = ('documento_identidad',)
+    list_per_page = 30
+
+
+@admin.register(Banco)
+class BancoAdmin(admin.ModelAdmin):
+    list_display = ('nombre',)
+    search_fields = ('nombre',)
     list_per_page = 30

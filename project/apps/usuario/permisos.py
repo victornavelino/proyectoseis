@@ -37,6 +37,7 @@ MODELOS_ACCESO_COMPLETO = (
     ('caja', 'plantarjetadecredito'),
     ('caja', 'tipoingreso'),
     ('caja', 'tipogasto'),
+    ('caja', 'banco'),
     ('cuentacorriente', 'cuentacorriente'),
     ('cliente', 'cliente'),
 )

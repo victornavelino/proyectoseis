@@ -17,6 +17,7 @@ import { useDisclosure } from '@mantine/hooks'
 import {
   IconBell,
   IconBox,
+  IconBuildingBank,
   IconBuildingStore,
   IconCash,
   IconCategory,
@@ -233,6 +234,13 @@ const NAV: { titulo: string; items: ItemNav[] }[] = [
         to: '/caja/tipos-gasto',
         label: 'Tipos de gasto',
         icon: IconTags,
+        seccion: 'Caja',
+        requierePermiso: GATE_CAJA,
+      },
+      {
+        to: '/caja/bancos',
+        label: 'Bancos',
+        icon: IconBuildingBank,
         seccion: 'Caja',
         requierePermiso: GATE_CAJA,
       },

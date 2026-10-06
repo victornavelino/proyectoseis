@@ -10,10 +10,12 @@ from rest_framework.response import Response
 from caja.exceptions import CajaError
 from caja.models import (
     Adelanto,
+    Banco,
     Caja,
     CuponPagoTarjeta,
     Gasto,
     Ingreso,
+    PagoQr,
     PagoTransferencia,
     PlanTarjetaDeCredito,
     RetiroEfectivo,
@@ -24,12 +26,14 @@ from caja.models import (
 )
 from caja.serializers import (
     AdelantoSerializer,
+    BancoSerializer,
     CajaSerializer,
     CerrarCajaInputSerializer,
     CobrarVentaInputSerializer,
     CuponPagoTarjetaSerializer,
     GastoSerializer,
     IngresoSerializer,
+    PagoQrSerializer,
     PagoTransferenciaSerializer,
     PlanTarjetaDeCreditoSerializer,
     RetiroEfectivoSerializer,
@@ -52,6 +56,14 @@ from caja.utils import (
 )
 from util.pdf import render_pdf_response
 from util.permissions import TienePermiso, TienePermisoDeModelo
+
+
+class BancoViewSet(viewsets.ModelViewSet):
+    queryset = Banco.objects.all()
+    serializer_class = BancoSerializer
+    permission_classes = (TienePermisoDeModelo,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('nombre',)
 
 
 class TarjetaDeCreditoViewSet(viewsets.ModelViewSet):
@@ -175,8 +187,16 @@ class CuponPagoTarjetaViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class PagoTransferenciaViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = PagoTransferencia.objects.select_related('venta')
+    queryset = PagoTransferencia.objects.select_related('venta', 'banco')
     serializer_class = PagoTransferenciaSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('venta',)
+
+
+class PagoQrViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = PagoQr.objects.select_related('venta', 'banco')
+    serializer_class = PagoQrSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('venta',)
@@ -334,9 +354,9 @@ class CajaViewSet(viewsets.ReadOnlyModelViewSet):
     def cobrar_venta(self, request):
         """Cobro combinado de una venta. Body:
         `{"venta": <numero_ticket>, "pagos_efectivo": [...], "pagos_tarjeta": [...],
-        "pagos_cuenta_corriente": [...], "pagos_transferencia": [...]}` (las 4 listas de pagos
-        son opcionales, pero al menos una no puede estar vacía). Ver `caja/services.py` para el
-        detalle de qué valida y qué corrige respecto al flujo legacy.
+        "pagos_cuenta_corriente": [...], "pagos_transferencia": [...], "pagos_qr": [...]}` (las 5
+        listas de pagos son opcionales, pero al menos una no puede estar vacía). Ver
+        `caja/services.py` para el detalle de qué valida y qué corrige respecto al flujo legacy.
         """
         entrada = CobrarVentaInputSerializer(data=request.data)
         entrada.is_valid(raise_exception=True)
@@ -348,6 +368,7 @@ class CajaViewSet(viewsets.ReadOnlyModelViewSet):
                 pagos_tarjeta=datos['pagos_tarjeta'],
                 pagos_cuenta_corriente=datos['pagos_cuenta_corriente'],
                 pagos_transferencia=datos['pagos_transferencia'],
+                pagos_qr=datos['pagos_qr'],
                 usuario=request.user,
             )
         except CajaError as exc:

@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from caja.constants import INGRESO
-from caja.models import Caja, CobroVenta, CuponPagoTarjeta, PagoTransferencia, PlanTarjetaDeCredito, TarjetaDeCredito
+from caja.models import Caja, CobroVenta, CuponPagoTarjeta, PagoQr, PagoTransferencia, PlanTarjetaDeCredito, TarjetaDeCredito
 from cliente.models import Cliente
 from cuentacorriente.constants import DEBITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
@@ -96,6 +96,18 @@ def test_venta_cobrada_por_transferencia(escenario):
     response = client.get('/api/v1/venta/', {'search': f"#{venta.numero_ticket}"})
 
     assert response.json()['results'][0]['medios_pago'] == ['transferencia']
+
+
+@pytest.mark.django_db
+def test_venta_cobrada_por_qr(escenario):
+    venta = escenario['crear_venta']()
+    PagoQr.objects.create(importe=venta.monto, documento_identidad='22222222', venta=venta)
+    client = APIClient()
+    client.force_authenticate(user=escenario['usuario'])
+
+    response = client.get('/api/v1/venta/', {'search': f"#{venta.numero_ticket}"})
+
+    assert response.json()['results'][0]['medios_pago'] == ['qr']
 
 
 @pytest.mark.django_db

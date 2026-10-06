@@ -10,7 +10,7 @@ from rest_framework.response import Response
 
 from decimal import Decimal, ROUND_HALF_UP
 
-from caja.models import Caja, CobroVenta, CuponPagoTarjeta, PagoTransferencia
+from caja.models import Caja, CobroVenta, CuponPagoTarjeta, PagoQr, PagoTransferencia
 from caja.utils import calcular_saldo_caja
 from cuentacorriente.constants import DEBITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
@@ -49,6 +49,7 @@ class VentaViewSet(viewsets.ReadOnlyModelViewSet):
         Prefetch('cobroventa_set', queryset=CobroVenta.objects.only('venta_id')),
         Prefetch('cuponpagotarjeta_set', queryset=CuponPagoTarjeta.objects.only('venta_id')),
         Prefetch('pagotransferencia_set', queryset=PagoTransferencia.objects.only('venta_id')),
+        Prefetch('pagoqr_set', queryset=PagoQr.objects.only('venta_id')),
         Prefetch(
             'movimientocuentacorriente_set', queryset=MovimientoCuentaCorriente.objects.only('venta_id'),
         ),
@@ -224,6 +225,12 @@ class VentaViewSet(viewsets.ReadOnlyModelViewSet):
             {
                 'medio': 'transferencia',
                 'total': _suma(PagoTransferencia.objects.filter(
+                    venta__sucursal=sucursal, venta__anulado=False, venta__fecha__date__gte=desde,
+                )),
+            },
+            {
+                'medio': 'qr',
+                'total': _suma(PagoQr.objects.filter(
                     venta__sucursal=sucursal, venta__anulado=False, venta__fecha__date__gte=desde,
                 )),
             },

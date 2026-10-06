@@ -13,6 +13,12 @@ export interface Caja {
   saldo_actual: string
 }
 
+export interface Banco {
+  id: number
+  nombre: string
+}
+export type BancoInput = Omit<Banco, 'id'>
+
 export interface TarjetaDeCredito {
   id: number
   nombre: string
@@ -53,7 +59,16 @@ export interface PagoTransferenciaInput {
   nombre?: string
   apellido?: string
   documento_identidad: string
-  banco?: string
+  banco?: number | null
+  observaciones?: string
+}
+
+export interface PagoQrInput {
+  importe: string
+  nombre?: string
+  apellido?: string
+  documento_identidad: string
+  banco?: number | null
   observaciones?: string
 }
 
@@ -63,6 +78,7 @@ export interface CobrarVentaInput {
   pagos_tarjeta: PagoTarjetaInput[]
   pagos_cuenta_corriente: PagoCuentaCorrienteInput[]
   pagos_transferencia: PagoTransferenciaInput[]
+  pagos_qr: PagoQrInput[]
 }
 
 export interface TipoIngreso {

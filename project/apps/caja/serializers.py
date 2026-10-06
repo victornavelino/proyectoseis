@@ -4,10 +4,12 @@ from rest_framework import serializers
 
 from caja.models import (
     Adelanto,
+    Banco,
     Caja,
     CuponPagoTarjeta,
     Gasto,
     Ingreso,
+    PagoQr,
     PagoTransferencia,
     PlanTarjetaDeCredito,
     RetiroEfectivo,
@@ -22,6 +24,12 @@ from venta.models import Venta
 # Campos que todo movimiento simple de caja (Sueldo/Adelanto/Ingreso/RetiroEfectivo/Gasto)
 # expone de sólo lectura: los pone el servidor (caja/services.py), nunca el cliente.
 CAMPOS_MOVIMIENTO_CAJA_SOLO_LECTURA = ('id', 'fecha', 'usuario', 'usuario_username', 'cerrado')
+
+
+class BancoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Banco
+        fields = ('id', 'nombre')
 
 
 class TarjetaDeCreditoSerializer(serializers.ModelSerializer):
@@ -166,6 +174,8 @@ class CuponPagoTarjetaSerializer(serializers.ModelSerializer):
 
 
 class PagoTransferenciaSerializer(serializers.ModelSerializer):
+    banco_nombre = serializers.CharField(source='banco.nombre', read_only=True)
+
     class Meta:
         model = PagoTransferencia
         fields = (
@@ -175,6 +185,27 @@ class PagoTransferenciaSerializer(serializers.ModelSerializer):
             'apellido',
             'documento_identidad',
             'banco',
+            'banco_nombre',
+            'fecha',
+            'venta',
+            'observaciones',
+        )
+        read_only_fields = fields
+
+
+class PagoQrSerializer(serializers.ModelSerializer):
+    banco_nombre = serializers.CharField(source='banco.nombre', read_only=True)
+
+    class Meta:
+        model = PagoQr
+        fields = (
+            'id',
+            'importe',
+            'nombre',
+            'apellido',
+            'documento_identidad',
+            'banco',
+            'banco_nombre',
             'fecha',
             'venta',
             'observaciones',
@@ -210,7 +241,16 @@ class PagoTransferenciaInputSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=40, required=False, allow_blank=True, allow_null=True)
     apellido = serializers.CharField(max_length=30, required=False, allow_blank=True, allow_null=True)
     documento_identidad = serializers.CharField(max_length=12)
-    banco = serializers.CharField(max_length=60, required=False, allow_blank=True, allow_null=True)
+    banco = serializers.PrimaryKeyRelatedField(queryset=Banco.objects.all(), required=False, allow_null=True)
+    observaciones = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True)
+
+
+class PagoQrInputSerializer(serializers.Serializer):
+    importe = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('0.01'))
+    nombre = serializers.CharField(max_length=40, required=False, allow_blank=True, allow_null=True)
+    apellido = serializers.CharField(max_length=30, required=False, allow_blank=True, allow_null=True)
+    documento_identidad = serializers.CharField(max_length=12)
+    banco = serializers.PrimaryKeyRelatedField(queryset=Banco.objects.all(), required=False, allow_null=True)
     observaciones = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True)
 
 
@@ -226,6 +266,7 @@ class CobrarVentaInputSerializer(serializers.Serializer):
     pagos_tarjeta = PagoTarjetaInputSerializer(many=True, required=False, default=list)
     pagos_cuenta_corriente = PagoCuentaCorrienteInputSerializer(many=True, required=False, default=list)
     pagos_transferencia = PagoTransferenciaInputSerializer(many=True, required=False, default=list)
+    pagos_qr = PagoQrInputSerializer(many=True, required=False, default=list)
 
     def validate(self, attrs):
         if not any([
@@ -233,6 +274,7 @@ class CobrarVentaInputSerializer(serializers.Serializer):
             attrs.get('pagos_tarjeta'),
             attrs.get('pagos_cuenta_corriente'),
             attrs.get('pagos_transferencia'),
+            attrs.get('pagos_qr'),
         ]):
             raise serializers.ValidationError('Debe incluir al menos un medio de pago.')
         return attrs
