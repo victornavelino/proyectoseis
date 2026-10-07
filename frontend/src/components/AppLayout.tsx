@@ -254,7 +254,7 @@ const NOMBRE_NEGOCIO = import.meta.env.VITE_BUSINESS_NAME || 'Sistema de Gestió
 const LOGO_URL = import.meta.env.VITE_LOGO_URL
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  const [opened, { toggle }] = useDisclosure()
+  const [opened, { toggle, close }] = useDisclosure()
   const { perfil, logout, tienePermiso } = useAuth()
   const location = useLocation()
 
@@ -361,6 +361,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     <UnstyledButton
                       component={Link}
                       to={item.to}
+                      // Cierra el drawer al navegar -> sólo tiene efecto visual en mobile: el
+                      // navbar del AppShell sólo está atado a `opened` por debajo del breakpoint
+                      // 'sm' (collapsed.mobile más arriba); en desktop no tiene `collapsed.desktop`,
+                      // así que queda siempre visible sin importar este estado.
+                      onClick={close}
                       p="xs"
                       mb={2}
                       style={{
