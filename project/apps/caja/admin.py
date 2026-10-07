@@ -18,7 +18,7 @@ from caja.constants import EGRESO, INGRESO
 from caja.models import Banco, Caja, CobroVenta, PagoQr, PagoTransferencia, Sueldo, Ingreso, TipoIngreso, RetiroEfectivo, TipoGasto, Gasto, \
     Adelanto, TarjetaDeCredito, PlanTarjetaDeCredito, CuponPagoTarjeta, MovimientoCaja
 from caja.utils import calcular_saldo_caja, calcular_caja_final, calcular_ingresos_caja, calcular_total_compras_transf, calcular_total_ingresos, \
-    calcular_egresos_caja, calcular_total_egresos, calcular_total_compras_cc
+    calcular_egresos_caja, calcular_total_egresos, calcular_total_compras_cc, calcular_total_compras_tarjeta, calcular_total_compras_qr
 from cuentacorriente.constants import DEBITO, CREDITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from empleado.models import Sucursal
@@ -208,7 +208,9 @@ class CajaAdmin(admin.ModelAdmin):
                                                 'egresos': calcular_egresos_caja(caja),
                                                 'total_egresos': calcular_total_egresos(caja),
                                                 'total_ccorrientes': calcular_total_compras_cc(caja),
-                                                'total_transferencias': calcular_total_compras_transf(caja)},
+                                                'total_transferencias': calcular_total_compras_transf(caja),
+                                                'total_tarjetas': calcular_total_compras_tarjeta(caja),
+                                                'total_qr': calcular_total_compras_qr(caja)},
                                        show_content_in_browser=True,
                                        )
         return response

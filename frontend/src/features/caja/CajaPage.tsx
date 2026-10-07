@@ -323,6 +323,14 @@ export default function CajaPage() {
               <Text size="sm">{resumen.total_cuenta_corriente.concepto}</Text>
               <Text size="sm">{formatearMonto(resumen.total_cuenta_corriente.importe)}</Text>
             </Group>
+            <Group justify="space-between" fw={600}>
+              <Text size="sm">{resumen.total_tarjeta.concepto}</Text>
+              <Text size="sm">{formatearMonto(resumen.total_tarjeta.importe)}</Text>
+            </Group>
+            <Group justify="space-between" fw={600}>
+              <Text size="sm">{resumen.total_qr.concepto}</Text>
+              <Text size="sm">{formatearMonto(resumen.total_qr.importe)}</Text>
+            </Group>
 
             <Group justify="flex-end" mt="lg">
               {resumen.fecha_fin ? (

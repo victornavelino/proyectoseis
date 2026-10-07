@@ -3,7 +3,7 @@ from decimal import Decimal
 import json
 from django.db.models import Sum
 from caja.constants import INGRESO, EGRESO
-from caja.models import MovimientoCaja, CobroVenta, Caja, PagoTransferencia, PlanTarjetaDeCredito, CuponPagoTarjeta, TipoIngreso, Ingreso, \
+from caja.models import MovimientoCaja, CobroVenta, Caja, PagoQr, PagoTransferencia, PlanTarjetaDeCredito, CuponPagoTarjeta, TipoIngreso, Ingreso, \
     Sueldo, Adelanto, RetiroEfectivo, Gasto
 from cuentacorriente.constants import DEBITO, CREDITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
@@ -235,6 +235,35 @@ def calcular_total_compras_transf(caja):
     json_valores = {
         "concepto": "TOTAL TRANSFERENCIA",
         "importe": str(total_compras_transf)
+    }
+    total = json.dumps(json_valores)
+    total = json.loads(total)
+    return total
+
+def calcular_total_compras_tarjeta(caja):
+    # importe_con_recargo (no `importe`): es lo que realmente pagó el cliente con la tarjeta,
+    # mismo criterio que usaba CajaAdmin.cerrar_caja para "Compras Con Tarjeta".
+    total_compras_tarjeta = CuponPagoTarjeta.objects.filter(
+        fecha__gte=caja.fecha_inicio,
+        fecha__lte=caja.fecha_fin).aggregate(
+        Sum('importe_con_recargo'))['importe_con_recargo__sum'] or 0.00
+    json_valores = {
+        "concepto": "TOTAL TARJETA",
+        "importe": str(total_compras_tarjeta)
+    }
+    total = json.dumps(json_valores)
+    total = json.loads(total)
+    return total
+
+def calcular_total_compras_qr(caja):
+
+    total_compras_qr = PagoQr.objects.filter(
+        fecha__gte=caja.fecha_inicio,
+        fecha__lte=caja.fecha_fin).aggregate(
+        Sum('importe'))['importe__sum'] or 0.00
+    json_valores = {
+        "concepto": "TOTAL QR",
+        "importe": str(total_compras_qr)
     }
     total = json.dumps(json_valores)
     total = json.loads(total)

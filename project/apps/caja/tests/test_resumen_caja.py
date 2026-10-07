@@ -38,7 +38,10 @@ def test_resumen_de_caja_cerrada_trae_el_mismo_desglose_que_cerrar(sucursal, usu
     assert response.status_code == 200
     data = response.json()
     assert data['id'] == caja.id
-    for campo in ('ingresos', 'total_ingresos', 'egresos', 'total_egresos', 'total_cuenta_corriente'):
+    for campo in (
+        'ingresos', 'total_ingresos', 'egresos', 'total_egresos', 'total_cuenta_corriente',
+        'total_tarjeta', 'total_qr',
+    ):
         assert campo in data
 
 

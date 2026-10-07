@@ -147,6 +147,8 @@ export interface ResumenCierreCaja extends Caja {
   egresos: ConceptoImporte[]
   total_egresos: ConceptoImporte
   total_cuenta_corriente: ConceptoImporte
+  total_tarjeta: ConceptoImporte
+  total_qr: ConceptoImporte
   /** Monto calculado a partir de los movimientos (mismo valor que `caja_final` una vez cerrada;
    * mientras la caja sigue abierta, `caja_final` todavía no existe y este es el único monto
    * contra el que cotejar el arqueo — ver caja.api.CajaViewSet.previsualizar_cierre). */
