@@ -5,9 +5,9 @@ from decimal import Decimal
 from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Sum, F
-from jet.filters import RelatedFieldAjaxListFilter
-from wkhtmltopdf.views import PDFTemplateResponse
+from util.pdf import render_pdf_response
 
 
 # Register your models here.
@@ -15,10 +15,10 @@ from django.shortcuts import render
 from psycopg2 import Date
 
 from caja.constants import EGRESO, INGRESO
-from caja.models import Caja, CobroVenta, PagoTransferencia, Sueldo, Ingreso, TipoIngreso, RetiroEfectivo, TipoGasto, Gasto, \
+from caja.models import Banco, Caja, CobroVenta, PagoQr, PagoTransferencia, Sueldo, Ingreso, TipoIngreso, RetiroEfectivo, TipoGasto, Gasto, \
     Adelanto, TarjetaDeCredito, PlanTarjetaDeCredito, CuponPagoTarjeta, MovimientoCaja
 from caja.utils import calcular_saldo_caja, calcular_caja_final, calcular_ingresos_caja, calcular_total_compras_transf, calcular_total_ingresos, \
-    calcular_egresos_caja, calcular_total_egresos, calcular_total_compras_cc
+    calcular_egresos_caja, calcular_total_egresos, calcular_total_compras_cc, calcular_total_compras_tarjeta, calcular_total_compras_qr
 from cuentacorriente.constants import DEBITO, CREDITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from empleado.models import Sucursal
@@ -199,7 +199,7 @@ class CajaAdmin(admin.ModelAdmin):
             messages.error(request, 'Debe seleccionar una Caja Cerrada para imprimir el ticket de cierre')
             return False
         nombre_archivo = "caja-" + str(caja.fecha_fin) + ".pdf"
-        response = PDFTemplateResponse(request=request,
+        response = render_pdf_response(request=request,
                                        template='admin/caja/ticket_cierre_caja.html',
                                        filename=nombre_archivo,
                                        context={'caja': caja,
@@ -208,9 +208,10 @@ class CajaAdmin(admin.ModelAdmin):
                                                 'egresos': calcular_egresos_caja(caja),
                                                 'total_egresos': calcular_total_egresos(caja),
                                                 'total_ccorrientes': calcular_total_compras_cc(caja),
-                                                'total_transferencias': calcular_total_compras_transf(caja)},
+                                                'total_transferencias': calcular_total_compras_transf(caja),
+                                                'total_tarjetas': calcular_total_compras_tarjeta(caja),
+                                                'total_qr': calcular_total_compras_qr(caja)},
                                        show_content_in_browser=True,
-                                       cmd_options={'margin-top': 50, },
                                        )
         return response
     
@@ -258,8 +259,8 @@ class MovimientoCajaAdmin(ExportMixin, admin.ModelAdmin):
         return True
     
     def has_delete_permission(self, request, obj=None):
-        return False
-     
+        return request.user.is_superuser
+
     def save_model(self, request, obj, form, change):
         messages.error(request, 'No Puede modificar movimientos desde este panel')
         return False
@@ -560,3 +561,41 @@ class PagoTransferenciaAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'apellido', 'documento_identidad','banco', 'fecha', 'venta', 'observaciones')
     search_fields = ('documento_identidad',)
     list_per_page = 30
+
+
+@admin.register(PagoQr)
+class PagoQrAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'apellido', 'documento_identidad', 'banco', 'fecha', 'venta', 'observaciones')
+    search_fields = ('documento_identidad',)
+    list_per_page = 30
+
+
+@admin.register(Banco)
+class BancoAdmin(admin.ModelAdmin):
+    list_display = ('nombre',)
+    search_fields = ('nombre',)
+    list_per_page = 30
+    actions = ['fusionar_bancos']
+
+    @admin.action(description='Fusionar bancos seleccionados (duplicados) en uno solo')
+    @transaction.atomic
+    def fusionar_bancos(self, request, queryset):
+        # "banco" en PagoTransferencia/PagoQr es PROTECT -> un duplicado cargado por error (ej.
+        # "mercado pago" vs "Mercado Pago") no se puede borrar directo una vez que algún pago ya
+        # lo referencia. Esta acción junta todos los pagos de los bancos seleccionados en el más
+        # antiguo (menor id) y recién ahí borra el resto -> deja el catálogo prolijo sin perder
+        # ningún pago ya registrado.
+        bancos = list(queryset.order_by('id'))
+        if len(bancos) < 2:
+            self.message_user(request, 'Seleccioná al menos 2 bancos para fusionar.', level=messages.ERROR)
+            return
+        canonico, *duplicados = bancos
+        for duplicado in duplicados:
+            PagoTransferencia.objects.filter(banco=duplicado).update(banco=canonico)
+            PagoQr.objects.filter(banco=duplicado).update(banco=canonico)
+        ids_duplicados = [b.id for b in duplicados]
+        Banco.objects.filter(id__in=ids_duplicados).delete()
+        self.message_user(
+            request,
+            f"Se fusionaron {len(duplicados)} banco(s) en '{canonico.nombre}' (el de menor id de los seleccionados).",
+        )

@@ -1,0 +1,339 @@
+from datetime import timedelta
+
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Prefetch, Q, Sum
+from django.utils import timezone
+from rest_framework import filters, permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError as DRFValidationError
+from rest_framework.response import Response
+
+from decimal import Decimal, ROUND_HALF_UP
+
+from caja.models import Caja, CobroVenta, CuponPagoTarjeta, PagoQr, PagoTransferencia
+from caja.utils import calcular_saldo_caja
+from cuentacorriente.constants import DEBITO
+from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
+from cuentacorriente.utils import calcular_saldo_cc
+from util.pdf import render_pdf_response
+from util.permissions import TienePermiso
+from venta.exceptions import (
+    ArticuloSinPrecioError,
+    CajaCerradaError,
+    SinSucursalError,
+    VentaYaAnuladaError,
+    VentaYaCobradaError,
+)
+from venta.models import Venta, VentaArticulo
+from venta.serializers import (
+    CrearVentaInputSerializer,
+    PrevisualizarVentaInputSerializer,
+    VentaPrevisualizadaSerializer,
+    VentaSerializer,
+)
+from venta.services import anular_venta, crear_venta
+from venta.utils import calcular_precio_venta_articulo
+
+
+class VentaViewSet(viewsets.ReadOnlyModelViewSet):
+    # El alta y la anulación son operaciones de negocio dedicadas (transaccionales, con
+    # recálculo/validaciones server-side), no un create()/destroy() de CRUD genérico ->
+    # ReadOnlyModelViewSet (list/retrieve) + acciones explícitas `crear`/`anular`.
+    queryset = Venta.objects.select_related(
+        'cliente__persona', 'empleado__persona', 'usuario', 'sucursal'
+    ).prefetch_related(
+        'ventaarticulo_set',
+        # Sólo para VentaSerializer.get_medios_pago -> sólo hace falta saber si existe alguna
+        # fila por venta, no sus datos; `.only('venta_id')` evita traer columnas de más en un
+        # listado que puede tener muchas filas.
+        Prefetch('cobroventa_set', queryset=CobroVenta.objects.only('venta_id')),
+        Prefetch('cuponpagotarjeta_set', queryset=CuponPagoTarjeta.objects.only('venta_id')),
+        Prefetch('pagotransferencia_set', queryset=PagoTransferencia.objects.only('venta_id')),
+        Prefetch('pagoqr_set', queryset=PagoQr.objects.only('venta_id')),
+        Prefetch(
+            'movimientocuentacorriente_set', queryset=MovimientoCuentaCorriente.objects.only('venta_id'),
+        ),
+    )
+    serializer_class = VentaSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
+    filterset_fields = ('sucursal', 'cliente', 'cobrada', 'anulado')
+    ordering_fields = ('numero_ticket', 'fecha')
+
+    def get_queryset(self):
+        # Búsqueda libre por ?search=: nro de ticket, apellido o DNI del cliente. No se usa
+        # filters.SearchFilter porque numero_ticket es un IntegerField -> un icontains ahí
+        # rompe en Postgres (LIKE no admite comparar contra integer sin cast); por eso el
+        # numero_ticket sólo entra en el filtro cuando el término buscado es numérico.
+        queryset = super().get_queryset()
+        busqueda = self.request.query_params.get('search', '').strip().lstrip('#')
+        if busqueda:
+            filtro = Q(cliente__persona__apellido__icontains=busqueda) | Q(
+                cliente__persona__documento_identidad__icontains=busqueda
+            )
+            if busqueda.isdigit():
+                filtro |= Q(numero_ticket=int(busqueda))
+            queryset = queryset.filter(filtro)
+        return queryset
+
+    def get_permissions(self):
+        if self.action == 'anular':
+            # Anular reversa una venta -> mismo nivel de acceso que hoy tiene esa acción en
+            # Django Admin (a él sólo llegan usuarios staff).
+            return [permissions.IsAdminUser()]
+        if self.action == 'crear':
+            # Cargar una venta es la acción de negocio central del mostrador -> exige el permiso
+            # puntual `venta.add_venta` en vez de dejarla abierta a cualquier autenticado, así un
+            # rol "cajero" (sólo caja/cobro) no puede además cargar ventas si no se le dio este
+            # permiso aparte -ver TienePermiso y usuario.migrations.0019_grupo_acceso_operativo
+            # para el backfill que conserva el acceso de las cuentas ya existentes-.
+            return [TienePermiso('venta.add_venta')]
+        return super().get_permissions()
+
+    @action(detail=False, methods=['post'])
+    def crear(self, request):
+        """Alta transaccional de una venta. Body:
+        `{"empleado": <id>, "cliente": <id>, "articulos": [{"articulo": <id>, "cantidad_peso": "1.250"}, ...]}`
+        El precio de cada artículo se recalcula siempre en servidor (nunca se recibe del
+        frontend) — ver `venta.utils.calcular_precio_venta_articulo`.
+        """
+        entrada = CrearVentaInputSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        try:
+            venta = crear_venta(
+                empleado=entrada.validated_data['empleado'],
+                cliente=entrada.validated_data['cliente'],
+                items=entrada.validated_data['articulos'],
+                usuario=request.user,
+            )
+        except SinSucursalError as exc:
+            raise DRFValidationError({'usuario': str(exc)})
+        except CajaCerradaError as exc:
+            raise DRFValidationError({'caja': str(exc)})
+        except ArticuloSinPrecioError as exc:
+            raise DRFValidationError({'articulos': str(exc)})
+        return Response(VentaSerializer(venta).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'], url_path='resumen-dashboard')
+    def resumen_dashboard(self, request):
+        """Resumen agregado para los gráficos de la pantalla de Inicio: ventas de hoy, estado de
+        caja, evolución de ventas, cortes más vendidos y medios de pago — todo filtrado por la
+        sucursal del usuario logueado (mismo criterio que `crear`/`previsualizar`), así que no
+        cruza datos entre sucursales aunque compartan la misma base.
+        `?dias=<N>` (default 14, tope 90) define la ventana de los gráficos de evolución/top
+        artículos/medios de pago; la tarjeta "hoy" es siempre del día en curso.
+        """
+        sucursal = request.user.sucursal
+        if sucursal is None:
+            raise DRFValidationError({'usuario': 'El usuario no tiene una sucursal asignada.'})
+
+        try:
+            dias = min(max(int(request.query_params.get('dias', 14)), 1), 90)
+        except ValueError:
+            dias = 14
+
+        CENTAVO = Decimal('0.01')
+
+        def _money(valor):
+            # Sum() sobre un DecimalField(decimal_places=2) preserva la escala en Postgres, pero
+            # no en SQLite (usado en los tests) — se cuantiza siempre acá para que la respuesta
+            # no dependa del motor de base de datos.
+            return str((valor or Decimal('0')).quantize(CENTAVO, rounding=ROUND_HALF_UP))
+
+        hoy = timezone.localdate()
+        desde = hoy - timedelta(days=dias - 1)
+        ventas_no_anuladas = Venta.objects.filter(sucursal=sucursal, anulado=False)
+
+        agregado_hoy = ventas_no_anuladas.filter(fecha__date=hoy).aggregate(
+            total=Sum('monto'),
+        )
+        total_hoy = agregado_hoy['total'] or Decimal('0')
+        # Se cuenta acá (no en el aggregate de arriba) para no depender de qué campo cuenta
+        # Count(): con numero_ticket alcanza, pero un aggregate ya resuelto es más barato.
+        cantidad_hoy = ventas_no_anuladas.filter(fecha__date=hoy).count()
+        ticket_promedio = total_hoy / cantidad_hoy if cantidad_hoy else Decimal('0')
+
+        caja_abierta = Caja.objects.filter(
+            sucursal=sucursal, fecha_fin__isnull=True, fecha_inicio__isnull=False
+        ).last()
+        if caja_abierta:
+            caja_data = {
+                'abierta': True,
+                'fecha_apertura': caja_abierta.fecha_inicio,
+                'saldo': _money(calcular_saldo_caja(caja_abierta)),
+            }
+        else:
+            caja_data = {'abierta': False}
+
+        # Evolución de ventas por día — se completan los días sin ventas con 0 para que el
+        # gráfico de línea del frontend no salte fechas.
+        totales_por_fecha = {
+            fila['fecha__date']: fila['total']
+            for fila in ventas_no_anuladas.filter(fecha__date__gte=desde)
+            .values('fecha__date')
+            .annotate(total=Sum('monto'))
+        }
+        ventas_por_dia = [
+            {
+                'fecha': (desde + timedelta(days=i)).isoformat(),
+                'total': _money(totales_por_fecha.get(desde + timedelta(days=i))),
+            }
+            for i in range(dias)
+        ]
+
+        top_articulos = [
+            {
+                'articulo': fila['articulo_id'],
+                'nombre': fila['nombre_articulo'],
+                'cantidad': str(fila['cantidad']),
+                'total': _money(fila['total']),
+            }
+            for fila in (
+                VentaArticulo.objects.filter(
+                    venta__sucursal=sucursal, venta__anulado=False, venta__fecha__date__gte=desde,
+                )
+                .values('articulo_id', 'nombre_articulo')
+                .annotate(cantidad=Sum('cantidad_peso'), total=Sum('total_articulo'))
+                .order_by('-total')[:8]
+            )
+        ]
+
+        def _suma(queryset):
+            return _money(queryset.aggregate(total=Sum('importe'))['total'])
+
+        def _medios_pago(filtro_fecha):
+            # Mismo desglose en 2 ventanas distintas: todo el período del gráfico (`dias`, abajo)
+            # y sólo "hoy" (tarjeta "Ventas de hoy") — se parametriza por el filtro de fecha de
+            # cada uno en vez de duplicar las 5 queries.
+            return [
+                {
+                    'medio': 'efectivo',
+                    'total': _suma(CobroVenta.objects.filter(
+                        sucursal=sucursal, venta__isnull=False, venta__anulado=False, **filtro_fecha,
+                    )),
+                },
+                {
+                    'medio': 'tarjeta',
+                    'total': _suma(CuponPagoTarjeta.objects.filter(
+                        venta__sucursal=sucursal, venta__anulado=False, **filtro_fecha,
+                    )),
+                },
+                {
+                    'medio': 'cuenta_corriente',
+                    'total': _suma(MovimientoCuentaCorriente.objects.filter(
+                        tipo=DEBITO, venta__sucursal=sucursal, venta__anulado=False, **filtro_fecha,
+                    )),
+                },
+                {
+                    'medio': 'transferencia',
+                    'total': _suma(PagoTransferencia.objects.filter(
+                        venta__sucursal=sucursal, venta__anulado=False, **filtro_fecha,
+                    )),
+                },
+                {
+                    'medio': 'qr',
+                    'total': _suma(PagoQr.objects.filter(
+                        venta__sucursal=sucursal, venta__anulado=False, **filtro_fecha,
+                    )),
+                },
+            ]
+
+        medios_pago = _medios_pago({'venta__fecha__date__gte': desde})
+
+        return Response({
+            'hoy': {
+                'total': _money(total_hoy),
+                'cantidad_tickets': cantidad_hoy,
+                'ticket_promedio': _money(ticket_promedio),
+                'medios_pago': _medios_pago({'venta__fecha__date': hoy}),
+            },
+            'caja': caja_data,
+            'ventas_por_dia': ventas_por_dia,
+            'top_articulos': top_articulos,
+            'medios_pago': medios_pago,
+        })
+
+    @action(detail=False, methods=['post'])
+    def previsualizar(self, request):
+        """Calcula el precio de cada artículo (misma lógica exacta que `crear`, reutilizando
+        `calcular_precio_venta_articulo`) SIN persistir nada — pensado para que el frontend
+        muestre el total en tiempo real mientras se arma el carrito (especificaciones.md §6:
+        "feedback inmediato"). No exige caja abierta (es sólo un cálculo, no una venta).
+        Body: `{"cliente": <id>, "articulos": [{"articulo": <id>, "cantidad_peso": "1.250"}]}`.
+        """
+        entrada = PrevisualizarVentaInputSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        cliente = entrada.validated_data['cliente']
+        sucursal = request.user.sucursal
+        if sucursal is None:
+            raise DRFValidationError({'usuario': 'El usuario no tiene una sucursal asignada.'})
+
+        items = []
+        total = Decimal('0')
+        for item in entrada.validated_data['articulos']:
+            articulo = item['articulo']
+            cantidad_peso = item['cantidad_peso']
+            try:
+                precio_lista, precio_final = calcular_precio_venta_articulo(cliente, articulo, sucursal)
+            except ArticuloSinPrecioError as exc:
+                raise DRFValidationError({'articulos': str(exc)})
+            monto_articulo = (precio_final * cantidad_peso).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            items.append({
+                'articulo': articulo.pk,
+                'articulo_nombre': articulo.nombre,
+                'cantidad_peso': cantidad_peso,
+                'precio_unitario': precio_lista,
+                'precio_promocion': precio_final,
+                'total_articulo': monto_articulo,
+            })
+            total += monto_articulo
+
+        salida = VentaPrevisualizadaSerializer({'articulos': items, 'monto': total})
+        return Response(salida.data)
+
+    @action(detail=True, methods=['post'])
+    def anular(self, request, pk=None):
+        """Anula una venta no cobrada. Anular una venta ya cobrada no está soportado todavía
+        (DECISIONES.md PEND-J) — responde 400 explicando por qué en vez de hacerlo a medias."""
+        venta = self.get_object()
+        try:
+            venta = anular_venta(venta)
+        except VentaYaAnuladaError as exc:
+            raise DRFValidationError({'anulado': str(exc)})
+        except VentaYaCobradaError as exc:
+            raise DRFValidationError({'cobrada': str(exc)})
+        return Response(VentaSerializer(venta).data)
+
+    @action(detail=True, methods=['get'])
+    def imprimir(self, request, pk=None):
+        """Ticket de venta en PDF (WeasyPrint, ver util/pdf.py). Mismo template y cálculo que la
+        vista legacy `venta.views.imprimir_ticket`/la acción de admin equivalente — ver
+        ROADMAP.md etapa 16: ninguna de esas dos era alcanzable desde el frontend nuevo (una
+        exige sesión de Django, no el Bearer token de la API), así que quedaba huérfana."""
+        venta = self.get_object()
+        articulos_venta = VentaArticulo.objects.filter(venta=venta)
+        # .first() en vez de .get(): un cliente puede terminar con más de una cuenta corriente
+        # "activa" (alta duplicada desde el admin) y .get() no tolera eso — rompía la impresión
+        # del ticket con un 500 (MultipleObjectsReturned) para esos clientes puntuales.
+        cuenta_corriente = CuentaCorriente.objects.filter(cliente_id=venta.cliente_id, activa=True).first()
+        if cuenta_corriente is not None:
+            saldo_cc = calcular_saldo_cc(cuenta_corriente)
+        else:
+            saldo_cc = '--'
+        monto_descuento = sum(
+            (articulo.precio_unitario - articulo.precio_promocion for articulo in articulos_venta),
+            Decimal('0'),
+        )
+        return render_pdf_response(
+            request=request._request,
+            template='admin/venta/ticket_venta.html',
+            filename=f'venta-{venta.numero_ticket}-{venta.fecha}.pdf',
+            context={
+                'venta': venta,
+                'vendedor': venta.empleado,
+                'articulos': articulos_venta,
+                'monto_descuento': monto_descuento,
+                'saldo_cc': saldo_cc,
+            },
+            show_content_in_browser=True,
+        )

@@ -4,8 +4,6 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 # Create your models here.
-from softdelete.models import SoftDeleteObject
-
 from articulo.models import Articulo
 from empleado.models import Sucursal
 
@@ -69,6 +67,8 @@ class Promocion(models.Model):
         return f'{self.nombre}'
 
     def clean(self, *args, **kwargs):
+        if self.fecha_inicio and self.fecha_fin and self.fecha_inicio > self.fecha_fin:
+            raise ValidationError('La fecha de inicio no puede ser posterior a la fecha de fin')
         if self.es_por_precio is False and self.porcentaje_todos is None:
             raise ValidationError("Debe haber un valor en Porcentaje para los articulos en promocion")
         if self.es_por_precio is True and self.porcentaje_todos is not None:

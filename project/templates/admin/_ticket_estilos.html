@@ -1,0 +1,118 @@
+<!-- Estilos compartidos por los tickets imprimibles (WeasyPrint): venta/ticket_venta.html y
+     caja/ticket_cierre_caja.html. Todo el texto en negro puro (#000): muchas ticketeras térmicas
+     imprimen con un umbral blanco/negro sin escala de grises real, así que cualquier gris más
+     claro que ese umbral sale invisible (blanco). La jerarquía visual se logra con tamaño y peso
+     de fuente, no con color. Mismo lenguaje visual que el modal "Resumen de cierre" de
+     CajaPage.tsx — divisores con etiqueta centrada, filas atenuadas, total grande al pie. Cambiar
+     acá impacta a ambos tickets. -->
+<style>
+  @page {
+    /* Sin `size`, WeasyPrint arma la página en A4 (210mm) y la impresora térmica la achica
+       para entrar en el rollo -> el ticket sale minúsculo. TICKET_ANCHO_MM (settings.
+       TICKET_ANCHO_MM, expuesto por core.context_processors.nombre_negocio) es el ancho real
+       del rollo de ESTA instancia — no todas usan el mismo papel/impresora (58mm es lo más
+       común, pero hay instancias con 48mm), así que no puede ir hardcodeado: si el valor
+       asume más ancho del que la impresora realmente tiene, el contenido alineado contra el
+       borde derecho (precios, total) quedaría fuera del papel físico y la impresora lo corta.
+       El alto no puede ser "auto" (WeasyPrint no lo soporta y lo ignora en silencio, volviendo
+       a A4) — se pone uno bien grande de sobra, así nunca corta el contenido a una segunda
+       página; el driver de la impresora térmica corta el rollo donde termina el contenido
+       real. `.ticket` ocupa el 100% del ancho de página, así no hay que tocar nada más al
+       cambiar TICKET_ANCHO_MM. */
+    size: {{ TICKET_ANCHO_MM }}mm 1000mm;
+    margin: 2mm 0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "DejaVu Sans", Arial, sans-serif;
+    font-size: 10px;
+    color: #000;
+  }
+  .ticket {
+    /* Padding grande a propósito: el ancho imprimible real del cabezal de una ticketera suele
+       ser bastante menor al ancho físico del papel (queda margen mecánico a cada lado que el
+       cabezal no cubre). Si el contenido usa casi todo el ancho lógico (TICKET_ANCHO_MM), las
+       líneas más largas se cortan del lado derecho al imprimir de verdad, aunque en el PDF se
+       vean bien. Este padding deja ~8mm de margen de sobra entre los dos lados. */
+    width: 100%;
+    padding: 0 4mm;
+  }
+  .titulo {
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+    margin: 0 0 2px;
+  }
+  .subtitulo {
+    text-align: center;
+    color: #000;
+    font-size: 9px;
+    margin: 0 0 14px;
+  }
+  .fila {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 10px;
+    margin: 3px 0;
+  }
+  .fila .etiqueta { color: #000; }
+  .fila.destacada {
+    font-weight: 700;
+    margin-top: 6px;
+  }
+  .divisor {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 8px;
+    color: #000;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+  .divisor::before, .divisor::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid #000;
+  }
+  /* Un renglón por artículo, en dos líneas (nombre + importe arriba, cantidad x precio unitario
+     abajo) en vez de una tabla de 4 columnas — a 58mm de ancho no entran Producto/Cant./P.
+     Unit./Importe uno al lado del otro sin cortarse. */
+  .articulo { margin: 7px 0; }
+  .articulo-fila {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 10px;
+  }
+  .nombre-articulo { font-weight: 600; }
+  .articulo-importe { font-weight: 600; white-space: nowrap; }
+  .articulo-detalle {
+    color: #000;
+    font-size: 9px;
+    margin-top: 1px;
+  }
+  .total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 10px;
+  }
+  .total .etiqueta { font-size: 10px; color: #000; font-weight: 700; letter-spacing: .03em; }
+  .total .importe { font-size: 18px; font-weight: 800; }
+  .pie {
+    /* margin-bottom grande a propósito: la impresora térmica corta el rollo apenas detecta que
+       el contenido terminó (la página sigue en blanco hasta los 1000mm de `@page`, ver arriba),
+       y sin este margen el corte caía justo sobre esta línea (alcanzaba a imprimir el TOTAL
+       pero no "Gracias por su compra") — hace falta dejarle al rodillo distancia de sobra para
+       que la línea termine de salir del todo antes de que la cuchilla corte. */
+    text-align: center;
+    color: #000;
+    font-size: 8px;
+    margin: 18px 0 50mm;
+  }
+</style>

@@ -1,12 +1,20 @@
 from django.contrib.auth import get_user_model
-from rest_framework import permissions, generics, viewsets, mixins, status
+from django.db.models import ProtectedError
+from rest_framework import filters, permissions, generics, viewsets, mixins, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 
 from persona.models import Persona
 from persona.serializers import PersonaSerializer
-from usuario.serializers import RegistroUsuarioSerializer, UsuarioSerializer, CambiarClaveSecretaSerializer
+from usuario.serializers import (
+    RegistroUsuarioSerializer,
+    UsuarioSerializer,
+    UsuarioSucursalSerializer,
+    CambiarClaveSecretaSerializer,
+)
+from util.permissions import EsEncargadoDeSucursal
 from util.serializers import TelefonoSerializer
 
 Usuario = get_user_model()
@@ -28,16 +36,18 @@ class RegistroUsuarioAPIView(generics.CreateAPIView):
         try:
             persona = Persona.objects.get(documento_identidad=datos_persona['documento_identidad'])
         except Persona.DoesNotExist:
-            telefono = datos_persona.pop('telefonos', None)
-            telefono_serializer = TelefonoSerializer(data=telefono)
-            telefono_serializer.is_valid(raise_exception=True)
+            telefonos_data = datos_persona.pop('telefonos', None) or []
+            telefono_serializers = [TelefonoSerializer(data=telefono) for telefono in telefonos_data]
+            for telefono_serializer in telefono_serializers:
+                telefono_serializer.is_valid(raise_exception=True)
             persona_serializer = PersonaSerializer(data=datos_persona)
             persona_serializer.is_valid(raise_exception=True)
             persona_serializer.save()
             persona = persona_serializer.instance
-            # Guardamos el teléfono en persona.
-            if not persona.telefonos.filter(**telefono_serializer.validated_data).exists():
-                telefono_serializer.save(persona=persona)
+            # Guardamos los teléfonos en persona.
+            for telefono_serializer in telefono_serializers:
+                if not persona.telefonos.filter(**telefono_serializer.validated_data).exists():
+                    telefono_serializer.save(content_object=persona)
         return persona
 
     def perform_create(self, serializer):
@@ -69,3 +79,43 @@ class UsuarioViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewset
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(status=status.HTTP_200_OK)
+
+
+class UsuarioSucursalViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    # Alta de usuarios operativos por el encargado de sucursal — ver util.permissions.
+    # EsEncargadoDeSucursal y UsuarioSucursalSerializer para las restricciones de seguridad.
+    #
+    # `is_staff=False` en el queryset: este endpoint es sólo para las cuentas operativas que el
+    # encargado da de alta, no para administrar cuentas de staff (eso sigue siendo /admin).
+    serializer_class = UsuarioSucursalSerializer
+    permission_classes = (EsEncargadoDeSucursal,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username', 'first_name', 'last_name', 'email')
+
+    def destroy(self, request, *args, **kwargs):
+        # Caja/MovimientoCaja/Venta/CuentaCorriente.usuario son todos on_delete=PROTECT (a
+        # diferencia de Venta.cliente, que es CASCADE) — mismo criterio que
+        # cliente.api.ClienteViewSet.destroy: se puede borrar una cuenta sin usar, nunca una con
+        # historial real asociado. Para eso, desactivala en vez de borrarla (is_active=False
+        # vía PATCH, ver UsuarioSucursalFormModal/switch "Activo").
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            raise DRFValidationError(
+                'No se puede eliminar: el usuario tiene ventas, movimientos de caja o cuenta '
+                'corriente registrados. Desactivalo en vez de borrarlo.'
+            )
+
+    def get_queryset(self):
+        queryset = Usuario.objects.filter(is_staff=False).select_related('empleado__persona').order_by('username')
+        user = self.request.user
+        if user.is_superuser:
+            return queryset
+        return queryset.filter(sucursal=user.sucursal)

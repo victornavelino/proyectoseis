@@ -1,6 +1,6 @@
 from django.contrib import admin, messages
+from django.contrib.admin import RelatedOnlyFieldListFilter
 from django.db.models import Sum
-from jet.filters import RelatedFieldAjaxListFilter
 from decimal import Decimal
 from caja.models import Caja
 from cuentacorriente.constants import DEBITO, CREDITO
@@ -21,7 +21,7 @@ class MovimientoCuentaCorrienteInline(admin.TabularInline):
 class CuentaCorrienteAdmin(admin.ModelAdmin):
     list_display = ('cliente', 'get_dni', 'fecha', 'activa', 'saldo')
     list_display_links = ('cliente', 'saldo',)
-    list_filter = (('cliente', RelatedFieldAjaxListFilter), 'cliente__persona__documento_identidad')
+    list_filter = (('cliente', RelatedOnlyFieldListFilter), 'cliente__persona__documento_identidad')
     list_per_page = 30
     search_fields = ('cliente__persona__documento_identidad', 'cliente__persona__apellido')
     inlines = (MovimientoCuentaCorrienteInline,)

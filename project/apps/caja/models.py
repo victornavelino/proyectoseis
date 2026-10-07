@@ -22,6 +22,10 @@ class Caja(models.Model):
     fecha_fin = models.DateTimeField(blank=True, null=True)
     caja_inicial = models.DecimalField(max_digits=12, decimal_places=2, null=True, default=0, blank=True)
     caja_final = models.DecimalField(max_digits=12, decimal_places=2, null=True, default=0, blank=True)
+    # Arqueo de caja: total real contado a mano por el cajero al cerrar, para cotejar contra
+    # `caja_final` (el calculado a partir de los movimientos) — ver caja/services.py cerrar_caja.
+    # Null mientras la caja sigue abierta (recién se carga al cerrar).
+    arqueo = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Arqueo de caja')
     sucursal = models.ForeignKey(Sucursal, on_delete=models.PROTECT, null=True, verbose_name='Sucursal')
     usuario = models.ForeignKey(Usuario, null=False, on_delete=models.PROTECT, verbose_name='Usuario')
 
@@ -49,7 +53,15 @@ class MovimientoCaja(models.Model):
         if self.importe <= 0.0:
             raise ValidationError("El importe del movimiento tiene que ser mayor que Cero")
         try:
-            first = Caja.objects.latest('id')
+            # Antes: `Caja.objects.latest('id')` tomaba la última caja creada en TODO el
+            # sistema, sin filtrar por sucursal. Con más de una sucursal operando cajas
+            # simultáneamente eso podía atar el movimiento a la caja de OTRA sucursal, o
+            # directamente bloquear el cobro en todas si la última caja creada
+            # globalmente estaba cerrada aunque la de esta sucursal siguiera abierta.
+            # Corregido para tomar la última caja DE LA SUCURSAL del movimiento — ver
+            # docs/modernizacion/SISTEMA_ACTUAL.md §15.8 y DECISIONES.md.
+            cajas = Caja.objects.filter(sucursal=self.sucursal) if self.sucursal_id else Caja.objects.all()
+            first = cajas.latest('id')
             self.caja = first
             if self.caja.fecha_fin:
                 raise ValidationError("La Caja se encuentra Cerrada")
@@ -260,6 +272,18 @@ class CuponPagoTarjeta(models.Model):
     def __str__(self):
         return f'{self.cliente}'
     
+class Banco(models.Model):
+    class Meta:
+        verbose_name = 'Banco'
+        verbose_name_plural = 'Bancos'
+        ordering = ['nombre']
+
+    nombre = models.CharField(max_length=60, unique=True, verbose_name='Nombre')
+
+    def __str__(self):
+        return self.nombre
+
+
 class PagoTransferencia(models.Model):
     class Meta:
         verbose_name = 'Pago Con Tranferencia'
@@ -271,10 +295,29 @@ class PagoTransferencia(models.Model):
     nombre = models.CharField(max_length=40, null=True, blank=True, verbose_name='Nombre')
     apellido = models.CharField(max_length=30, null=True, blank=True, verbose_name='Apellido')
     documento_identidad = models.CharField(max_length=12, verbose_name='Documento Identidad')
-    banco = models.CharField(max_length=60, null=True, blank=True, verbose_name='Banco')
+    banco = models.ForeignKey(Banco, on_delete=models.PROTECT, null=True, blank=True, verbose_name='Banco')
     fecha = models.DateTimeField(auto_now=True, verbose_name='Fecha')
     venta = models.ForeignKey(Venta, on_delete=models.PROTECT, blank=True, null=True, verbose_name='Venta')
     observaciones = models.CharField(max_length=100, null=True, blank=True, verbose_name='Observaciones')
-    
+
+    def __str__(self):
+        return "{} {}".format(self.nombre, self.apellido)
+
+
+class PagoQr(models.Model):
+    class Meta:
+        verbose_name = 'Pago Con QR'
+        verbose_name_plural = 'Pagos Con QR'
+        ordering = ['-id']
+
+    importe = models.DecimalField(max_digits=12, decimal_places=2, default=0, null=False, verbose_name='Importe')
+    nombre = models.CharField(max_length=40, null=True, blank=True, verbose_name='Nombre')
+    apellido = models.CharField(max_length=30, null=True, blank=True, verbose_name='Apellido')
+    documento_identidad = models.CharField(max_length=12, verbose_name='Documento Identidad')
+    banco = models.ForeignKey(Banco, on_delete=models.PROTECT, null=True, blank=True, verbose_name='Banco')
+    fecha = models.DateTimeField(auto_now=True, verbose_name='Fecha')
+    venta = models.ForeignKey(Venta, on_delete=models.PROTECT, blank=True, null=True, verbose_name='Venta')
+    observaciones = models.CharField(max_length=100, null=True, blank=True, verbose_name='Observaciones')
+
     def __str__(self):
         return "{} {}".format(self.nombre, self.apellido)

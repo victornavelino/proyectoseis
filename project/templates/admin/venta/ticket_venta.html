@@ -1,24 +1,44 @@
+{% load moneda %}
+<!-- Mismo lenguaje visual que el modal "Resumen de cierre" de caja (CajaPage.tsx): divisores
+     con etiqueta centrada y el total grande al pie (ver admin/_ticket_estilos.html). -->
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+{% include "admin/_ticket_estilos.html" %}
+</head>
+<body>
+  <div class="ticket">
+    <p class="titulo">{{ PROJECT_NAME_TITLE }}</p>
+    <p class="subtitulo">{{ venta.sucursal }} · {{ venta.fecha|date:"d/m/Y H:i" }}</p>
 
-    <!-- AGREGAR CONTENIDO AQUI -->
-<ul style="list-style-type:none">
-    <li>CARNICERIA VIRGEN DEL VALLE</li>&nbsp
-    <li>Sucursal: {{vendedor.sucursal}}</li>
-    <li>Fecha: {{venta.fecha|date:"M d, Y, H:i"}}</li>
+    <div class="fila"><span class="etiqueta">Ticket</span><span>#{{ venta.numero_ticket }}</span></div>
+    <div class="fila"><span class="etiqueta">Vendedor</span><span>{{ vendedor }}</span></div>
+    <div class="fila"><span class="etiqueta">Cliente</span><span>{{ venta.cliente }}</span></div>
 
-    <li>Nro Ticket: {{venta.numero_ticket}}</li>
-    <li>Vendedor: {{vendedor}}</li>
-    <li>Cliente: {{venta.cliente}}</li>
-    <li>____________________________</li>
+    <div class="divisor">Artículos</div>
     {% for articulo in articulos %}
-    &nbsp
-    <li>{{articulo.nombre_articulo}} x {{articulo.cantidad_peso}} = {{articulo.precio}} </li>
-    <li>Precio Unit.: ${{articulo.precio_unitario}} </li>
-    <li>Importe: ${{articulo.total_articulo}} </li>
+    <div class="articulo">
+      <div class="articulo-fila">
+        <span class="nombre-articulo">{{ articulo.nombre_articulo }}</span>
+        <span class="articulo-importe">{{ articulo.total_articulo|moneda }}</span>
+      </div>
+      <div class="articulo-detalle">{{ articulo.cantidad_peso|floatformat:"-3" }} x {{ articulo.precio_unitario|moneda }}</div>
+    </div>
     {% endfor %}
-    <li>____________________________</li>
-    <li>Saldo CC: {{saldo_cc}}</li>
-    <li>____________________________</li>
-    <li>Descuentos: {{monto_descuento}}</li>
-    <li>MONTO TOTAL: {{venta.monto}}</li>
 
-</ul>
+    <div class="divisor"></div>
+    {% if monto_descuento %}
+    <div class="fila"><span class="etiqueta">Descuentos</span><span>{{ monto_descuento|moneda }}</span></div>
+    {% endif %}
+    <div class="fila"><span class="etiqueta">Saldo cta. cte.</span><span>{{ saldo_cc|moneda }}</span></div>
+
+    <div class="total">
+      <span class="etiqueta">TOTAL</span>
+      <span class="importe">{{ venta.monto|moneda }}</span>
+    </div>
+
+    <p class="pie">Gracias por su compra</p>
+  </div>
+</body>
+</html>

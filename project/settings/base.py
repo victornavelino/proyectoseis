@@ -15,8 +15,6 @@ from import_export.formats.base_formats import XLSX
 
 EXPORT_FORMATS = [XLSX]
 
-CORS_ORIGIN_ALLOW_ALL = True
-
 ROOT_DIR = environ.Path(__file__) - 3
 PROJECT_DIR = ROOT_DIR.path('project')
 APPS_DIR = PROJECT_DIR.path('apps')
@@ -41,13 +39,45 @@ DEBUG = env.bool('DJANGO_DEBUG', True)
 # PROJECT
 PROJECT_NAME_HEADER = env('PROJECT_NAME_HEADER', default='SISTEMA DE GESTION CARNICERIA VIRGEN DEL VALLE')
 PROJECT_NAME_TITLE = env('PROJECT_NAME_TITLE', default='CARNICERIA VIRGEN DEL VALLE')
+# URL del logo del negocio (ya subido a algún lado: un static/, un CDN, etc.) para la pantalla de
+# login. Vacío por defecto -> el login no muestra ningún logo. No es un archivo del repo para que
+# cada instancia (carnicería/verdulería/pollería) pueda tener el suyo sin tocar código.
+LOGO_URL = env('LOGO_URL', default='')
+# Ancho real del rollo de la ticketera térmica, en mm (ver admin/_ticket_estilos.html). 58 es el
+# estándar más común, pero no todas las instancias usan el mismo papel/impresora (ej. la
+# pollería imprime en un papel de 48mm) -> configurable por variable de entorno en vez de
+# hardcodeado, para no tener que tocar código por cada instancia con una impresora distinta.
+TICKET_ANCHO_MM = env.int('TICKET_ANCHO_MM', default=58)
 
-ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default='*')  # noqa
-WKHTMLTOPDF_CMD = env.str('WKHTMLTOPDF_CMD', default='wkhtmltopdf')
+ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=['*'])  # noqa
+
+# Dokploy corre detrás de un reverse proxy (Traefik) que termina TLS y reenvía
+# por HTTP plano al contenedor. Sin esto, Django cree que la conexión es HTTP
+# y rechaza el Origin/Referer https:// del navegador (CSRF 403) y no marca
+# las cookies como secure aunque el sitio se sirva por HTTPS.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = env.bool('DJANGO_SECURE_SSL_REDIRECT', default=False)
+
+# Orígenes https:// confiables para el chequeo de CSRF (Django >=4.0 lo exige
+# explícito, no alcanza con ALLOWED_HOSTS). Setear en Dokploy, ej:
+# DJANGO_CSRF_TRUSTED_ORIGINS=https://carniceria.carniceriavirgendelvalle.online
+CSRF_TRUSTED_ORIGINS = env.list('DJANGO_CSRF_TRUSTED_ORIGINS', default=[])
+
+# CORS — el frontend React vive en el mismo dominio que esta API en producción (DEC-009, ver
+# docs/modernizacion/DECISIONES.md), así que ahí las requests son same-origin y no necesitan
+# CORS. La lista sólo hace falta para desarrollo, donde el servidor de Vite corre en otro puerto
+# (localhost:5173 por defecto) y el navegador lo trata como otro origen. Antes era
+# `CORS_ALLOW_ALL_ORIGINS = True` (abierto a cualquier origen) — se acota explícitamente.
+CORS_ALLOWED_ORIGINS = env.list(
+    'DJANGO_CORS_ALLOWED_ORIGINS', default=['http://localhost:5173', 'http://127.0.0.1:5173']
+)
+# Necesario para que el navegador mande la cookie httpOnly del refresh_token en las requests
+# cross-origin del Vite de desarrollo (en producción, same-origin, esto no aplica).
+CORS_ALLOW_CREDENTIALS = True
+
 # Application definition
 
 DJANGO_APPS = [
-    'jet',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -57,15 +87,12 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
-    'rest_framework_social_oauth2',
+    'drf_social_oauth2',
     'mptt',
     'oauth2_provider',
     'rest_framework',
     'corsheaders',
     'django_filters',
-    'dal',
-    'dal_queryset_sequence',
-    'dal_select2',
     'import_export',
     'softdelete',
     'rangefilter',
@@ -91,6 +118,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PROJECT_APPS
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -102,11 +130,22 @@ MIDDLEWARE = [
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
-JET_SIDE_MENU_COMPACT = True
-
 ROOT_URLCONF = 'project.urls'
 
 AUTH_USER_MODEL = 'usuario.Usuario'
+
+# El default de Django (`/accounts/login/`) no existe en este proyecto — nunca se armó una
+# vista de login "de sitio". La vista de autorización de OAuth2 (`/oauth2/authorize/`,
+# oauth2_provider.views.AuthorizationView) exige sesión iniciada vía `LoginRequiredMixin` y
+# redirige a LOGIN_URL si no la hay — sin esto, esa redirección caía en un 404. Detectado al
+# probar el flujo PKCE de la etapa 5/6 contra un navegador real.
+#
+# OJO: no usar `/admin/login/` acá — ese login exige `is_staff` (es el de Django Admin a
+# propósito) y hubiera dejado afuera a cualquier empleado de mostrador no-staff, que sí necesita
+# poder loguearse en el frontend SPA. `/login/` (project/urls.py, `django.contrib.auth.views.
+# LoginView`) acepta cualquier Usuario activo.
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/admin/'
 
 DATABASES = {'default': env.db('DATABASE_URL')}
 
@@ -121,6 +160,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.nombre_negocio',
             ],
         },
     },
@@ -169,29 +209,65 @@ STATIC_ROOT = env('DJANGO_STATIC_ROOT', default='./static/')
 
 STATICFILES_DIRS = [str(PROJECT_DIR.path('assets')), ]
 
+# Sin esto, MEDIA_URL queda en '' y `static(settings.MEDIA_URL, ...)` en project/urls.py genera
+# un patrón `^(?P<path>.*)$` que matchea CUALQUIER URL no reconocida antes (ver `frontend_index`
+# y su catch-all, que sí excluye explícitamente varios prefijos) — cualquier ruta que no matchee
+# en otro lado termina en django.views.static.serve devolviendo un 404 crudo de "archivo no
+# encontrado" en vez del 404 esperado. Detectado por el 404 de /auth/callback en producción.
+MEDIA_URL = env('DJANGO_MEDIA_URL', default='/media/')
+
+MEDIA_ROOT = env('DJANGO_MEDIA_ROOT', default=str(ROOT_DIR.path('media')))
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
 AUTHENTICATION_BACKENDS = (
-    'rest_framework_social_oauth2.backends.DjangoOAuth2',
+    'drf_social_oauth2.backends.DjangoOAuth2',
     'django.contrib.auth.backends.ModelBackend',
 )
-JET_DEFAULT_THEME = env.str('DJANGO_JET_DEFAULT_THEME', default='default')
 
 REST_FRAMEWORK = {
     'PAGE_SIZE': 50,
-    'EXCEPTION_HANDLER': 'rest_framework_json_api.exceptions.exception_handler',
     'DEFAULT_PAGINATION_CLASS': 'util.paginations.LargePagination',
     'DEFAULT_PARSER_CLASSES': (
-        'rest_framework_json_api.parsers.JSONParser',
+        'rest_framework.parsers.JSONParser',
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser'
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-        'rest_framework_social_oauth2.authentication.SocialAuthentication',
+        'drf_social_oauth2.authentication.SocialAuthentication',
     ),
-    'DEFAULT_RENDERER_CLASSES': ('rest_framework_json_api.renderers.JSONRenderer',),
-    'DEFAULT_METADATA_CLASS': 'rest_framework_json_api.metadata.JSONAPIMetadata',
+    'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
     'NON_FIELD_ERRORS_KEY': 'error_messages'
 }
+
+# OAuth2 (django-oauth-toolkit) — Authorization Code + PKCE para el cliente SPA (DEC-002, ver
+# docs/modernizacion/DECISIONES.md). PKCE_REQUIRED y ROTATE_REFRESH_TOKEN ya son True por
+# default en esta versión de la librería; se dejan explícitos acá para que la intención quede
+# documentada en el propio settings, no sólo en el default de un paquete externo.
+OAUTH2_PROVIDER = {
+    'SCOPES': {
+        'read': 'Leer información',
+        'write': 'Modificar información',
+    },
+    # Access token de vida corta (pensado para guardarse en memoria del frontend, no en
+    # localStorage — ver docs/modernizacion/ARQUITECTURA.md § Autenticación) + refresh token de
+    # vida más larga para no forzar un re-login constante.
+    'ACCESS_TOKEN_EXPIRE_SECONDS': env.int('OAUTH2_ACCESS_TOKEN_EXPIRE_SECONDS', default=60 * 30),  # 30 min
+    'REFRESH_TOKEN_EXPIRE_SECONDS': env.int(
+        'OAUTH2_REFRESH_TOKEN_EXPIRE_SECONDS', default=60 * 60 * 24 * 30
+    ),  # 30 días
+    'ROTATE_REFRESH_TOKEN': True,
+    'PKCE_REQUIRED': True,
+}
+
+# Redirect URI(s) del frontend SPA para el flujo Authorization Code + PKCE, usada por el
+# management command `crear_aplicacion_oauth_spa` (usuario app). Setear
+# OAUTH2_SPA_REDIRECT_URIS en producción; en desarrollo por defecto apunta al puerto por defecto
+# de Vite.
+OAUTH2_SPA_REDIRECT_URIS = env.list(
+    'OAUTH2_SPA_REDIRECT_URIS', default=['http://localhost:5173/auth/callback']
+)
 
 ACTIVAR_HERRAMIENTAS_DEBUGGING = env.bool('ACTIVAR_HERRAMIENTAS_DEBUGGING', default=False)
 if ACTIVAR_HERRAMIENTAS_DEBUGGING:
