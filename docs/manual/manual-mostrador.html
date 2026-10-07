@@ -341,9 +341,10 @@
     <p class="lead">Desde el listado de ventas, tocá <span class="field">Cobrar</span> en la venta que corresponda.</p>
 
     <ol>
-      <li>Elegí el medio de pago tocando su botón (<strong>Efectivo</strong>, <strong>Tarjeta</strong>, <strong>Cta. corriente</strong> o <strong>Transferencia</strong>) — cada uno tiene marcado abajo su atajo de teclado.</li>
+      <li>Elegí el medio de pago tocando su botón (<strong>Efectivo</strong>, <strong>Tarjeta</strong>, <strong>Cta. corriente</strong>, <strong>Transferencia</strong> o <strong>QR</strong>) — cada uno tiene marcado abajo su atajo de teclado.</li>
       <li>Se abre un panel (una ventana, si es Tarjeta) con el importe ya sugerido según el saldo pendiente. Ajustalo si hace falta y tocá <span class="field">Agregar</span>.</li>
       <li>En <strong>Efectivo</strong> podés cargar además "Paga con" para que el sistema calcule el vuelto solo.</li>
+      <li>En <strong>Transferencia</strong> y <strong>QR</strong> podés elegir el <span class="field">Banco</span> de una lista desplegable (es el mismo catálogo para los dos). En <strong>QR</strong>, además, el <span class="field">Documento del titular</span> y el <span class="field">Banco</span> son obligatorios: el botón <span class="field">Agregar</span> queda deshabilitado hasta completarlos.</li>
       <li>El pago queda en la lista de <strong>Pagos cargados</strong>. Si te equivocaste, tocá el ícono de basura de esa fila para quitarlo.</li>
       <li>Se puede combinar más de un medio de pago, o repetir el mismo, hasta cubrir el total exacto.</li>
       <li>El panel de la derecha va mostrando cuánto falta. Cuando el cobro queda completo, los botones de método de pago se deshabilitan solos.</li>
@@ -351,12 +352,17 @@
     </ol>
 
     <div class="shot-img">
-      <img src="cobrar-venta.png" alt="Pantalla de cobro de venta, con el panel de Cuenta corriente abierto">
+      <img src="cobrar-venta.png" alt="Pantalla de cobro de venta, con el panel de QR abierto y un banco elegido">
     </div>
 
     <div class="callout">
       <span class="c-label">Importante</span>
       <p>Mientras lo cargado no cubra exactamente el total, el botón <span class="field">Confirmar cobro</span> queda deshabilitado.</p>
+    </div>
+
+    <div class="callout tip">
+      <span class="c-label">Tip</span>
+      <p>Si el banco que necesitás no aparece en la lista de <span class="field">Banco</span>, un administrador lo puede agregar desde <span class="path">Caja → Bancos</span>.</p>
     </div>
   </section>
 
@@ -475,7 +481,7 @@
     </div>
 
     <h3>Cerrar</h3>
-    <p>Al terminar el turno, tocá <span class="field">Cerrar caja</span>. Se abre el <strong>Resumen de cierre</strong>, con los ingresos, los egresos y el total de cuenta corriente del turno.</p>
+    <p>Al terminar el turno, tocá <span class="field">Cerrar caja</span>. Se abre el <strong>Resumen de cierre</strong>, con los ingresos, los egresos y el total cobrado por cuenta corriente, tarjeta y QR del turno (el ticket impreso de cierre suma además el total por transferencia).</p>
     <ol>
       <li>El resumen muestra el <span class="field">Monto calculado</span> (lo que el sistema espera encontrar según los movimientos cargados).</li>
       <li>Contá el efectivo real de la caja y cargalo en <span class="field">Arqueo de caja</span>.</li>
@@ -494,7 +500,7 @@
     </div>
 
     <div class="shot-img">
-      <img src="cierre-caja.png" alt="Resumen de cierre de caja, con Monto calculado, Arqueo de caja, Ingresos y Egresos">
+      <img src="cierre-caja.png" alt="Resumen de cierre de caja, con Monto calculado, Arqueo de caja, Ingresos, Egresos y los totales de Cta. corriente, Tarjeta y QR">
     </div>
 
     <div class="callout">
@@ -577,6 +583,7 @@
           <tr><td><kbd>F1</kbd></td><td>Cobrar venta</td><td>Abre el panel de Efectivo.</td></tr>
           <tr><td><kbd>F2</kbd></td><td>Cobrar venta</td><td>Abre la ventana de Tarjeta.</td></tr>
           <tr><td><kbd>F3</kbd></td><td>Cobrar venta</td><td>Abre el panel de Cuenta corriente.</td></tr>
+          <tr><td><kbd>F5</kbd></td><td>Cobrar venta</td><td>Abre el panel de QR.</td></tr>
           <tr><td><kbd>F6</kbd></td><td>Cobrar venta</td><td>Abre el panel de Transferencia.</td></tr>
           <tr><td><kbd>F4</kbd></td><td>Cobrar venta</td><td>Confirma el cobro (si ya está completo).</td></tr>
         </tbody>
