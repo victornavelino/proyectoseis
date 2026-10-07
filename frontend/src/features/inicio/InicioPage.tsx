@@ -58,6 +58,9 @@ export default function InicioPage() {
       color: MEDIOS_PAGO_INFO[m.medio].color,
     }))
 
+  // Desglose de "Ventas de hoy" por medio de pago (sólo los que tienen algo cobrado hoy).
+  const mediosPagoHoy = (resumen?.hoy.medios_pago ?? []).filter((m) => Number(m.total) > 0)
+
   return (
     <Container size="lg" py="md">
       <Title order={2}>Hola, {perfil?.first_name || perfil?.username}</Title>
@@ -112,6 +115,15 @@ export default function InicioPage() {
               <Text size="xs" c="dimmed">
                 {resumen?.hoy.cantidad_tickets ?? 0} ticket(s)
               </Text>
+              {mediosPagoHoy.length > 0 && (
+                <Group gap={4} wrap="wrap" mt={8}>
+                  {mediosPagoHoy.map((m) => (
+                    <Badge key={m.medio} color={MEDIOS_PAGO_INFO[m.medio].color} variant="light" size="sm">
+                      {MEDIOS_PAGO_INFO[m.medio].etiqueta}: {formatearMonto(m.total)}
+                    </Badge>
+                  ))}
+                </Group>
+              )}
             </>
           )}
         </Paper>

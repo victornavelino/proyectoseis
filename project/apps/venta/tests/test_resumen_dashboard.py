@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal
 
 import pytest
@@ -7,7 +8,7 @@ from rest_framework.test import APIClient
 
 from articulo.models import Articulo, Categoria, TipoIva, UnidadMedida
 from caja.constants import INGRESO
-from caja.models import Caja, CobroVenta
+from caja.models import Caja, CobroVenta, PagoQr
 from cliente.models import Cliente
 from empleado.models import Empleado, Sucursal
 from persona.models import Persona
@@ -89,6 +90,38 @@ def test_resumen_dashboard_agrega_solo_la_sucursal_del_usuario(contexto):
 
     efectivo = next(m for m in data['medios_pago'] if m['medio'] == 'efectivo')
     assert efectivo['total'] == '1000.00'
+
+    # Mismo desglose por medio de pago, pero sólo de "hoy" -> alimenta la tarjeta "Ventas de
+    # hoy" del Dashboard (no el período completo de `medios_pago`/la torta).
+    efectivo_hoy = next(m for m in data['hoy']['medios_pago'] if m['medio'] == 'efectivo')
+    assert efectivo_hoy['total'] == '1000.00'
+    for medio in ('tarjeta', 'cuenta_corriente', 'transferencia', 'qr'):
+        assert next(m for m in data['hoy']['medios_pago'] if m['medio'] == medio)['total'] == '0.00'
+
+
+@pytest.mark.django_db
+def test_resumen_dashboard_hoy_no_incluye_pagos_de_otros_dias(contexto):
+    # Un pago QR de ayer tiene que sumar al desglose del período (`medios_pago`, la torta) pero
+    # NO al de "hoy" (`hoy.medios_pago`) -> confirma que el filtro exacto por fecha de la tarjeta
+    # "Ventas de hoy" no se confunde con el `__gte` del período completo.
+    usuario, _venta_hoy, _caja = contexto
+    venta_ayer = Venta.objects.create(
+        empleado=_venta_hoy.empleado, fecha=timezone.now() - timedelta(days=1), monto=Decimal('700.00'),
+        descuento=Decimal('0.00'), sucursal=_venta_hoy.sucursal, cliente=_venta_hoy.cliente, usuario=usuario,
+        cobrada=True,
+    )
+    PagoQr.objects.create(importe=Decimal('700.00'), documento_identidad='30111222', venta=venta_ayer)
+    client = APIClient()
+    client.force_authenticate(user=usuario)
+
+    response = client.get('/api/v1/venta/resumen-dashboard/')
+
+    assert response.status_code == 200
+    data = response.json()
+    qr_periodo = next(m for m in data['medios_pago'] if m['medio'] == 'qr')
+    assert qr_periodo['total'] == '700.00'
+    qr_hoy = next(m for m in data['hoy']['medios_pago'] if m['medio'] == 'qr')
+    assert qr_hoy['total'] == '0.00'
 
 
 @pytest.mark.django_db

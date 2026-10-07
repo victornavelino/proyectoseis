@@ -75,6 +75,8 @@ export interface ResumenDashboard {
     total: string
     cantidad_tickets: number
     ticket_promedio: string
+    /** Mismo desglose que `medios_pago` de abajo, pero sólo de hoy (no del período de `dias`). */
+    medios_pago: { medio: MedioDePago; total: string }[]
   }
   caja: { abierta: false } | { abierta: true; fecha_apertura: string; saldo: string }
   ventas_por_dia: { fecha: string; total: string }[]

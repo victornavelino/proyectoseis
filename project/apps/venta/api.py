@@ -201,46 +201,51 @@ class VentaViewSet(viewsets.ReadOnlyModelViewSet):
         def _suma(queryset):
             return _money(queryset.aggregate(total=Sum('importe'))['total'])
 
-        medios_pago = [
-            {
-                'medio': 'efectivo',
-                'total': _suma(CobroVenta.objects.filter(
-                    sucursal=sucursal, venta__isnull=False, venta__anulado=False,
-                    venta__fecha__date__gte=desde,
-                )),
-            },
-            {
-                'medio': 'tarjeta',
-                'total': _suma(CuponPagoTarjeta.objects.filter(
-                    venta__sucursal=sucursal, venta__anulado=False, venta__fecha__date__gte=desde,
-                )),
-            },
-            {
-                'medio': 'cuenta_corriente',
-                'total': _suma(MovimientoCuentaCorriente.objects.filter(
-                    tipo=DEBITO, venta__sucursal=sucursal, venta__anulado=False,
-                    venta__fecha__date__gte=desde,
-                )),
-            },
-            {
-                'medio': 'transferencia',
-                'total': _suma(PagoTransferencia.objects.filter(
-                    venta__sucursal=sucursal, venta__anulado=False, venta__fecha__date__gte=desde,
-                )),
-            },
-            {
-                'medio': 'qr',
-                'total': _suma(PagoQr.objects.filter(
-                    venta__sucursal=sucursal, venta__anulado=False, venta__fecha__date__gte=desde,
-                )),
-            },
-        ]
+        def _medios_pago(filtro_fecha):
+            # Mismo desglose en 2 ventanas distintas: todo el período del gráfico (`dias`, abajo)
+            # y sólo "hoy" (tarjeta "Ventas de hoy") — se parametriza por el filtro de fecha de
+            # cada uno en vez de duplicar las 5 queries.
+            return [
+                {
+                    'medio': 'efectivo',
+                    'total': _suma(CobroVenta.objects.filter(
+                        sucursal=sucursal, venta__isnull=False, venta__anulado=False, **filtro_fecha,
+                    )),
+                },
+                {
+                    'medio': 'tarjeta',
+                    'total': _suma(CuponPagoTarjeta.objects.filter(
+                        venta__sucursal=sucursal, venta__anulado=False, **filtro_fecha,
+                    )),
+                },
+                {
+                    'medio': 'cuenta_corriente',
+                    'total': _suma(MovimientoCuentaCorriente.objects.filter(
+                        tipo=DEBITO, venta__sucursal=sucursal, venta__anulado=False, **filtro_fecha,
+                    )),
+                },
+                {
+                    'medio': 'transferencia',
+                    'total': _suma(PagoTransferencia.objects.filter(
+                        venta__sucursal=sucursal, venta__anulado=False, **filtro_fecha,
+                    )),
+                },
+                {
+                    'medio': 'qr',
+                    'total': _suma(PagoQr.objects.filter(
+                        venta__sucursal=sucursal, venta__anulado=False, **filtro_fecha,
+                    )),
+                },
+            ]
+
+        medios_pago = _medios_pago({'venta__fecha__date__gte': desde})
 
         return Response({
             'hoy': {
                 'total': _money(total_hoy),
                 'cantidad_tickets': cantidad_hoy,
                 'ticket_promedio': _money(ticket_promedio),
+                'medios_pago': _medios_pago({'venta__fecha__date': hoy}),
             },
             'caja': caja_data,
             'ventas_por_dia': ventas_por_dia,
