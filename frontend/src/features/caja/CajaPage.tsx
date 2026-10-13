@@ -327,6 +327,16 @@ export default function CajaPage() {
               <Text size="sm">{resumen.total_tarjeta.concepto}</Text>
               <Text size="sm">{formatearMonto(resumen.total_tarjeta.importe)}</Text>
             </Group>
+            {resumen.qr_por_banco.map((fila) => (
+              <Group justify="space-between" key={fila.concepto}>
+                <Text size="sm" c="dimmed">
+                  {fila.concepto}
+                </Text>
+                <Text size="sm" c="dimmed">
+                  {formatearMonto(fila.importe)}
+                </Text>
+              </Group>
+            ))}
             <Group justify="space-between" fw={600}>
               <Text size="sm">{resumen.total_qr.concepto}</Text>
               <Text size="sm">{formatearMonto(resumen.total_qr.importe)}</Text>

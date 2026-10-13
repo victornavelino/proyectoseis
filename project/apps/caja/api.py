@@ -51,6 +51,7 @@ from caja.utils import (
     calcular_saldo_caja,
     calcular_total_compras_cc,
     calcular_total_compras_qr,
+    calcular_total_compras_qr_por_banco,
     calcular_total_compras_tarjeta,
     calcular_total_compras_transf,
     calcular_total_egresos,
@@ -260,6 +261,7 @@ class CajaViewSet(viewsets.ReadOnlyModelViewSet):
         data['total_cuenta_corriente'] = calcular_total_compras_cc(caja)
         data['total_tarjeta'] = calcular_total_compras_tarjeta(caja)
         data['total_qr'] = calcular_total_compras_qr(caja)
+        data['qr_por_banco'] = calcular_total_compras_qr_por_banco(caja)
         # `caja_final` (fijado por cerrar_caja) es el arqueo real contado, no el teórico — para
         # "Monto calculado" hay que recalcularlo aparte. calcular_saldo_caja() filtra sólo por
         # caja_id (no por fecha), así que da el mismo resultado de siempre aunque la caja ya
@@ -294,6 +296,7 @@ class CajaViewSet(viewsets.ReadOnlyModelViewSet):
         data['total_cuenta_corriente'] = calcular_total_compras_cc(caja_al_corte)
         data['total_tarjeta'] = calcular_total_compras_tarjeta(caja_al_corte)
         data['total_qr'] = calcular_total_compras_qr(caja_al_corte)
+        data['qr_por_banco'] = calcular_total_compras_qr_por_banco(caja_al_corte)
         # A diferencia de `_serializar_resumen_cierre`, acá `caja_final` todavía no existe (la
         # caja sigue abierta) -> el monto a cotejar contra el arqueo es `calcular_saldo_caja`
         # (misma fórmula que `cerrar_caja` usa para validar, sin el efecto secundario de marcar
@@ -354,6 +357,7 @@ class CajaViewSet(viewsets.ReadOnlyModelViewSet):
                 'total_transferencias': calcular_total_compras_transf(caja),
                 'total_tarjetas': calcular_total_compras_tarjeta(caja),
                 'total_qr': calcular_total_compras_qr(caja),
+                'qr_por_banco': calcular_total_compras_qr_por_banco(caja),
             },
             show_content_in_browser=True,
         )

@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from caja.models import Caja, CuponPagoTarjeta, PagoQr, PlanTarjetaDeCredito, TarjetaDeCredito
+from caja.models import Banco, Caja, CuponPagoTarjeta, PagoQr, PlanTarjetaDeCredito, TarjetaDeCredito
 from cliente.models import Cliente
 from empleado.models import Sucursal
 from persona.models import Persona
@@ -50,6 +50,27 @@ def test_previsualizar_cierre_incluye_total_tarjeta_y_total_qr(contexto):
     assert Decimal(data['total_tarjeta']['importe']) == Decimal('1050.00')
     assert data['total_qr']['concepto'] == 'TOTAL QR'
     assert Decimal(data['total_qr']['importe']) == Decimal('300.00')
+
+
+@pytest.mark.django_db
+def test_previsualizar_cierre_desglosa_qr_por_banco(contexto):
+    mercadopago = Banco.objects.create(nombre='Mercado Pago')
+    nacion = Banco.objects.create(nombre='Banco Nación')
+    PagoQr.objects.create(importe=Decimal('300.00'), documento_identidad='22222222', banco=mercadopago)
+    PagoQr.objects.create(importe=Decimal('200.00'), documento_identidad='22222222', banco=mercadopago)
+    PagoQr.objects.create(importe=Decimal('100.00'), documento_identidad='22222222', banco=nacion)
+    # Un pago viejo sin banco (de antes de que el frontend lo exigiera) no debería perderse.
+    PagoQr.objects.create(importe=Decimal('50.00'), documento_identidad='22222222', banco=None)
+
+    response = contexto['client'].get(f"/api/v1/caja/{contexto['caja'].id}/previsualizar-cierre/")
+
+    assert response.status_code == 200, response.data
+    data = response.json()
+    assert Decimal(data['total_qr']['importe']) == Decimal('650.00')
+    por_banco = {fila['concepto']: Decimal(fila['importe']) for fila in data['qr_por_banco']}
+    assert por_banco['QR - Mercado Pago'] == Decimal('500.00')
+    assert por_banco['QR - Banco Nación'] == Decimal('100.00')
+    assert por_banco['QR - Sin banco'] == Decimal('50.00')
 
 
 @pytest.mark.django_db

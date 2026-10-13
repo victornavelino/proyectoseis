@@ -33,6 +33,9 @@
     <div class="fila destacada"><span>{{ total_ccorrientes.concepto }}</span><span>{{ total_ccorrientes.importe|moneda }}</span></div>
     <div class="fila destacada"><span>{{ total_transferencias.concepto }}</span><span>{{ total_transferencias.importe|moneda }}</span></div>
     <div class="fila destacada"><span>{{ total_tarjetas.concepto }}</span><span>{{ total_tarjetas.importe|moneda }}</span></div>
+    {% for fila in qr_por_banco %}
+    <div class="fila"><span class="etiqueta">{{ fila.concepto }}</span><span>{{ fila.importe|moneda }}</span></div>
+    {% endfor %}
     <div class="fila destacada"><span>{{ total_qr.concepto }}</span><span>{{ total_qr.importe|moneda }}</span></div>
 
     <div class="total">
