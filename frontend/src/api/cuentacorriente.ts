@@ -14,6 +14,9 @@ export function listarCuentasCorrientes(opciones: { search?: string; pagina?: nu
     params: { search: opciones.search, page: opciones.pagina ?? 1, page_size: POR_PAGINA },
   })
 }
+export function obtenerCuentaCorriente(id: number) {
+  return apiFetch<CuentaCorriente>(`api/v1/cuentacorriente/${id}/`)
+}
 export function obtenerCuentaCorrienteDeCliente(cliente: number) {
   return apiFetch<PaginatedResponse<CuentaCorriente>>('api/v1/cuentacorriente/', {
     params: { cliente, page_size: 1 },

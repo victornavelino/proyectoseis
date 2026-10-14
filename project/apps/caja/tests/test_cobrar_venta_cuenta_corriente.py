@@ -48,22 +48,41 @@ def _crear_venta(*, contexto, monto):
 
 def _dar_saldo_a_favor(*, contexto, importe):
     """Simula que el cliente ya pagó/depositó `importe` de más en su cuenta corriente, dejándolo
-    con ese monto a favor (saldo negativo, ver cuentacorriente.utils.calcular_saldo_cc)."""
+    con ese monto a favor (saldo negativo, ver cuentacorriente.utils.calcular_saldo_cc). Crea el
+    movimiento directo (no vía el service) para no generar de paso un Ingreso de caja acá."""
     MovimientoCuentaCorriente.objects.create(
         cuenta=contexto['cuenta'], importe=importe, tipo=CREDITO, usuario=contexto['usuario'],
     )
 
 
 @pytest.mark.django_db
-def test_pago_cuenta_corriente_no_puede_superar_el_saldo_a_favor(contexto):
-    """La cuenta corriente es un saldo a favor del cliente, no una línea de crédito: un pago que
-    lo dejaría debiendo dinero al negocio debe rechazarse, sin importar el `tope` configurado."""
-    _dar_saldo_a_favor(contexto=contexto, importe=Decimal('100000.00'))
+def test_pago_cuenta_corriente_puede_superar_el_saldo_a_favor_hasta_el_tope(contexto):
+    """La cuenta corriente es una línea de crédito hasta `tope` (default $100.000), no sólo una
+    billetera prepaga: un pago puede dejar al cliente debiendo, siempre que no supere el tope."""
+    _dar_saldo_a_favor(contexto=contexto, importe=Decimal('50000.00'))
+    # saldo a favor $50.000 + tope $100.000 -> disponible $150.000.
     venta = _crear_venta(contexto=contexto, monto=Decimal('150000.00'))
 
     response = contexto['client'].post('/api/v1/caja/cobrar-venta/', {
         'venta': venta.numero_ticket,
         'pagos_cuenta_corriente': [{'importe': '150000.00'}],
+    }, format='json')
+
+    assert response.status_code == 200, response.data
+    venta.refresh_from_db()
+    assert venta.cobrada is True
+    assert MovimientoCuentaCorriente.objects.filter(venta=venta).count() == 1
+
+
+@pytest.mark.django_db
+def test_pago_cuenta_corriente_que_supera_el_tope_se_rechaza(contexto):
+    _dar_saldo_a_favor(contexto=contexto, importe=Decimal('50000.00'))
+    # disponible $150.000 (ver test de arriba) -> $150.000,01 debería rechazarse.
+    venta = _crear_venta(contexto=contexto, monto=Decimal('150000.01'))
+
+    response = contexto['client'].post('/api/v1/caja/cobrar-venta/', {
+        'venta': venta.numero_ticket,
+        'pagos_cuenta_corriente': [{'importe': '150000.01'}],
     }, format='json')
 
     assert response.status_code == 400
@@ -74,30 +93,28 @@ def test_pago_cuenta_corriente_no_puede_superar_el_saldo_a_favor(contexto):
 
 
 @pytest.mark.django_db
-def test_pago_cuenta_corriente_hasta_el_saldo_a_favor_se_acepta(contexto):
-    _dar_saldo_a_favor(contexto=contexto, importe=Decimal('100000.00'))
-    venta = _crear_venta(contexto=contexto, monto=Decimal('100000.00'))
-
-    response = contexto['client'].post('/api/v1/caja/cobrar-venta/', {
-        'venta': venta.numero_ticket,
-        'pagos_cuenta_corriente': [{'importe': '100000.00'}],
-    }, format='json')
-
-    assert response.status_code == 200, response.data
-    venta.refresh_from_db()
-    assert venta.cobrada is True
-    assert MovimientoCuentaCorriente.objects.filter(venta=venta).count() == 1
-
-
-@pytest.mark.django_db
-def test_pago_cuenta_corriente_sin_saldo_a_favor_se_rechaza(contexto):
-    """Un cliente que no tiene nada a favor (saldo en 0) no puede pagar nada con cuenta
-    corriente: antes se permitía igual mientras no se superara el tope por defecto ($100.000)."""
+def test_pago_cuenta_corriente_sin_saldo_a_favor_se_acepta_hasta_el_tope(contexto):
+    """Un cliente sin nada a favor (saldo en 0) puede igual "fiar" hasta el tope configurado
+    ($100.000 por defecto) -ya no hace falta que haya depositado plata antes-."""
     venta = _crear_venta(contexto=contexto, monto=Decimal('50000.00'))
 
     response = contexto['client'].post('/api/v1/caja/cobrar-venta/', {
         'venta': venta.numero_ticket,
         'pagos_cuenta_corriente': [{'importe': '50000.00'}],
+    }, format='json')
+
+    assert response.status_code == 200, response.data
+    venta.refresh_from_db()
+    assert venta.cobrada is True
+
+
+@pytest.mark.django_db
+def test_pago_cuenta_corriente_que_supera_el_tope_sin_saldo_a_favor_se_rechaza(contexto):
+    venta = _crear_venta(contexto=contexto, monto=Decimal('100000.01'))
+
+    response = contexto['client'].post('/api/v1/caja/cobrar-venta/', {
+        'venta': venta.numero_ticket,
+        'pagos_cuenta_corriente': [{'importe': '100000.01'}],
     }, format='json')
 
     assert response.status_code == 400

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Badge, Button, Group, Modal, NumberInput, SegmentedControl, Table, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { crearMovimientoCuentaCorriente, listarMovimientosCuentaCorriente } from '../../api/cuentacorriente'
+import { crearMovimientoCuentaCorriente, listarMovimientosCuentaCorriente, obtenerCuentaCorriente } from '../../api/cuentacorriente'
 import { mensajeDeError } from '../../api/client'
 import type { CuentaCorriente, MovimientoCuentaCorriente, TipoMovimientoCC } from '../../types/cuentacorriente'
 import { formatearMonto } from '../ventas/dinero'
@@ -20,6 +20,11 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
   const [importe, setImporte] = useState('')
   const [observaciones, setObservaciones] = useState('')
   const [guardando, setGuardando] = useState(false)
+  // Saldo/disponible propios del modal, no el `cuenta` del padre: ese prop queda desactualizado
+  // después de registrar un movimiento (el padre no vuelve a pasar un objeto nuevo mientras el
+  // modal sigue abierto) -> sin esto, "Disponible" mostraba un valor viejo apenas se cargaba un
+  // crédito o débito sin cerrar el modal.
+  const [cuentaActual, setCuentaActual] = useState<CuentaCorriente | null>(cuenta)
 
   const cargar = () => {
     if (!cuenta) return
@@ -33,6 +38,7 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
   useEffect(() => {
     if (opened) {
       cargar()
+      setCuentaActual(cuenta)
       setTipo('C')
       setImporte('')
       setObservaciones('')
@@ -54,6 +60,7 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
       setImporte('')
       setObservaciones('')
       cargar()
+      void obtenerCuentaCorriente(cuenta.id).then(setCuentaActual)
       onCambio()
     } catch (err) {
       const detalle = mensajeDeError(err)
@@ -64,15 +71,22 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
   }
 
   if (!cuenta) return null
+  const datos = cuentaActual ?? cuenta
 
   return (
     <Modal opened={opened} onClose={onClose} title={cuenta.cliente_nombre} size="lg">
       <Group justify="space-between" mb="md">
         <Text>
-          Saldo: <strong>{formatearMonto(cuenta.saldo)}</strong>
+          Saldo: <strong>{formatearMonto(datos.saldo)}</strong>
         </Text>
         <Text c="dimmed" size="sm">
-          Tope: {formatearMonto(cuenta.tope)}
+          Tope: {formatearMonto(datos.tope)}
+        </Text>
+        {/* La cuenta corriente es una línea de crédito hasta `tope` (ver
+           cuentacorriente.services.crear_movimiento_cuenta_corriente): esto es cuánto más se le
+           puede fiar al cliente antes de que un débito se rechace. */}
+        <Text c="dimmed" size="sm">
+          Disponible: {formatearMonto(String(Number(datos.tope) - Number(datos.saldo)))}
         </Text>
       </Group>
 

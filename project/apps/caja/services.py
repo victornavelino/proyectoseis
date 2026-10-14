@@ -15,7 +15,6 @@ from caja.exceptions import (
     CajaYaCerradaError,
     SinCuentaCorrienteError,
     SinSucursalError,
-    TopeCuentaCorrienteError,
     TotalPagosNoCoincideError,
     VentaAnuladaError,
     VentaFueraDeCajaError,
@@ -26,8 +25,7 @@ from caja.constants import EGRESO, INGRESO
 from caja.models import Adelanto, Caja, CobroVenta, CuponPagoTarjeta, Gasto, Ingreso, PagoQr, PagoTransferencia, RetiroEfectivo, Sueldo
 from caja.utils import calcular_caja_final, calcular_saldo_caja
 from cuentacorriente.constants import DEBITO
-from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
-from cuentacorriente.utils import calcular_saldo_cc
+from cuentacorriente.models import CuentaCorriente
 from venta.models import Venta
 
 CENTAVO = Decimal('0.01')
@@ -200,22 +198,15 @@ def cobrar_venta(*, venta, pagos_efectivo, pagos_tarjeta, pagos_cuenta_corriente
             )
 
         for pago in pagos_cuenta_corriente:
-            cuenta = CuentaCorriente.objects.select_for_update().filter(cliente=venta.cliente, activa=True).first()
+            cuenta = CuentaCorriente.objects.filter(cliente=venta.cliente, activa=True).first()
             if cuenta is None:
                 raise SinCuentaCorrienteError('El cliente no tiene una cuenta corriente activa.')
-            saldo_actual = calcular_saldo_cc(cuenta)
-            # La cuenta corriente es un saldo a favor del cliente, no una línea de crédito: no se
-            # le permite quedar debiendo dinero al negocio, así que el pago nunca puede superar lo
-            # que tiene disponible (saldo negativo = a favor).
-            disponible = -saldo_actual if saldo_actual < 0 else Decimal('0')
-            if pago['importe'] > disponible:
-                raise TopeCuentaCorrienteError(
-                    f"El pago a cuenta corriente (${pago['importe']}) supera el saldo a favor "
-                    f"disponible del cliente (${disponible})."
-                )
-            MovimientoCuentaCorriente.objects.create(
-                cuenta=cuenta, importe=pago['importe'], tipo=DEBITO, venta=venta,
-                observaciones=pago.get('observaciones'), usuario=usuario,
+            # import diferido: evita ciclo caja <-> cuentacorriente (cuentacorriente.services
+            # importa caja.services.crear_ingreso para el lado Crédito).
+            from cuentacorriente.services import crear_movimiento_cuenta_corriente
+            crear_movimiento_cuenta_corriente(
+                cuenta=cuenta, tipo=DEBITO, importe=pago['importe'], usuario=usuario, venta=venta,
+                observaciones=pago.get('observaciones'),
             )
 
         for pago in pagos_transferencia:

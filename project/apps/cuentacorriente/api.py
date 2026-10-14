@@ -3,8 +3,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, viewsets
 from rest_framework.exceptions import ValidationError as DRFValidationError
 
+from caja.exceptions import CajaError
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from cuentacorriente.serializers import CuentaCorrienteSerializer, MovimientoCuentaCorrienteSerializer
+from cuentacorriente.services import crear_movimiento_cuenta_corriente
 from util.permissions import TienePermisoDeModelo
 
 
@@ -45,4 +47,12 @@ class MovimientoCuentaCorrienteViewSet(viewsets.ModelViewSet):
     filterset_fields = ('cuenta', 'tipo', 'venta')
 
     def perform_create(self, serializer):
-        serializer.save(usuario=self.request.user)
+        # Delega en el service (no serializer.save() directo): un Crédito tiene que generar
+        # además un Ingreso en caja, y un Débito se valida contra el tope de la cuenta -ver
+        # cuentacorriente.services.crear_movimiento_cuenta_corriente, mismo código que usa
+        # caja.services.cobrar_venta para el pago con este medio-.
+        try:
+            instancia = crear_movimiento_cuenta_corriente(usuario=self.request.user, **serializer.validated_data)
+        except CajaError as exc:
+            raise DRFValidationError({'importe': str(exc)})
+        serializer.instance = instancia
