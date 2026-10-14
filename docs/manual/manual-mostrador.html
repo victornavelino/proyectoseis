@@ -374,7 +374,7 @@
     <ol>
       <li>La lista muestra cliente, saldo, tope y si la cuenta está <span class="pill done">Activa</span> o <span class="pill void">Inactiva</span>.</li>
       <li>Buscá por nombre o documento del cliente con el buscador de arriba.</li>
-      <li>Tocá el ícono del ojo para ver el historial de movimientos de esa cuenta.</li>
+      <li>Tocá el ícono del <strong>ojo</strong> para ver el historial de movimientos de esa cuenta y cargar un pago o un consumo nuevo.</li>
     </ol>
 
     <div class="shot-img">
@@ -382,8 +382,13 @@
     </div>
 
     <div class="callout">
+      <span class="c-label">Importante</span>
+      <p>La cuenta corriente es una línea de crédito hasta el <span class="field">Tope</span> configurado: un cliente puede comprar "a cuenta" hasta ese límite, sin necesidad de haber depositado plata antes. Una cuenta nueva arranca con <strong>tope $0</strong> (sin crédito) — hay que asignarle un tope a mano para habilitarle la cuenta corriente.</p>
+    </div>
+
+    <div class="callout">
       <span class="c-label">Sólo administradores</span>
-      <p>Crear, editar o eliminar una cuenta corriente es una decisión de crédito: sólo la puede tocar un usuario administrador. Al resto de los usuarios no le aparecen los íconos de lápiz ni de basura.</p>
+      <p>Crear, editar o eliminar una cuenta corriente (y fijarle el tope) es una decisión de crédito: sólo la puede tocar un usuario administrador. Al resto de los usuarios no le aparecen los íconos de lápiz ni de basura. Cargar un pago o un consumo del día a día (ver abajo) sí lo puede hacer cualquier usuario con acceso a Clientes.</p>
     </div>
 
     <h3>Crear una cuenta</h3>
@@ -396,6 +401,29 @@
     <div class="callout tip">
       <span class="c-label">Tip</span>
       <p>Un cliente sólo puede tener una cuenta corriente. Si ya tiene una, el sistema avisa y no deja crear una segunda.</p>
+    </div>
+
+    <h3>Cargar un pago (crédito) o un consumo (débito)</h3>
+    <p class="lead">Desde el ícono del ojo de la fila del cliente.</p>
+    <ol>
+      <li>Arriba del todo se ve el <strong>Saldo</strong> actual, el <strong>Tope</strong> y el <strong>Disponible</strong> (tope menos lo que ya debe) — cuánto más se le puede fiar antes de que un consumo se rechace.</li>
+      <li>Elegí <span class="field">Pago (crédito)</span> cuando el cliente te trae plata para cargar a su cuenta, o <span class="field">Consumo (débito)</span> para descontarle manualmente (normalmente el consumo se carga solo al cobrar una venta con este medio — ver <a href="#cobrar-venta">Cobrar una venta</a>, esta opción es para cargarlo a mano si hace falta).</li>
+      <li>Cargá el importe y, si querés, una observación.</li>
+      <li>Tocá <span class="field">Registrar</span>.</li>
+    </ol>
+
+    <div class="shot-img">
+      <img src="cuentacorriente-movimientos.png" alt="Detalle de una cuenta corriente, con Saldo, Tope, Disponible y el historial de movimientos">
+    </div>
+
+    <div class="callout tip">
+      <span class="c-label">Tip</span>
+      <p>Un <span class="field">Pago (crédito)</span> también queda registrado como un ingreso en la caja del día (como si fuera un cobro más) — por eso hace falta tener la caja abierta para cargarlo.</p>
+    </div>
+
+    <div class="callout">
+      <span class="c-label">Importante</span>
+      <p>Un <span class="field">Consumo (débito)</span> que superaría el <strong>Disponible</strong> de la cuenta se rechaza, mostrando cuánto es lo máximo que se le puede cargar en ese momento.</p>
     </div>
 
     <h3>Eliminar una cuenta</h3>
@@ -609,6 +637,9 @@
 
     <h3>¿Se puede cobrar con más de un medio de pago?</h3>
     <p>Sí, se pueden combinar (por ejemplo, parte en efectivo y parte en tarjeta) siempre que sumen el total exacto.</p>
+
+    <h3>¿Cómo le doy crédito a un cliente para que compre a cuenta corriente?</h3>
+    <p>Un administrador le asigna un <span class="field">Tope</span> a su cuenta corriente (<span class="path">Clientes › Cuentas corrientes</span>, ícono de lápiz) — una cuenta nueva arranca en $0, sin crédito. Ver <a href="#cuentas-corrientes">Cuentas corrientes</a>.</p>
   </section>
 
   <a class="back" href="#acceso">↑ Volver al principio</a>
