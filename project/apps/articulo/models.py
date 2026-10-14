@@ -62,11 +62,26 @@ class Articulo(SoftDeleteObject):
         verbose_name = 'Artículo'
         verbose_name_plural = 'Artículos'
         ordering = ['-id']
+        # unique=True a nivel de columna (como estaba antes) no distingue borrados lógicos:
+        # un artículo eliminado (deleted_at no nulo) seguía bloqueando su nombre/código para
+        # siempre, aunque ya no aparezca en ningún lado -> crear uno nuevo reusando ese valor
+        # tiraba un IntegrityError sin atrapar (500) en vez de un error explicable. La condición
+        # limita la unicidad a los artículos activos, para que borrar uno libere su nombre/código.
+        constraints = [
+            models.UniqueConstraint(
+                fields=['nombre'], condition=models.Q(deleted_at__isnull=True),
+                name='articulo_nombre_activo_unico',
+            ),
+            models.UniqueConstraint(
+                fields=['codigo'], condition=models.Q(deleted_at__isnull=True),
+                name='articulo_codigo_activo_unico',
+            ),
+        ]
 
-    nombre = models.CharField(max_length=50, verbose_name='Nombre', unique=True, help_text='Ejemplo: Vacío especial')
-    abreviatura = models.CharField(max_length=10, verbose_name='Abreviatura', help_text='Ejemplo: VACÍO ESP.')
+    nombre = models.CharField(max_length=60, verbose_name='Nombre', help_text='Ejemplo: Vacío especial')
+    abreviatura = models.CharField(max_length=20, verbose_name='Abreviatura', help_text='Ejemplo: VACÍO ESP.')
     codigo = models.CharField(max_length=10, verbose_name='Código de barras',
-                              help_text='Ingrese el código de barras del artículo', unique=True)
+                              help_text='Ingrese el código de barras del artículo')
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, verbose_name='Categoría')
     unidad_medida = models.ForeignKey(UnidadMedida, on_delete=models.CASCADE, verbose_name='Unidad de medida')
     es_por_peso = models.BooleanField(verbose_name='¿Es Peso?', help_text='Indique si el artículo se pesa',

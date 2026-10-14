@@ -14,8 +14,18 @@ class CuentaCorriente(models.Model):
         verbose_name_plural = 'Cuentas Corrientes'
         ordering = ['-id']
 
-    cliente = models.ForeignKey('cliente.Cliente', on_delete=models.PROTECT, verbose_name='Cliente')
-    tope = models.DecimalField(max_digits=12, decimal_places=2, default=100000,
+    # unique=True: un cliente tiene a lo sumo una cuenta corriente en toda su historia — para
+    # cerrarla/reabrirla se usa `activa`, nunca se crea una segunda fila (ver venta.api
+    # VentaViewSet.imprimir, que asumía esto y rompía con MultipleObjectsReturned cuando había
+    # dos filas `activa=True` para el mismo cliente).
+    cliente = models.ForeignKey(
+        'cliente.Cliente', on_delete=models.PROTECT, verbose_name='Cliente', unique=True,
+        error_messages={'unique': 'El cliente ya tiene una cuenta corriente!'},
+    )
+    # Una cuenta nueva arranca sin crédito (tope $0) -> hay que asignárselo a mano a cada
+    # cliente, a propósito: antes el default ($100.000) le daba crédito a cualquier cuenta
+    # nueva sin que nadie lo decidiera.
+    tope = models.DecimalField(max_digits=12, decimal_places=2, default=0,
                                verbose_name='Tope máximo de cuenta')
     fecha = models.DateTimeField(auto_now=True, verbose_name='Fecha de apertura')
     observaciones = models.CharField(max_length=100, verbose_name='Observaciones', null=True)
