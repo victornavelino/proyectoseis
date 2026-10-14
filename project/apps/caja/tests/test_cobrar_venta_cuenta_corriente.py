@@ -28,7 +28,9 @@ def contexto():
     empleado = Empleado.objects.create(persona=persona_empleado, cuil='20111111112')
     persona_cliente = Persona.objects.create(nombre='Cliente', apellido='Perez', documento_identidad='30111222')
     cliente = Cliente.objects.create(persona=persona_cliente, condicion_iva=Cliente.CONSUMIDOR_FINAL)
-    cuenta = CuentaCorriente.objects.create(cliente=cliente)
+    # Explícito (no el default $0 de una cuenta nueva): estos tests ejercitan el límite del
+    # tope en sí, no el valor por defecto -eso lo cubre cuentacorriente/tests aparte-.
+    cuenta = CuentaCorriente.objects.create(cliente=cliente, tope=Decimal('100000.00'))
     caja = Caja.objects.create(sucursal=sucursal, usuario=usuario, caja_inicial=Decimal('0'))
 
     client = APIClient()

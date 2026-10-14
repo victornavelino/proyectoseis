@@ -25,7 +25,7 @@ interface FormValores {
 export default function CuentaCorrienteFormModal({ opened, onClose, onGuardado, cuenta }: Props) {
   const [cliente, setCliente] = useState<Cliente | null>(null)
 
-  const form = useForm<FormValores>({ initialValues: { tope: '100000', observaciones: '', activa: true } })
+  const form = useForm<FormValores>({ initialValues: { tope: '0', observaciones: '', activa: true } })
 
   useEffect(() => {
     if (opened) {
@@ -33,7 +33,7 @@ export default function CuentaCorrienteFormModal({ opened, onClose, onGuardado, 
       form.setValues(
         cuenta
           ? { tope: cuenta.tope, observaciones: cuenta.observaciones ?? '', activa: cuenta.activa }
-          : { tope: '100000', observaciones: '', activa: true },
+          : { tope: '0', observaciones: '', activa: true },
       )
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

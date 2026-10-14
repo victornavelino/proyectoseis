@@ -35,6 +35,15 @@ def usuario_staff():
 
 
 @pytest.mark.django_db
+def test_una_cuenta_nueva_arranca_sin_credito(cliente):
+    # Antes el default era $100.000 -> cualquier cuenta nueva ya tenía crédito sin que nadie lo
+    # decidiera. Ahora arranca en $0 y un admin se lo tiene que asignar a mano.
+    cuenta = CuentaCorriente.objects.create(cliente=cliente)
+
+    assert cuenta.tope == Decimal('0')
+
+
+@pytest.mark.django_db
 def test_no_se_puede_crear_una_segunda_cuenta_a_nivel_de_modelo(cliente):
     CuentaCorriente.objects.create(cliente=cliente)
 
