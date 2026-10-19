@@ -11,6 +11,7 @@ from caja.models import (
     CuponPagoTarjeta,
     Gasto,
     MovimientoCaja,
+    PagoQr,
     PagoTransferencia,
     PlanTarjetaDeCredito,
     TarjetaDeCredito,
@@ -65,6 +66,7 @@ def escenario_completo(db):
         cliente=cliente, plan_tarjeta=plan, importe=Decimal('300'), importe_con_recargo=Decimal('300'), venta=venta,
     )
     PagoTransferencia.objects.create(importe=Decimal('300'), documento_identidad='22222222', venta=venta)
+    PagoQr.objects.create(importe=Decimal('100'), documento_identidad='22222222', venta=venta)
 
     cuenta = CuentaCorriente.objects.create(cliente=cliente)
     MovimientoCuentaCorriente.objects.create(cuenta=cuenta, importe=Decimal('0'), tipo=DEBITO, usuario=usuario, venta=venta)
@@ -88,6 +90,7 @@ def _conteos():
         'cobros': CobroVenta.objects.count(),
         'cupones': CuponPagoTarjeta.objects.count(),
         'transferencias': PagoTransferencia.objects.count(),
+        'pagos_qr': PagoQr.objects.count(),
         'mov_cc': MovimientoCuentaCorriente.objects.count(),
         'cuentas_cc': CuentaCorriente.objects.count(),
         'mov_caja': MovimientoCaja.objects.count(),
@@ -113,6 +116,7 @@ def test_ventas_borra_venta_y_todo_lo_que_cuelga_de_ella(escenario_completo):
     assert conteos['cobros'] == 0
     assert conteos['cupones'] == 0
     assert conteos['transferencias'] == 0
+    assert conteos['pagos_qr'] == 0
     assert conteos['mov_cc'] == 0  # el movimiento estaba ligado a la venta
     # lo que NO pidió --ventas sigue intacto:
     assert conteos['cuentas_cc'] == 1

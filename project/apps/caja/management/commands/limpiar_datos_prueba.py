@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import ProtectedError
 
-from caja.models import Caja, CobroVenta, CuponPagoTarjeta, MovimientoCaja, PagoTransferencia
+from caja.models import Caja, CobroVenta, CuponPagoTarjeta, MovimientoCaja, PagoQr, PagoTransferencia
 from cliente.models import Cliente
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from venta.models import Venta, VentaArticulo
@@ -120,6 +120,7 @@ class Command(BaseCommand):
         total = 0
         total += self._contar_y_borrar(CuponPagoTarjeta.objects.filter(venta__in=ventas), 'Cupones de tarjeta', confirmar)
         total += self._contar_y_borrar(PagoTransferencia.objects.filter(venta__in=ventas), 'Pagos por transferencia', confirmar)
+        total += self._contar_y_borrar(PagoQr.objects.filter(venta__in=ventas), 'Pagos con QR', confirmar)
         total += self._contar_y_borrar(
             MovimientoCuentaCorriente.objects.filter(venta__in=ventas),
             'Movimientos de cta. corriente ligados a una venta', confirmar,
