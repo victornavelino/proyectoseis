@@ -96,6 +96,15 @@ THIRD_PARTY_APPS = [
     'import_export',
     'softdelete',
     'rangefilter',
+    'django_afip',
+    # Necesaria desde social-auth-app-django 5.9 (antes 5.4.3): hasta esa versión,
+    # `social_django/__init__.py` parchaba `BaseAuth.__init__` al importarse (sin necesidad de
+    # estar en INSTALLED_APPS) para completar la `strategy` que pide `drf_social_oauth2.backends.
+    # DjangoOAuth2`. Esa versión sacó el parche y mudó la inicialización a
+    # `PythonSocialAuthConfig.ready()` -> sin esta app registrada, cualquier `user.has_perm(...)`
+    # (dispara `django.contrib.auth.get_backends()`, que instancia cada backend de
+    # AUTHENTICATION_BACKENDS sin argumentos) tira `DefaultStrategyMissingError`.
+    'social_django',
 ]
 
 PROJECT_APPS = [
@@ -110,7 +119,8 @@ PROJECT_APPS = [
     'venta',
     'caja',
     'inventario',
-    'cuentacorriente'
+    'cuentacorriente',
+    'facturacion',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PROJECT_APPS

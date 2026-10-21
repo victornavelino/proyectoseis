@@ -40,6 +40,7 @@ MODELOS_ACCESO_COMPLETO = (
     ('caja', 'banco'),
     ('cuentacorriente', 'cuentacorriente'),
     ('cliente', 'cliente'),
+    ('facturacion', 'comprobanteventa'),
 )
 
 # Los 5 permisos "ver_seccion_*" (usuario.models.Usuario.Meta.permissions) no siguen el patrón

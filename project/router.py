@@ -5,6 +5,7 @@ from caja import api as api_caja
 from cliente import api as api_cliente
 from cuentacorriente import api as api_cuentacorriente
 from empleado import api as api_empleado
+from facturacion import api as api_facturacion
 from persona import api as api_persona
 from promocion import api as api_promocion
 from usuario import api as api_usuario
@@ -50,3 +51,4 @@ router.register('categoria', api_articulo.CategoriaViewSet, basename='categoria'
 router.register('listaprecio', api_articulo.ListaPrecioViewSet, basename='listaprecio')
 router.register('articulo', api_articulo.ArticuloViewSet, basename='articulo')
 router.register('precio', api_articulo.PrecioViewSet, basename='precio')
+router.register('comprobanteventa', api_facturacion.ComprobanteVentaViewSet, basename='comprobanteventa')
