@@ -3,7 +3,7 @@ from decimal import Decimal
 import json
 from django.db.models import Sum
 from caja.constants import INGRESO, EGRESO
-from caja.models import MovimientoCaja, CobroVenta, Caja, PagoTransferencia, PlanTarjetaDeCredito, CuponPagoTarjeta, TipoIngreso, Ingreso, \
+from caja.models import MovimientoCaja, CobroVenta, Caja, PagoQr, PagoTransferencia, PlanTarjetaDeCredito, CuponPagoTarjeta, TipoIngreso, Ingreso, \
     Sueldo, Adelanto, RetiroEfectivo, Gasto
 from cuentacorriente.constants import DEBITO, CREDITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
@@ -239,3 +239,54 @@ def calcular_total_compras_transf(caja):
     total = json.dumps(json_valores)
     total = json.loads(total)
     return total
+
+def calcular_total_compras_tarjeta(caja):
+    # importe_con_recargo (no `importe`): es lo que realmente pagó el cliente con la tarjeta,
+    # mismo criterio que usaba CajaAdmin.cerrar_caja para "Compras Con Tarjeta".
+    total_compras_tarjeta = CuponPagoTarjeta.objects.filter(
+        fecha__gte=caja.fecha_inicio,
+        fecha__lte=caja.fecha_fin).aggregate(
+        Sum('importe_con_recargo'))['importe_con_recargo__sum'] or 0.00
+    json_valores = {
+        "concepto": "TOTAL TARJETA",
+        "importe": str(total_compras_tarjeta)
+    }
+    total = json.dumps(json_valores)
+    total = json.loads(total)
+    return total
+
+def calcular_total_compras_qr(caja):
+
+    total_compras_qr = PagoQr.objects.filter(
+        fecha__gte=caja.fecha_inicio,
+        fecha__lte=caja.fecha_fin).aggregate(
+        Sum('importe'))['importe__sum'] or 0.00
+    json_valores = {
+        "concepto": "TOTAL QR",
+        "importe": str(total_compras_qr)
+    }
+    total = json.dumps(json_valores)
+    total = json.loads(total)
+    return total
+
+def calcular_total_compras_qr_por_banco(caja):
+    # Mismo criterio que calcular_ingresos_caja/calcular_egresos_caja (lista de {concepto,
+    # importe}, no un único total) -> se muestra como desglose antes de TOTAL QR, tanto en el
+    # Resumen de cierre como en el ticket impreso. Un PagoQr sin banco (dato viejo, de antes de
+    # que el frontend lo exigiera) se agrupa aparte como "Sin banco" en vez de perderse.
+    filas = (
+        PagoQr.objects.filter(fecha__gte=caja.fecha_inicio, fecha__lte=caja.fecha_fin)
+        .values('banco__nombre')
+        .annotate(total=Sum('importe'))
+        .order_by('banco__nombre')
+    )
+    resultado = [
+        {
+            "concepto": f"QR - {fila['banco__nombre'] or 'Sin banco'}",
+            "importe": str(fila['total'] or 0.00),
+        }
+        for fila in filas
+    ]
+    resultado = json.dumps(resultado)
+    resultado = json.loads(resultado)
+    return resultado

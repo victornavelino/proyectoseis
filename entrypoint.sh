@@ -1,5 +1,9 @@
 #!/bin/bash
-python /opt/carniceriavv/manage.py makemigrations 
-python /opt/carniceriavv/manage.py migrate
-python /opt/carniceriavv/manage.py collectstatic
-python /opt/carniceriavv/manage.py runserver 0.0.0.0:8000
+set -euo pipefail
+
+python manage.py migrate --noinput
+python manage.py collectstatic --noinput
+
+exec gunicorn project.wsgi:application \
+    --bind 0.0.0.0:8000 \
+    --workers "${GUNICORN_WORKERS:-3}"

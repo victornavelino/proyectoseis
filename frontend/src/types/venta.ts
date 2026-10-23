@@ -1,0 +1,85 @@
+export interface VentaArticulo {
+  id: number
+  articulo: number
+  articulo_codigo: string
+  nombre_articulo: string
+  codigo_articulo: string
+  cantidad_peso: string
+  precio_unitario: string
+  precio_promocion: string
+  total_articulo: string
+}
+
+export type MedioDePago = 'efectivo' | 'tarjeta' | 'cuenta_corriente' | 'transferencia' | 'qr'
+
+export interface Venta {
+  numero_ticket: number
+  fecha: string
+  monto: string
+  descuento: string
+  anulado: boolean
+  cobrada: boolean
+  sucursal: number
+  sucursal_nombre: string
+  cliente: number
+  cliente_nombre: string
+  empleado: number
+  empleado_nombre: string
+  usuario: number
+  usuario_username: string
+  /** Puede tener más de uno: el cobro admite combinar medios en la misma operación (ver
+   * venta.api.VentaViewSet.cobrar_venta). Vacío si todavía no se cobró. */
+  medios_pago: MedioDePago[]
+  articulos: VentaArticulo[]
+}
+
+/** Línea del carrito en el frontend, antes de mandarla al backend. */
+export interface ItemCarrito {
+  /** id local, sólo para la key de React / poder borrar la línea. */
+  clave: string
+  articuloId: number
+  articuloNombre: string
+  articuloCodigo: string
+  esPorPeso: boolean
+  cantidadPeso: string
+}
+
+export interface ItemVentaInput {
+  articulo: number
+  cantidad_peso: string
+}
+
+export interface CrearVentaInput {
+  empleado: number
+  cliente: number
+  articulos: ItemVentaInput[]
+}
+
+export interface ItemPrevisualizado {
+  articulo: number
+  articulo_nombre: string
+  cantidad_peso: string
+  precio_unitario: string
+  precio_promocion: string
+  total_articulo: string
+}
+
+export interface VentaPrevisualizada {
+  articulos: ItemPrevisualizado[]
+  monto: string
+}
+
+/** Ver venta.api.VentaViewSet.resumen_dashboard en el backend. */
+export interface ResumenDashboard {
+  hoy: {
+    total: string
+    cantidad_tickets: number
+    ticket_promedio: string
+    /** Mismo desglose que `medios_pago` de abajo, pero sólo de hoy (no del período de `dias`). */
+    medios_pago: { medio: MedioDePago; total: string }[]
+  }
+  caja: { abierta: false } | { abierta: true; fecha_apertura: string; saldo: string }
+  ventas_por_dia: { fecha: string; total: string }[]
+  top_articulos: { articulo: number; nombre: string; cantidad: string; total: string }[]
+  medios_pago: { medio: MedioDePago; total: string }[]
+}
