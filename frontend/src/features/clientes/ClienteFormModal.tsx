@@ -4,9 +4,11 @@ import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { actualizarCliente, crearCliente, listarListasPrecio } from '../../api/cliente'
 import { mensajeDeError } from '../../api/client'
+import { listarDescuentos } from '../../api/promocion'
 import { buscarPersonaPorDocumento, crearPersona, obtenerPersona } from '../../api/persona'
 import type { Cliente, CondicionIva } from '../../types/cliente'
 import type { ListaPrecio } from '../../types/articulo'
+import type { Descuento } from '../../types/promocion'
 import type { Persona } from '../../types/persona'
 
 interface Props {
@@ -37,6 +39,7 @@ interface FormValores {
   telefono: string
   condicion_iva: CondicionIva
   lista_precio: number | null
+  descuento: number | null
 }
 
 const VALORES_VACIOS: FormValores = {
@@ -49,6 +52,7 @@ const VALORES_VACIOS: FormValores = {
   telefono: '',
   condicion_iva: 'cf',
   lista_precio: null,
+  descuento: null,
 }
 
 /** Alta de cliente: primero busca si ya existe una Persona con ese documento (reutiliza el
@@ -58,6 +62,7 @@ const VALORES_VACIOS: FormValores = {
 export default function ClienteFormModal({ opened, onClose, onGuardado, cliente = null }: Props) {
   const editando = cliente !== null
   const [listasPrecio, setListasPrecio] = useState<ListaPrecio[]>([])
+  const [descuentos, setDescuentos] = useState<Descuento[]>([])
   const [personaEncontrada, setPersonaEncontrada] = useState<Persona | null>(null)
   const [buscando, setBuscando] = useState(false)
   const [yaBuscado, setYaBuscado] = useState(false)
@@ -87,6 +92,7 @@ export default function ClienteFormModal({ opened, onClose, onGuardado, cliente 
           apellido: cliente.persona_detalle.apellido,
           condicion_iva: cliente.condicion_iva,
           lista_precio: cliente.lista_precio,
+          descuento: cliente.descuento,
         })
       } else {
         form.setValues(VALORES_VACIOS)
@@ -96,6 +102,9 @@ export default function ClienteFormModal({ opened, onClose, onGuardado, cliente 
       listarListasPrecio()
         .then((r) => setListasPrecio(r.results))
         .catch(() => notifications.show({ message: 'No se pudieron cargar las listas de precio.', color: 'red' }))
+      listarDescuentos()
+        .then((r) => setDescuentos(r.results))
+        .catch(() => notifications.show({ message: 'No se pudieron cargar los descuentos.', color: 'red' }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opened, cliente])
@@ -137,6 +146,7 @@ export default function ClienteFormModal({ opened, onClose, onGuardado, cliente 
         await actualizarCliente(cliente.id, {
           condicion_iva: valores.condicion_iva,
           lista_precio: valores.lista_precio,
+          descuento: valores.descuento,
         })
         notifications.show({ message: 'Cliente actualizado.', color: 'green' })
       } else {
@@ -157,6 +167,7 @@ export default function ClienteFormModal({ opened, onClose, onGuardado, cliente 
           persona: personaId,
           condicion_iva: valores.condicion_iva,
           lista_precio: valores.lista_precio,
+          descuento: valores.descuento,
         })
         notifications.show({
           message: `Cliente "${clienteCreado.persona_detalle.apellido}, ${clienteCreado.persona_detalle.nombre}" creado.`,
@@ -238,6 +249,15 @@ export default function ClienteFormModal({ opened, onClose, onGuardado, cliente 
               data={listasPrecio.map((l) => ({ value: String(l.id), label: l.nombre }))}
               value={form.values.lista_precio ? String(form.values.lista_precio) : null}
               onChange={(v) => form.setFieldValue('lista_precio', v ? Number(v) : null)}
+            />
+            <Select
+              label="Descuento"
+              description="Opcional — se aplica como % sobre el precio de lista al cobrar"
+              mt="sm"
+              clearable
+              data={descuentos.map((d) => ({ value: String(d.id), label: `${d.nombre} (${d.valor}%)` }))}
+              value={form.values.descuento ? String(form.values.descuento) : null}
+              onChange={(v) => form.setFieldValue('descuento', v ? Number(v) : null)}
             />
           </>
         )}

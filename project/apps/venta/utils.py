@@ -255,10 +255,14 @@ def calcular_precio_venta_articulo(cliente, articulo, sucursal):
     A diferencia de `get_precio_promocion()`/`calcular_total_con_descuento()` (usadas por el
     flujo legacy `guardar_venta_cliente_articulos`, que sigue intacto para Admin/JS), esta
     función nunca acepta un precio ya calculado por el frontend, ni siquiera en la rama de
-    descuento por cumpleaños/empleado — corrige el riesgo señalado en SISTEMA_ACTUAL.md §15.4.
-    Reutiliza (no duplica) `cumpleanio`, `es_empleado`, `get_precio_articulo`,
+    descuento por cumpleaños/cliente.descuento — corrige el riesgo señalado en
+    SISTEMA_ACTUAL.md §15.4. Reutiliza (no duplica) `cumpleanio`, `get_precio_articulo`,
     `get_promociones_activas` y `buscar_precio_articulo_en_promo`, ya existentes en este mismo
     módulo.
+
+    El descuento a aplicar sale de dos lugares, en este orden: "CUMPLEAÑOS" (automático, si hoy
+    es el cumpleaños del cliente) y si no, `cliente.descuento` (el único descuento manual
+    asignable por cliente, ej. "Gastronómicos" o "EMPLEADOS" — ver cliente.models.Cliente).
 
     Pensada para `venta/services.py` (endpoint transaccional nuevo de alta de venta).
 
@@ -275,8 +279,8 @@ def calcular_precio_venta_articulo(cliente, articulo, sucursal):
     descuento = None
     if cumpleanio(cliente.pk):
         descuento = Descuento.objects.filter(nombre='CUMPLEAÑOS').first()
-    if descuento is None and es_empleado(cliente.persona):
-        descuento = Descuento.objects.filter(nombre='EMPLEADOS').first()
+    if descuento is None:
+        descuento = cliente.descuento
 
     if descuento is not None and descuento.valor > 0:
         monto_a_descontar = precio.precio * descuento.valor / 100

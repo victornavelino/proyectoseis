@@ -19,11 +19,11 @@ class ClienteViewSet(
 ):
     # Orden por defecto igual al de la pantalla de venta legacy (venta/views.get_clientes):
     # apellido de la persona asociada.
-    queryset = Cliente.objects.select_related('persona', 'lista_precio').order_by('persona__apellido')
+    queryset = Cliente.objects.select_related('persona', 'lista_precio', 'descuento').order_by('persona__apellido')
     serializer_class = ClienteSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
-    filterset_fields = ('condicion_iva', 'lista_precio')
+    filterset_fields = ('condicion_iva', 'lista_precio', 'descuento')
     search_fields = ('persona__nombre', 'persona__apellido', 'persona__documento_identidad')
     ordering_fields = ('persona__apellido', 'fecha_alta')
 

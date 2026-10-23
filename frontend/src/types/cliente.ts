@@ -10,6 +10,8 @@ export interface Cliente {
   condicion_iva_display: string
   lista_precio: number | null
   lista_precio_nombre: string | null
+  descuento: number | null
+  descuento_nombre: string | null
   fecha_alta: string
 }
 
@@ -17,4 +19,5 @@ export interface ClienteInput {
   persona: number
   condicion_iva: CondicionIva
   lista_precio: number | null
+  descuento: number | null
 }

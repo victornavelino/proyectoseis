@@ -103,6 +103,7 @@ export default function ClientesPage() {
               <Table.Th>Nombre</Table.Th>
               <Table.Th>Condición IVA</Table.Th>
               <Table.Th>Lista de precios</Table.Th>
+              <Table.Th>Descuento</Table.Th>
               <Table.Th />
             </Table.Tr>
           </Table.Thead>
@@ -115,6 +116,7 @@ export default function ClientesPage() {
                 </Table.Td>
                 <Table.Td>{cliente.condicion_iva_display}</Table.Td>
                 <Table.Td>{cliente.lista_precio_nombre ?? '—'}</Table.Td>
+                <Table.Td>{cliente.descuento_nombre ?? '—'}</Table.Td>
                 <Table.Td>
                   <Group gap="xs" wrap="nowrap">
                     <ActionIcon variant="subtle" aria-label="Editar" onClick={() => abrirEdicion(cliente)}>
