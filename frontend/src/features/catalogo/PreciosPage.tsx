@@ -43,7 +43,7 @@ export default function PreciosPage() {
         listar={listarPrecios}
         clave={(p) => p.id}
         porPagina={10}
-        sinBuscador
+        buscarPlaceholder="Buscar por nombre, código o abreviatura del artículo…"
         puedeCrear={puedeEditar}
         nuevoLabel="Nuevo precio"
         onNuevo={() => {

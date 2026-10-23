@@ -125,6 +125,9 @@ class PrecioViewSet(viewsets.ModelViewSet):
     queryset = Precio.objects.select_related('articulo', 'sucursal', 'lista_precio').all()
     serializer_class = PrecioSerializer
     permission_classes = (TienePermisoDeModelo,)
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     # Uso típico del mostrador: GET /api/v1/precio/?articulo=<id>&sucursal=<id>&lista_precio=<id>
     filterset_fields = ('articulo', 'sucursal', 'lista_precio')
+    # Mismos campos que ArticuloViewSet.search_fields, pero atravesando la FK -> permite buscar
+    # un precio por nombre/código/abreviatura del artículo, igual que en la sección Artículos.
+    search_fields = ('articulo__nombre', 'articulo__codigo', 'articulo__abreviatura')

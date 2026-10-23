@@ -113,7 +113,7 @@ export function eliminarListaPrecio(id: number) {
 // --- Precio ---
 export function listarPrecios(opciones: { search?: string; pagina?: number; articulo?: number } = {}) {
   return apiFetch<PaginatedResponse<Precio>>('api/v1/precio/', {
-    params: { page: opciones.pagina ?? 1, page_size: POR_PAGINA, articulo: opciones.articulo },
+    params: { search: opciones.search, page: opciones.pagina ?? 1, page_size: POR_PAGINA, articulo: opciones.articulo },
   })
 }
 export function crearPrecio(datos: PrecioInput) {
