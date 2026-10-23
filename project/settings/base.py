@@ -96,6 +96,18 @@ THIRD_PARTY_APPS = [
     'import_export',
     'softdelete',
     'rangefilter',
+    # `drf_social_oauth2.backends.DjangoOAuth2` (uno de los AUTHENTICATION_BACKENDS) necesita
+    # `social_core.registry.REGISTRY.default_strategy`, que se arma importando
+    # `social_django.utils` -algo que hoy sólo pasa de rebote cuando DRF resuelve
+    # DEFAULT_AUTHENTICATION_CLASSES (SocialAuthentication importa social_django), en el
+    # primer request a la API. Un worker de gunicorn que todavía no sirvió ningún request a la
+    # API -por ejemplo, el primero en recibir tráfico después de un deploy, si le toca una
+    # página del admin antes que la API- no tiene ese import hecho todavía, y cualquier
+    # user.has_perm(...) o login (ambos llaman a get_backends(), que instancia cada backend)
+    # tira DefaultStrategyMissingError -> 500 intermitente en /admin, según a qué worker caiga
+    # el request. Registrar la app acá hace que Django importe social_django (y corra su
+    # monkeypatch) al arrancar el proceso, para TODOS los workers, antes de servir nada.
+    'social_django',
 ]
 
 PROJECT_APPS = [
