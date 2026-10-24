@@ -122,14 +122,19 @@ export async function cerrarSesion(): Promise<void> {
   const tokens = getTokens()
   if (tokens) {
     try {
+      // AbortSignal.timeout: si el servidor de revocación no responde (red lenta, caído), no
+      // nos quedamos esperando para siempre antes de pasar al logout de Django — mejor terminar
+      // el logout local y de sesión en tiempo acotado que dejar al usuario tildado en esta
+      // pantalla sin ninguna señal de que algo está pasando.
       await fetch(OAUTH_CONFIG.revokeUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ token: tokens.refreshToken, client_id: OAUTH_CONFIG.clientId }),
+        signal: AbortSignal.timeout(5000),
       })
     } catch {
-      // Si falla la revocación remota (ej. sin conexión), igual seguimos: mejor terminar el
-      // logout local y de sesión que dejar al usuario tildado en esta pantalla.
+      // Si falla la revocación remota (ej. sin conexión, timeout), igual seguimos: mejor
+      // terminar el logout local y de sesión que dejar al usuario tildado en esta pantalla.
     }
   }
   clearTokens()

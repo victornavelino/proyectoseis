@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   ActionIcon,
@@ -44,6 +44,7 @@ import {
   IconWallet,
   type Icon,
 } from '@tabler/icons-react'
+import { notifications } from '@mantine/notifications'
 import { useAuth } from '../auth/AuthContext'
 
 interface ItemNav {
@@ -257,6 +258,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [opened, { toggle, close }] = useDisclosure()
   const { perfil, logout, tienePermiso } = useAuth()
   const location = useLocation()
+  // cerrarSesion() revoca el token (fetch) y recién después navega -> sin este guard, un click
+  // repetido mientras ese fetch está en vuelo (conexión lenta, o el usuario reintentando porque
+  // no vio efecto inmediato) dispara cerrarSesion() de nuevo en paralelo, y cada llamada termina
+  // en su propio window.location.assign(): la última en ganar la carrera reinicia la navegación
+  // de la anterior, pudiendo cancelarla antes de que el GET a /logout/ llegue a pegarle al
+  // servidor -> la sesión de Django nunca se flushea de verdad, aunque la página sí "refresque".
+  const [cerrandoSesion, setCerrandoSesion] = useState(false)
 
   const itemActual = TODOS_LOS_ITEMS.find((item) => item.to === location.pathname)
     ?? { label: 'Cobro', seccion: 'Ventas' } // /ventas/:id/cobrar no matchea exacto
@@ -316,8 +324,21 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 </Menu.Target>
                 <Menu.Dropdown>
                   <Menu.Label>{perfil.sucursal_nombre ?? 'Sin sucursal'}</Menu.Label>
-                  <Menu.Item leftSection={<IconLogout size={16} />} onClick={() => void logout()}>
-                    Cerrar sesión
+                  <Menu.Item
+                    leftSection={<IconLogout size={16} />}
+                    disabled={cerrandoSesion}
+                    onClick={() => {
+                      if (cerrandoSesion) return
+                      setCerrandoSesion(true)
+                      // El Menu se cierra solo al clickear el item (closeOnItemClick por
+                      // default) -> sin esto, no queda ninguna señal visible de que el click
+                      // surtió efecto mientras cerrarSesion() espera la revocación del token,
+                      // que es justo lo que invitaba a clickear de nuevo.
+                      notifications.show({ id: 'logout', loading: true, message: 'Cerrando sesión…', autoClose: false })
+                      void logout()
+                    }}
+                  >
+                    {cerrandoSesion ? 'Cerrando sesión…' : 'Cerrar sesión'}
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
