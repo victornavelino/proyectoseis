@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from rest_framework.test import APIClient
 
 from caja.models import Adelanto, Caja, Gasto, Ingreso, RetiroEfectivo, Sueldo, TipoGasto, TipoIngreso
@@ -37,6 +38,16 @@ def otra_sucursal():
 @pytest.fixture
 def usuario(sucursal):
     return Usuario.objects.create_user(username='cajera', password='password', sucursal=sucursal)
+
+
+@pytest.fixture
+def encargado(sucursal):
+    # Grupo creado en usuario.migrations.0018_grupo_acceso_completo_staff y resincronizado en
+    # cada post_migrate (usuario.apps.UsuarioConfig.ready) -> trae change_/delete_ de estos
+    # modelos (ver usuario.permisos.MODELOS_ACCESO_COMPLETO).
+    usuario = Usuario.objects.create_user(username='encargada', password='password', sucursal=sucursal, is_staff=True)
+    usuario.groups.add(Group.objects.get(name='Acceso completo (staff)'))
+    return usuario
 
 
 @pytest.fixture
@@ -110,21 +121,61 @@ def test_crear_movimiento_sin_sucursal_falla(recurso, contexto):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('recurso', ENDPOINTS.keys())
-def test_no_se_puede_editar_ni_borrar_un_movimiento_cerrado(recurso, client, usuario, sucursal, contexto):
+def test_no_se_puede_editar_ni_borrar_un_movimiento_cerrado(recurso, client, usuario, encargado, sucursal, contexto):
+    # La edición/borrado la hace un encargado (tiene change_/delete_) -> lo que se prueba acá es
+    # la regla de negocio "cerrado", no el permiso en sí (eso lo cubren los tests de abajo).
     caja = Caja.objects.create(sucursal=sucursal, usuario=usuario, caja_inicial=Decimal('0'))
     url, payload_fn = ENDPOINTS[recurso]
     creado_id = client.post(url, payload_fn(contexto)).data['id']
     modelo = MODELOS[recurso]
     modelo.objects.filter(pk=creado_id).update(cerrado=True)
+    client_encargado = APIClient()
+    client_encargado.force_authenticate(user=encargado)
 
-    resp_patch = client.patch(f'{url}{creado_id}/', {'importe': '1.00'})
-    resp_delete = client.delete(f'{url}{creado_id}/')
+    resp_patch = client_encargado.patch(f'{url}{creado_id}/', {'importe': '1.00'})
+    resp_delete = client_encargado.delete(f'{url}{creado_id}/')
 
     assert resp_patch.status_code == 400
     assert 'cerrado' in resp_patch.data
     assert resp_delete.status_code == 400
     assert 'cerrado' in resp_delete.data
     assert modelo.objects.filter(pk=creado_id).exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('recurso', ENDPOINTS.keys())
+def test_cajero_no_puede_editar_ni_borrar(recurso, client, usuario, sucursal, contexto):
+    """Un cajero (sin change_/delete_) puede crear el movimiento, pero no corregirlo ni
+    borrarlo -incluso estando recién creado, sin cerrar- eso queda para un encargado."""
+    Caja.objects.create(sucursal=sucursal, usuario=usuario, caja_inicial=Decimal('0'))
+    url, payload_fn = ENDPOINTS[recurso]
+    creado_id = client.post(url, payload_fn(contexto)).data['id']
+    modelo = MODELOS[recurso]
+
+    resp_patch = client.patch(f'{url}{creado_id}/', {'importe': '1.00'})
+    resp_delete = client.delete(f'{url}{creado_id}/')
+
+    assert resp_patch.status_code == 403
+    assert resp_delete.status_code == 403
+    assert modelo.objects.get(pk=creado_id).importe != Decimal('1.00')
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('recurso', ENDPOINTS.keys())
+def test_encargado_puede_editar_y_borrar_un_movimiento_abierto(recurso, client, encargado, sucursal, contexto):
+    Caja.objects.create(sucursal=sucursal, usuario=encargado, caja_inicial=Decimal('0'))
+    url, payload_fn = ENDPOINTS[recurso]
+    creado_id = client.post(url, payload_fn(contexto)).data['id']
+    modelo = MODELOS[recurso]
+    client_encargado = APIClient()
+    client_encargado.force_authenticate(user=encargado)
+
+    resp_patch = client_encargado.patch(f'{url}{creado_id}/', {'importe': '1.00'})
+    resp_delete = client_encargado.delete(f'{url}{creado_id}/')
+
+    assert resp_patch.status_code == 200
+    assert resp_delete.status_code == 204
+    assert not modelo.objects.filter(pk=creado_id).exists()
 
 
 @pytest.mark.django_db

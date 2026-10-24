@@ -58,7 +58,7 @@ from caja.utils import (
     calcular_total_ingresos,
 )
 from util.pdf import render_pdf_response
-from util.permissions import TienePermiso, TienePermisoDeModelo
+from util.permissions import PuedeCrearPeroNoEditarNiBorrar, TienePermiso, TienePermisoDeModelo
 
 
 class BancoViewSet(viewsets.ModelViewSet):
@@ -113,8 +113,11 @@ class MovimientoCajaViewSetMixin:
     - `perform_update`/`perform_destroy` bloquean si el movimiento ya quedó `cerrado` (la caja
       donde vive ya se cerró) — mismo criterio que `has_change_permission`/`has_delete_permission`
       de esos Admin para un usuario no superusuario.
+    - Cualquier autenticado puede crear (el cajero carga el movimiento al momento); corregirlo o
+      borrarlo exige el permiso Django `change_`/`delete_` del modelo -ver
+      `util.permissions.PuedeCrearPeroNoEditarNiBorrar`-, reservado a encargados.
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (PuedeCrearPeroNoEditarNiBorrar,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_fields = ('caja',)
     crear_fn = None

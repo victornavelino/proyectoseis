@@ -17,6 +17,19 @@ class TienePermisoDeModelo(DjangoModelPermissions):
     """
 
 
+class PuedeCrearPeroNoEditarNiBorrar(DjangoModelPermissions):
+    """Cualquier autenticado puede leer Y crear (sin pedir `add_<modelo>`); para editar o
+    eliminar sí exige el permiso Django del modelo (`change_<modelo>`/`delete_<modelo>`).
+
+    Pensada para los movimientos de caja "simples" (Ingreso, Gasto, RetiroEfectivo, Sueldo,
+    Adelanto, ver `MovimientoCajaViewSetMixin`): un cajero tiene que poder cargarlos al momento
+    sin que alguien le asigne un permiso puntual para eso -pero corregir o borrar un movimiento
+    ya cargado es una acción más delicada, reservada a encargados (otorgable por grupo desde
+    /admin, mismo mecanismo que `TienePermisoDeModelo`)."""
+
+    perms_map = {**DjangoModelPermissions.perms_map, 'POST': []}
+
+
 class TienePermiso(BasePermission):
     """Exige el permiso Django puntual `codename` (ej. `"venta.add_venta"`), fijo, sin
     derivarlo del modelo del ViewSet ni del método HTTP.

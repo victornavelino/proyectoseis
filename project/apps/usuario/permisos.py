@@ -38,6 +38,14 @@ MODELOS_ACCESO_COMPLETO = (
     ('caja', 'tipoingreso'),
     ('caja', 'tipogasto'),
     ('caja', 'banco'),
+    # Movimientos "simples" de caja (ver caja.api.MovimientoCajaViewSetMixin): cualquier
+    # autenticado puede crearlos, pero corregirlos o borrarlos exige change_/delete_ -> sin
+    # estar acá, "Acceso completo (staff)" se quedaría sin poder editarlos/borrarlos también.
+    ('caja', 'sueldo'),
+    ('caja', 'adelanto'),
+    ('caja', 'ingreso'),
+    ('caja', 'retiroefectivo'),
+    ('caja', 'gasto'),
     ('cuentacorriente', 'cuentacorriente'),
     ('cliente', 'cliente'),
 )
