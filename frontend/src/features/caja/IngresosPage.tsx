@@ -98,8 +98,13 @@ function IngresoFormModal({
 }
 
 export default function IngresosPage() {
-  const { perfil } = useAuth()
+  const { perfil, tienePermiso, puedeBorrar } = useAuth()
   const puedeCargar = !!perfil?.sucursal
+  // Crear queda abierto a cualquier cajero con sucursal (ver caja.api.MovimientoCajaViewSetMixin
+  // -el backend no exige add_ingreso-); editar/borrar sí exige el permiso puntual, reservado a
+  // encargados (PuedeCrearPeroNoEditarNiBorrar).
+  const puedeEditar = tienePermiso('caja.change_ingreso')
+  const puedeEliminar = puedeBorrar('caja.ingreso')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<Ingreso | null>(null)
   const [recarga, setRecarga] = useState(0)
@@ -154,23 +159,27 @@ export default function IngresosPage() {
           },
         ]}
         accionesHeader={
-          puedeCargar
+          puedeEditar || puedeEliminar
             ? (i) =>
                 i.cerrado ? null : (
                   <Group gap={4} wrap="nowrap">
-                    <ActionIcon
-                      variant="subtle"
-                      aria-label="Editar"
-                      onClick={() => {
-                        setEditando(i)
-                        setModalAbierto(true)
-                      }}
-                    >
-                      <IconEdit size={16} />
-                    </ActionIcon>
-                    <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(i)}>
-                      <IconTrash size={16} />
-                    </ActionIcon>
+                    {puedeEditar && (
+                      <ActionIcon
+                        variant="subtle"
+                        aria-label="Editar"
+                        onClick={() => {
+                          setEditando(i)
+                          setModalAbierto(true)
+                        }}
+                      >
+                        <IconEdit size={16} />
+                      </ActionIcon>
+                    )}
+                    {puedeEliminar && (
+                      <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(i)}>
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    )}
                   </Group>
                 )
             : undefined

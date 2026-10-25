@@ -77,8 +77,10 @@ function RetiroEfectivoFormModal({
 }
 
 export default function RetirosEfectivoPage() {
-  const { perfil } = useAuth()
+  const { perfil, tienePermiso, puedeBorrar } = useAuth()
   const puedeCargar = !!perfil?.sucursal
+  const puedeEditar = tienePermiso('caja.change_retiroefectivo')
+  const puedeEliminar = puedeBorrar('caja.retiroefectivo')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<RetiroEfectivo | null>(null)
   const [recarga, setRecarga] = useState(0)
@@ -125,23 +127,27 @@ export default function RetirosEfectivoPage() {
           },
         ]}
         accionesHeader={
-          puedeCargar
+          puedeEditar || puedeEliminar
             ? (r) =>
                 r.cerrado ? null : (
                   <Group gap={4} wrap="nowrap">
-                    <ActionIcon
-                      variant="subtle"
-                      aria-label="Editar"
-                      onClick={() => {
-                        setEditando(r)
-                        setModalAbierto(true)
-                      }}
-                    >
-                      <IconEdit size={16} />
-                    </ActionIcon>
-                    <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(r)}>
-                      <IconTrash size={16} />
-                    </ActionIcon>
+                    {puedeEditar && (
+                      <ActionIcon
+                        variant="subtle"
+                        aria-label="Editar"
+                        onClick={() => {
+                          setEditando(r)
+                          setModalAbierto(true)
+                        }}
+                      >
+                        <IconEdit size={16} />
+                      </ActionIcon>
+                    )}
+                    {puedeEliminar && (
+                      <ActionIcon color="red" variant="subtle" aria-label="Eliminar" onClick={() => void eliminar(r)}>
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    )}
                   </Group>
                 )
             : undefined
