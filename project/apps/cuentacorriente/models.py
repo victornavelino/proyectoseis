@@ -5,7 +5,7 @@ from django.db import models
 from django.http import request
 
 from caja.models import Caja
-from cuentacorriente.constants import TIPOS_MOVIMIENTO_CTA_CTE, CREDITO
+from cuentacorriente.constants import MEDIOS_PAGO_CTA_CTE, TIPOS_MOVIMIENTO_CTA_CTE, CREDITO
 
 
 class CuentaCorriente(models.Model):
@@ -47,6 +47,10 @@ class MovimientoCuentaCorriente(models.Model):
                                   verbose_name='Importe')
     fecha = models.DateTimeField(auto_now=True, verbose_name='Fecha de movimiento')
     tipo = models.CharField(max_length=1,choices=TIPOS_MOVIMIENTO_CTA_CTE, verbose_name='Tipo de movimiento')
+    # Sólo tiene sentido en un Crédito (con qué pagó el cliente) -queda en blanco en un Débito.
+    medio_pago = models.CharField(
+        max_length=20, choices=MEDIOS_PAGO_CTA_CTE, blank=True, null=True, verbose_name='Medio de pago',
+    )
     usuario = models.ForeignKey('usuario.Usuario', on_delete=models.PROTECT, verbose_name='Usuario')
     venta = models.ForeignKey('venta.Venta', on_delete=models.PROTECT, null=True, verbose_name='Venta relacionada')
     observaciones = models.CharField(max_length=40, verbose_name='Observaciones', null=True)

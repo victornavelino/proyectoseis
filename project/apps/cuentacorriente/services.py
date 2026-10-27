@@ -13,7 +13,7 @@ DESCRIPCION_TIPO_INGRESO_CC = 'Pago de cuenta corriente'
 
 
 @transaction.atomic
-def crear_movimiento_cuenta_corriente(*, cuenta, tipo, importe, usuario, venta=None, observaciones=None):
+def crear_movimiento_cuenta_corriente(*, cuenta, tipo, importe, usuario, venta=None, observaciones=None, medio_pago=None):
     """Alta de un movimiento de cuenta corriente.
 
     La cuenta corriente funciona como una línea de crédito: el saldo (débitos - créditos) puede
@@ -25,7 +25,10 @@ def crear_movimiento_cuenta_corriente(*, cuenta, tipo, importe, usuario, venta=N
     Un Crédito es plata real que el cliente puso en el mostrador -> además de anotarse acá,
     genera un Ingreso en la caja de la sucursal del usuario (ver `caja.services.crear_ingreso`);
     por eso cargar un crédito exige que haya una caja abierta, igual que cualquier otro ingreso
-    (`CajaCerradaError`/`SinSucursalError` se propagan tal cual desde ahí).
+    (`CajaCerradaError`/`SinSucursalError` se propagan tal cual desde ahí). `medio_pago` (con qué
+    pagó el cliente: efectivo/transferencia/QR) se exige en el serializer sólo para un Crédito
+    -acá se guarda igual, por si se llama a esta función directo sin pasar por esa validación-;
+    para un Débito se descarta, no tiene sentido (no es plata entrando).
     """
     cuenta = CuentaCorriente.objects.select_for_update().get(pk=cuenta.pk)
 
@@ -40,6 +43,7 @@ def crear_movimiento_cuenta_corriente(*, cuenta, tipo, importe, usuario, venta=N
 
     movimiento = MovimientoCuentaCorriente.objects.create(
         cuenta=cuenta, tipo=tipo, importe=importe, usuario=usuario, venta=venta, observaciones=observaciones,
+        medio_pago=medio_pago if tipo == CREDITO else None,
     )
 
     if tipo == CREDITO:

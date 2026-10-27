@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
+from cuentacorriente.constants import CREDITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from cuentacorriente.utils import calcular_saldo_cc
 
@@ -41,6 +42,7 @@ class MovimientoCuentaCorrienteSerializer(serializers.ModelSerializer):
         source='cuenta.cliente.persona.obtener_nombre_completo', read_only=True
     )
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+    medio_pago_display = serializers.CharField(source='get_medio_pago_display', read_only=True, default=None)
     usuario_username = serializers.CharField(source='usuario.username', read_only=True)
 
     class Meta:
@@ -53,6 +55,8 @@ class MovimientoCuentaCorrienteSerializer(serializers.ModelSerializer):
             'fecha',
             'tipo',
             'tipo_display',
+            'medio_pago',
+            'medio_pago_display',
             'usuario',
             'usuario_username',
             'venta',
@@ -67,6 +71,13 @@ class MovimientoCuentaCorrienteSerializer(serializers.ModelSerializer):
         if value <= 0:
             raise serializers.ValidationError('El importe debe ser mayor que cero.')
         return value
+
+    def validate(self, data):
+        # Sólo tiene sentido en un Crédito (con qué pagó el cliente) -un Débito es un consumo a
+        # cuenta, no hay plata entrando para la que elegir medio de pago-.
+        if data.get('tipo') == CREDITO and not data.get('medio_pago'):
+            raise serializers.ValidationError({'medio_pago': 'Elegí con qué medio de pago se cargó el crédito.'})
+        return data
     # El tope de la cuenta (para un Débito) se valida en cuentacorriente.services
     # .crear_movimiento_cuenta_corriente -no acá-, porque ese mismo chequeo también lo necesita
     # caja.services.cobrar_venta al pagar una venta con este medio; mantenerlo en un solo lugar
