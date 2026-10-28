@@ -6,6 +6,7 @@ import { mensajeDeError } from '../../api/client'
 import type { CuentaCorriente, MedioPagoCC, MovimientoCuentaCorriente, TipoMovimientoCC } from '../../types/cuentacorriente'
 import { MEDIOS_PAGO_INFO } from '../ventas/mediosPago'
 import { formatearMonto } from '../ventas/dinero'
+import { etiquetaSaldo } from './saldo'
 
 const OPCIONES_MEDIO_PAGO: { value: MedioPagoCC; label: string }[] = [
   { value: 'efectivo', label: MEDIOS_PAGO_INFO.efectivo.etiqueta },
@@ -44,9 +45,19 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
   }
 
   useEffect(() => {
-    if (opened) {
+    if (opened && cuenta) {
       cargar()
+      // El `cuenta` que pasa el padre es la fila tal como la trajo el último listado -si hubo
+      // ventas en cuenta corriente desde entonces (muy probable: el cajero las carga desde la
+      // pantalla de venta, no desde acá), ese saldo queda viejo. Se pisa con uno fresco apenas
+      // se abre, no sólo después de registrar un movimiento desde este modal.
       setCuentaActual(cuenta)
+      obtenerCuentaCorriente(cuenta.id)
+        .then(setCuentaActual)
+        .catch(() => {
+          // si falla, nos quedamos con el `cuenta` del padre (ya seteado arriba) antes que
+          // dejar el modal sin nada que mostrar.
+        })
       setTipo('C')
       setImporte('')
       setMedioPago(null)
@@ -92,12 +103,18 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
 
   if (!cuenta) return null
   const datos = cuentaActual ?? cuenta
+  const etiqueta = etiquetaSaldo(datos.saldo)
 
   return (
     <Modal opened={opened} onClose={onClose} title={cuenta.cliente_nombre} size="lg">
       <Group justify="space-between" mb="md">
         <Text>
-          Saldo: <strong>{formatearMonto(datos.saldo)}</strong>
+          Saldo: <strong>{formatearMonto(datos.saldo)}</strong>{' '}
+          {etiqueta && (
+            <Text component="span" c={etiqueta.color} size="sm" fw={600}>
+              {etiqueta.texto}
+            </Text>
+          )}
         </Text>
         <Text c="dimmed" size="sm">
           Tope: {formatearMonto(datos.tope)}

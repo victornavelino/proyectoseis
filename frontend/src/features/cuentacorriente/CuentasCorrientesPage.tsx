@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ActionIcon, Badge } from '@mantine/core'
+import { ActionIcon, Badge, Group, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconEdit, IconEye, IconTrash } from '@tabler/icons-react'
 import { eliminarCuentaCorriente, listarCuentasCorrientes } from '../../api/cuentacorriente'
@@ -10,6 +10,7 @@ import type { CuentaCorriente } from '../../types/cuentacorriente'
 import CuentaCorrienteDetalleModal from './CuentaCorrienteDetalleModal'
 import CuentaCorrienteFormModal from './CuentaCorrienteFormModal'
 import { formatearMonto } from '../ventas/dinero'
+import { etiquetaSaldo } from './saldo'
 
 export default function CuentasCorrientesPage() {
   const { puedeEscribir, puedeBorrar } = useAuth()
@@ -49,7 +50,22 @@ export default function CuentasCorrientesPage() {
         disparadorRecarga={recarga}
         columnas={[
           { header: 'Cliente', render: (c) => c.cliente_nombre },
-          { header: 'Saldo', render: (c) => formatearMonto(c.saldo) },
+          {
+            header: 'Saldo',
+            render: (c) => {
+              const etiqueta = etiquetaSaldo(c.saldo)
+              return (
+                <Group gap={6} wrap="nowrap">
+                  <Text size="sm">{formatearMonto(c.saldo)}</Text>
+                  {etiqueta && (
+                    <Text size="xs" c={etiqueta.color} fw={600}>
+                      {etiqueta.texto}
+                    </Text>
+                  )}
+                </Group>
+              )
+            },
+          },
           { header: 'Tope', render: (c) => formatearMonto(c.tope) },
           {
             header: 'Estado',
