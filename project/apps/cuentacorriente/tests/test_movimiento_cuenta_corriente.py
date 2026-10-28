@@ -4,7 +4,8 @@ import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-from caja.models import Caja, Ingreso
+from caja.models import Caja, Ingreso, PagoQr, PagoTransferencia
+from caja.utils import calcular_saldo_caja
 from cliente.models import Cliente
 from cuentacorriente.constants import CREDITO, DEBITO
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
@@ -82,6 +83,40 @@ def test_credito_sin_caja_abierta_se_rechaza(client, cuenta):
     assert response.status_code == 400
     assert not MovimientoCuentaCorriente.objects.filter(cuenta=cuenta).exists()
     assert not Ingreso.objects.exists()
+
+
+@pytest.mark.django_db
+def test_credito_por_transferencia_no_genera_ingreso_sino_pago_transferencia(client, cuenta, sucursal, usuario):
+    """Regresión: antes CUALQUIER crédito -sin importar el medio- generaba un Ingreso genérico,
+    inflando el efectivo esperado de caja con plata que en realidad nunca entró en billetes."""
+    caja = Caja.objects.create(sucursal=sucursal, usuario=usuario, caja_inicial=Decimal('0'))
+
+    response = client.post('/api/v1/movimientocuentacorriente/', {
+        'cuenta': cuenta.id, 'tipo': CREDITO, 'importe': '5000.00', 'medio_pago': 'transferencia',
+    }, format='json')
+
+    assert response.status_code == 201, response.data
+    assert not Ingreso.objects.exists()
+    pago = PagoTransferencia.objects.get(documento_identidad=cuenta.cliente.persona.documento_identidad)
+    assert pago.importe == Decimal('5000.00')
+    assert pago.venta is None
+    # No es efectivo -> no tiene que contar para el arqueo de la caja.
+    assert calcular_saldo_caja(caja) == Decimal('0')
+
+
+@pytest.mark.django_db
+def test_credito_por_qr_no_genera_ingreso_sino_pago_qr(client, cuenta, sucursal, usuario):
+    caja = Caja.objects.create(sucursal=sucursal, usuario=usuario, caja_inicial=Decimal('0'))
+
+    response = client.post('/api/v1/movimientocuentacorriente/', {
+        'cuenta': cuenta.id, 'tipo': CREDITO, 'importe': '5000.00', 'medio_pago': 'qr',
+    }, format='json')
+
+    assert response.status_code == 201, response.data
+    assert not Ingreso.objects.exists()
+    pago = PagoQr.objects.get(documento_identidad=cuenta.cliente.persona.documento_identidad)
+    assert pago.importe == Decimal('5000.00')
+    assert calcular_saldo_caja(caja) == Decimal('0')
 
 
 @pytest.mark.django_db

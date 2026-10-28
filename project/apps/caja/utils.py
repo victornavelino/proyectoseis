@@ -5,8 +5,8 @@ from django.db.models import Sum
 from caja.constants import INGRESO, EGRESO
 from caja.models import MovimientoCaja, CobroVenta, Caja, PagoQr, PagoTransferencia, PlanTarjetaDeCredito, CuponPagoTarjeta, TipoIngreso, Ingreso, \
     Sueldo, Adelanto, RetiroEfectivo, Gasto
-from cuentacorriente.constants import DEBITO, CREDITO
-from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
+from cuentacorriente.constants import DEBITO
+from cuentacorriente.models import MovimientoCuentaCorriente
 from venta.models import Venta
 
 
@@ -106,6 +106,11 @@ def guardar_cupon_transferencia(pago_transferencia, numero_ticket):
 
 
 def calcular_ingresos_caja(caja):
+    # Ya no hay una fila aparte "Cobranzas Cta Corriente": un Crédito de cuenta corriente deja un
+    # Ingreso acá (si fue en efectivo -ver cuentacorriente.services._registrar_cobro_en_caja-) o
+    # un PagoTransferencia/PagoQr (si no), igual que un pago de venta. Mostrarlo aparte
+    # duplicaba el mismo cobro: una vez acá (leyendo caja.Ingreso) y otra vez leyendo
+    # MovimientoCuentaCorriente directamente, inflando "TOTAL INGRESOS" con el doble de lo cobrado.
     results = []
     total_ingreso_ventas = CobroVenta.objects.filter(caja=caja, tipo=INGRESO).aggregate(Sum('importe'))[
                                'importe__sum'] or 0.00
@@ -114,17 +119,6 @@ def calcular_ingresos_caja(caja):
         "importe": str(total_ingreso_ventas)
     }
     results.append(json_valores)
-    #######
-    total_ingreso_cobranza_cc = MovimientoCuentaCorriente.objects.filter(
-        fecha__gte=caja.fecha_inicio,
-        fecha__lte=caja.fecha_fin, tipo=CREDITO).aggregate(
-        Sum('importe'))['importe__sum'] or 0.00
-    json_valores = {
-        "concepto": "Cobranzas Cta Corriente",
-        "importe": str(total_ingreso_cobranza_cc)
-    }
-    results.append(json_valores)
-    #########
     total_ingreso_varios = Ingreso.objects.filter(caja=caja, tipo=INGRESO).aggregate(Sum('importe'))[
                                'importe__sum'] or 0.00
     json_valores = {
@@ -139,21 +133,15 @@ def calcular_ingresos_caja(caja):
 
 
 def calcular_total_ingresos(caja):
-    ingreso_caja = Decimal(0.0)
+    # Sólo MovimientoCaja (Ventas + Ingresos Varios, ver calcular_ingresos_caja de arriba): ya
+    # no se le suma aparte "cobranza cta corriente" -esa plata, si fue en efectivo, ya está
+    # contada acá como Ingreso; si fue por transferencia/QR, nunca tocó el efectivo de caja y no
+    # va en este total (ver cuentacorriente.services._registrar_cobro_en_caja).
     total_movimientos_ingreso = MovimientoCaja.objects.filter(caja=caja, tipo=INGRESO).aggregate(Sum('importe'))[
                                'importe__sum'] or Decimal(0.0)
-
-    #for i in movimientos_ingreso:
-    #    ingreso_caja = ingreso_caja + i.importe
-    ###le sumamos los ingreso por credito en CC
-    total_ingreso_cobranza_cc = MovimientoCuentaCorriente.objects.filter(
-        fecha__gte=caja.fecha_inicio,
-        fecha__lte=caja.fecha_fin, tipo=CREDITO).aggregate(
-        Sum('importe'))['importe__sum'] or Decimal(0.0)
-    ingreso_caja = total_ingreso_cobranza_cc + total_movimientos_ingreso
     json_valores = {
         "concepto": "TOTAL INGRESOS",
-        "importe": str(ingreso_caja)
+        "importe": str(total_movimientos_ingreso)
     }
     total_ingreso = json.dumps(json_valores)
     total_ingreso = json.loads(total_ingreso)
