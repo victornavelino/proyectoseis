@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from cuentacorriente.constants import CREDITO
+from cuentacorriente.constants import CREDITO, QR
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from cuentacorriente.utils import calcular_saldo_cc
 
@@ -43,6 +43,7 @@ class MovimientoCuentaCorrienteSerializer(serializers.ModelSerializer):
     )
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     medio_pago_display = serializers.CharField(source='get_medio_pago_display', read_only=True, default=None)
+    banco_nombre = serializers.CharField(source='banco.nombre', read_only=True, default=None)
     usuario_username = serializers.CharField(source='usuario.username', read_only=True)
 
     class Meta:
@@ -57,6 +58,8 @@ class MovimientoCuentaCorrienteSerializer(serializers.ModelSerializer):
             'tipo_display',
             'medio_pago',
             'medio_pago_display',
+            'banco',
+            'banco_nombre',
             'usuario',
             'usuario_username',
             'venta',
@@ -77,6 +80,11 @@ class MovimientoCuentaCorrienteSerializer(serializers.ModelSerializer):
         # cuenta, no hay plata entrando para la que elegir medio de pago-.
         if data.get('tipo') == CREDITO and not data.get('medio_pago'):
             raise serializers.ValidationError({'medio_pago': 'Elegí con qué medio de pago se cargó el crédito.'})
+        # Mismo criterio que venta.CobroVentaPage: en QR el cajero tiene que poder identificar el
+        # pago sí o sí -> banco obligatorio. En transferencia queda opcional (dato que puede no
+        # tenerse a mano en el momento).
+        if data.get('medio_pago') == QR and not data.get('banco'):
+            raise serializers.ValidationError({'banco': 'Elegí con qué banco se recibió el pago por QR.'})
         return data
     # El tope de la cuenta (para un Débito) se valida en cuentacorriente.services
     # .crear_movimiento_cuenta_corriente -no acá-, porque ese mismo chequeo también lo necesita

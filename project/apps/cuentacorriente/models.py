@@ -51,6 +51,10 @@ class MovimientoCuentaCorriente(models.Model):
     medio_pago = models.CharField(
         max_length=20, choices=MEDIOS_PAGO_CTA_CTE, blank=True, null=True, verbose_name='Medio de pago',
     )
+    # Sólo aplica con medio_pago transferencia/qr (igual que PagoTransferencia/PagoQr de venta).
+    banco = models.ForeignKey(
+        'caja.Banco', on_delete=models.PROTECT, null=True, blank=True, verbose_name='Banco',
+    )
     usuario = models.ForeignKey('usuario.Usuario', on_delete=models.PROTECT, verbose_name='Usuario')
     venta = models.ForeignKey('venta.Venta', on_delete=models.PROTECT, null=True, verbose_name='Venta relacionada')
     observaciones = models.CharField(max_length=40, verbose_name='Observaciones', null=True)

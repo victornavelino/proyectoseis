@@ -13,7 +13,9 @@ DESCRIPCION_TIPO_INGRESO_CC = 'Pago de cuenta corriente'
 
 
 @transaction.atomic
-def crear_movimiento_cuenta_corriente(*, cuenta, tipo, importe, usuario, venta=None, observaciones=None, medio_pago=None):
+def crear_movimiento_cuenta_corriente(
+    *, cuenta, tipo, importe, usuario, venta=None, observaciones=None, medio_pago=None, banco=None,
+):
     """Alta de un movimiento de cuenta corriente.
 
     La cuenta corriente funciona como una línea de crédito: el saldo (débitos - créditos) puede
@@ -49,15 +51,19 @@ def crear_movimiento_cuenta_corriente(*, cuenta, tipo, importe, usuario, venta=N
     movimiento = MovimientoCuentaCorriente.objects.create(
         cuenta=cuenta, tipo=tipo, importe=importe, usuario=usuario, venta=venta, observaciones=observaciones,
         medio_pago=medio_pago if tipo == CREDITO else None,
+        banco=banco if tipo == CREDITO else None,
     )
 
     if tipo == CREDITO:
-        _registrar_cobro_en_caja(cuenta=cuenta, importe=importe, usuario=usuario, medio_pago=medio_pago, observaciones=observaciones)
+        _registrar_cobro_en_caja(
+            cuenta=cuenta, importe=importe, usuario=usuario, medio_pago=medio_pago, banco=banco,
+            observaciones=observaciones,
+        )
 
     return movimiento
 
 
-def _registrar_cobro_en_caja(*, cuenta, importe, usuario, medio_pago, observaciones):
+def _registrar_cobro_en_caja(*, cuenta, importe, usuario, medio_pago, banco, observaciones):
     # import diferido: evita ciclo caja <-> cuentacorriente (caja.services importa
     # cuentacorriente.services para el lado Débito de cobrar_venta).
     from caja.models import PagoQr, PagoTransferencia, TipoIngreso
@@ -77,12 +83,12 @@ def _registrar_cobro_en_caja(*, cuenta, importe, usuario, medio_pago, observacio
     if medio_pago == TRANSFERENCIA:
         PagoTransferencia.objects.create(
             importe=importe, nombre=persona.nombre, apellido=persona.apellido,
-            documento_identidad=persona.documento_identidad, observaciones=observaciones,
+            documento_identidad=persona.documento_identidad, banco=banco, observaciones=observaciones,
         )
     elif medio_pago == QR:
         PagoQr.objects.create(
             importe=importe, nombre=persona.nombre, apellido=persona.apellido,
-            documento_identidad=persona.documento_identidad, observaciones=observaciones,
+            documento_identidad=persona.documento_identidad, banco=banco, observaciones=observaciones,
         )
     else:
         assert medio_pago in (EFECTIVO, None)

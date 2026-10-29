@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Badge, Button, Group, Modal, NumberInput, Select, SegmentedControl, Table, Text, TextInput } from '@mantine/core'
+import { Badge, Button, Group, Modal, NumberInput, Select, SegmentedControl, Stack, Table, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { listarTodosLosBancos } from '../../api/caja'
 import { crearMovimientoCuentaCorriente, listarMovimientosCuentaCorriente, obtenerCuentaCorriente } from '../../api/cuentacorriente'
 import { mensajeDeError } from '../../api/client'
+import type { Banco } from '../../types/caja'
 import type { CuentaCorriente, MedioPagoCC, MovimientoCuentaCorriente, TipoMovimientoCC } from '../../types/cuentacorriente'
 import { MEDIOS_PAGO_INFO } from '../ventas/mediosPago'
 import { formatearMonto } from '../ventas/dinero'
@@ -27,6 +29,8 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
   const [tipo, setTipo] = useState<TipoMovimientoCC>('C')
   const [importe, setImporte] = useState('')
   const [medioPago, setMedioPago] = useState<MedioPagoCC | null>(null)
+  const [banco, setBanco] = useState<number | null>(null)
+  const [bancos, setBancos] = useState<Banco[]>([])
   const [observaciones, setObservaciones] = useState('')
   const [guardando, setGuardando] = useState(false)
   // Saldo/disponible propios del modal, no el `cuenta` del padre: ese prop queda desactualizado
@@ -61,22 +65,40 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
       setTipo('C')
       setImporte('')
       setMedioPago(null)
+      setBanco(null)
       setObservaciones('')
+      if (bancos.length === 0) {
+        listarTodosLosBancos()
+          .then((r) => setBancos(r.results))
+          .catch(() => notifications.show({ message: 'No se pudieron cargar los bancos.', color: 'red' }))
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opened, cuenta])
 
-  // El medio de pago sólo aplica a un Crédito (ver cuentacorriente.serializers
-  // .MovimientoCuentaCorrienteSerializer.validate) -se limpia al pasar a Débito para no mandar
+  // El medio de pago (y el banco) sólo aplican a un Crédito (ver cuentacorriente.serializers
+  // .MovimientoCuentaCorrienteSerializer.validate) -se limpian al pasar a Débito para no mandar
   // un valor que después el backend ignora igual, pero que confundiría si quedara pisado.
   const cambiarTipo = (v: string) => {
     setTipo(v as TipoMovimientoCC)
-    if (v === 'D') setMedioPago(null)
+    if (v === 'D') {
+      setMedioPago(null)
+      setBanco(null)
+    }
   }
+
+  const cambiarMedioPago = (v: string | null) => {
+    setMedioPago(v as MedioPagoCC | null)
+    if (v !== 'qr' && v !== 'transferencia') setBanco(null)
+  }
+
+  // En QR el banco es obligatorio (mismo criterio que al cobrar una venta: hace falta poder
+  // identificar el pago); en transferencia queda opcional.
+  const faltaBanco = medioPago === 'qr' && !banco
 
   const agregarMovimiento = async () => {
     if (!cuenta || !importe) return
-    if (tipo === 'C' && !medioPago) return
+    if (tipo === 'C' && (!medioPago || faltaBanco)) return
     setGuardando(true)
     try {
       await crearMovimientoCuentaCorriente({
@@ -84,11 +106,13 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
         tipo,
         importe,
         medio_pago: tipo === 'C' ? medioPago : null,
+        banco: tipo === 'C' ? banco : null,
         observaciones: observaciones || null,
       })
       notifications.show({ message: 'Movimiento registrado.', color: 'green' })
       setImporte('')
       setMedioPago(null)
+      setBanco(null)
       setObservaciones('')
       cargar()
       void obtenerCuentaCorriente(cuenta.id).then(setCuentaActual)
@@ -106,7 +130,7 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
   const etiqueta = etiquetaSaldo(datos.saldo)
 
   return (
-    <Modal opened={opened} onClose={onClose} title={cuenta.cliente_nombre} size="lg">
+    <Modal opened={opened} onClose={onClose} title={cuenta.cliente_nombre} size="xl">
       <Group justify="space-between" mb="md">
         <Text>
           Saldo: <strong>{formatearMonto(datos.saldo)}</strong>{' '}
@@ -127,30 +151,46 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
         </Text>
       </Group>
 
-      <Group align="flex-end" mb="md">
+      <Stack gap="sm" mb="md">
         <SegmentedControl
           value={tipo}
           onChange={cambiarTipo}
           data={[
-            { label: 'Pago (crédito)', value: 'C' },
+            { label: 'Pagos del Cliente', value: 'C' },
             { label: 'Consumo (débito)', value: 'D' },
           ]}
         />
-        <NumberInput placeholder="Importe" decimalScale={2} min={0} value={importe} onChange={(v) => setImporte(String(v))} />
-        {tipo === 'C' && (
-          <Select
-            placeholder="Medio de pago"
-            data={OPCIONES_MEDIO_PAGO}
-            value={medioPago}
-            onChange={(v) => setMedioPago(v as MedioPagoCC | null)}
-            w={160}
-          />
-        )}
-        <TextInput placeholder="Observaciones" value={observaciones} onChange={(e) => setObservaciones(e.currentTarget.value)} style={{ flex: 1 }} />
-        <Button loading={guardando} disabled={!importe || (tipo === 'C' && !medioPago)} onClick={() => void agregarMovimiento()}>
-          Registrar
-        </Button>
-      </Group>
+        <Group align="flex-end" wrap="wrap">
+          <NumberInput placeholder="Importe" decimalScale={2} min={0} value={importe} onChange={(v) => setImporte(String(v))} />
+          {tipo === 'C' && (
+            <Select
+              placeholder="Medio de pago"
+              data={OPCIONES_MEDIO_PAGO}
+              value={medioPago}
+              onChange={cambiarMedioPago}
+              w={160}
+            />
+          )}
+          {tipo === 'C' && (medioPago === 'qr' || medioPago === 'transferencia') && (
+            <Select
+              placeholder={medioPago === 'qr' ? 'Banco (obligatorio)' : 'Banco (opcional)'}
+              data={bancos.map((b) => ({ value: String(b.id), label: b.nombre }))}
+              value={banco ? String(banco) : null}
+              onChange={(v) => setBanco(v ? Number(v) : null)}
+              clearable
+              w={180}
+            />
+          )}
+          <TextInput placeholder="Observaciones" value={observaciones} onChange={(e) => setObservaciones(e.currentTarget.value)} style={{ flex: 1, minWidth: 180 }} />
+          <Button
+            loading={guardando}
+            disabled={!importe || (tipo === 'C' && (!medioPago || faltaBanco))}
+            onClick={() => void agregarMovimiento()}
+          >
+            Registrar
+          </Button>
+        </Group>
+      </Stack>
 
       <Table striped verticalSpacing="xs">
         <Table.Thead>
@@ -175,9 +215,16 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
               <Table.Td>{formatearMonto(m.importe)}</Table.Td>
               <Table.Td>
                 {m.medio_pago ? (
-                  <Badge color={MEDIOS_PAGO_INFO[m.medio_pago].color} variant="light">
-                    {m.medio_pago_display}
-                  </Badge>
+                  <Group gap={4} wrap="nowrap">
+                    <Badge color={MEDIOS_PAGO_INFO[m.medio_pago].color} variant="light">
+                      {m.medio_pago_display}
+                    </Badge>
+                    {m.banco_nombre && (
+                      <Text size="xs" c="dimmed">
+                        ({m.banco_nombre})
+                      </Text>
+                    )}
+                  </Group>
                 ) : (
                   '—'
                 )}

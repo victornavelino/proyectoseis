@@ -31,6 +31,8 @@ export interface MovimientoCuentaCorriente {
   tipo_display: string
   medio_pago: MedioPagoCC | null
   medio_pago_display: string | null
+  banco: number | null
+  banco_nombre: string | null
   usuario: number
   usuario_username: string
   venta: number | null
@@ -41,5 +43,6 @@ export interface MovimientoCuentaCorrienteInput {
   importe: string
   tipo: TipoMovimientoCC
   medio_pago: MedioPagoCC | null
+  banco: number | null
   observaciones: string | null
 }
