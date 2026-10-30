@@ -31,6 +31,14 @@ class Cliente(models.Model):
 
     lista_precio = models.ForeignKey(ListaPrecio, on_delete=models.CASCADE, null=True, verbose_name='Lista de Precios')
 
+    # Un único descuento manual por cliente (ej. "Gastronómicos", "EMPLEADOS"), aplicado como %
+    # sobre el precio de lista_precio al cobrar — ver venta.utils.calcular_precio_venta_articulo.
+    # "CUMPLEAÑOS" queda aparte como caso automático (depende de la fecha, no tiene sentido
+    # asignarlo a mano acá).
+    descuento = models.ForeignKey(
+        'promocion.Descuento', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Descuento',
+    )
+
     fecha_alta = models.DateField(auto_now=True)
 
     def __str__(self):

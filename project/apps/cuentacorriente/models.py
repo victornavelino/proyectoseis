@@ -5,7 +5,7 @@ from django.db import models
 from django.http import request
 
 from caja.models import Caja
-from cuentacorriente.constants import TIPOS_MOVIMIENTO_CTA_CTE, CREDITO
+from cuentacorriente.constants import MEDIOS_PAGO_CTA_CTE, TIPOS_MOVIMIENTO_CTA_CTE, CREDITO
 
 
 class CuentaCorriente(models.Model):
@@ -14,8 +14,18 @@ class CuentaCorriente(models.Model):
         verbose_name_plural = 'Cuentas Corrientes'
         ordering = ['-id']
 
-    cliente = models.ForeignKey('cliente.Cliente', on_delete=models.PROTECT, verbose_name='Cliente')
-    tope = models.DecimalField(max_digits=12, decimal_places=2, default=100000,
+    # unique=True: un cliente tiene a lo sumo una cuenta corriente en toda su historia — para
+    # cerrarla/reabrirla se usa `activa`, nunca se crea una segunda fila (ver venta.api
+    # VentaViewSet.imprimir, que asumía esto y rompía con MultipleObjectsReturned cuando había
+    # dos filas `activa=True` para el mismo cliente).
+    cliente = models.ForeignKey(
+        'cliente.Cliente', on_delete=models.PROTECT, verbose_name='Cliente', unique=True,
+        error_messages={'unique': 'El cliente ya tiene una cuenta corriente!'},
+    )
+    # Una cuenta nueva arranca sin crédito (tope $0) -> hay que asignárselo a mano a cada
+    # cliente, a propósito: antes el default ($100.000) le daba crédito a cualquier cuenta
+    # nueva sin que nadie lo decidiera.
+    tope = models.DecimalField(max_digits=12, decimal_places=2, default=0,
                                verbose_name='Tope máximo de cuenta')
     fecha = models.DateTimeField(auto_now=True, verbose_name='Fecha de apertura')
     observaciones = models.CharField(max_length=100, verbose_name='Observaciones', null=True)
@@ -37,6 +47,14 @@ class MovimientoCuentaCorriente(models.Model):
                                   verbose_name='Importe')
     fecha = models.DateTimeField(auto_now=True, verbose_name='Fecha de movimiento')
     tipo = models.CharField(max_length=1,choices=TIPOS_MOVIMIENTO_CTA_CTE, verbose_name='Tipo de movimiento')
+    # Sólo tiene sentido en un Crédito (con qué pagó el cliente) -queda en blanco en un Débito.
+    medio_pago = models.CharField(
+        max_length=20, choices=MEDIOS_PAGO_CTA_CTE, blank=True, null=True, verbose_name='Medio de pago',
+    )
+    # Sólo aplica con medio_pago transferencia/qr (igual que PagoTransferencia/PagoQr de venta).
+    banco = models.ForeignKey(
+        'caja.Banco', on_delete=models.PROTECT, null=True, blank=True, verbose_name='Banco',
+    )
     usuario = models.ForeignKey('usuario.Usuario', on_delete=models.PROTECT, verbose_name='Usuario')
     venta = models.ForeignKey('venta.Venta', on_delete=models.PROTECT, null=True, verbose_name='Venta relacionada')
     observaciones = models.CharField(max_length=40, verbose_name='Observaciones', null=True)

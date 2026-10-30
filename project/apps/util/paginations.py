@@ -1,6 +1,6 @@
-from rest_framework_json_api.pagination import JsonApiPageNumberPagination
+from rest_framework.pagination import PageNumberPagination
 
 
-class LargePagination(JsonApiPageNumberPagination):
+class LargePagination(PageNumberPagination):
     max_page_size = 300
     page_size_query_param = 'page_size'

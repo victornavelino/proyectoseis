@@ -1,0 +1,10 @@
+/* Mantine trae su propio reset (@mantine/core/styles.css) — esto es sólo lo mínimo extra. */
+html,
+body,
+#root {
+  min-height: 100vh;
+}
+
+body {
+  margin: 0;
+}

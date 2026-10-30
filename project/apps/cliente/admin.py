@@ -20,7 +20,7 @@ class ClienteResource(resources.ModelResource):
 @admin.register(Cliente)
 class ClienteAdmin(ExportMixin, admin.ModelAdmin):
     resource_class = ClienteResource
-    list_display = ('cliente', 'condicion_iva', 'get_dni', 'get_lista_precio')
+    list_display = ('cliente', 'condicion_iva', 'get_dni', 'get_lista_precio', 'get_descuento')
     search_fields = ('condicion_iva','persona__apellido', 'persona__nombre', 'persona__documento_identidad')
     list_per_page = 30
 
@@ -35,3 +35,7 @@ class ClienteAdmin(ExportMixin, admin.ModelAdmin):
     @admin.display(ordering='listaprecio', description='ListaPrecio')
     def get_lista_precio(self, obj):
         return obj.lista_precio.nombre
+
+    @admin.display(ordering='descuento', description='Descuento')
+    def get_descuento(self, obj):
+        return obj.descuento.nombre if obj.descuento else '—'
