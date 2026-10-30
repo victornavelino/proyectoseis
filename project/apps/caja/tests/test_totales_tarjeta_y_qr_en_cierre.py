@@ -46,9 +46,9 @@ def test_previsualizar_cierre_incluye_total_tarjeta_y_total_qr(contexto):
     # Sum() sobre un DecimalField preserva la escala en Postgres pero no en SQLite (motor de los
     # tests) -> se compara como Decimal, no como string, mismo criterio que
     # venta.api.VentaViewSet.resumen_dashboard._money.
-    assert data['total_tarjeta']['concepto'] == 'TOTAL TARJETA'
+    assert data['total_tarjeta']['concepto'] == 'Total tarjeta'
     assert Decimal(data['total_tarjeta']['importe']) == Decimal('1050.00')
-    assert data['total_qr']['concepto'] == 'TOTAL QR'
+    assert data['total_qr']['concepto'] == 'Total QR'
     assert Decimal(data['total_qr']['importe']) == Decimal('300.00')
 
 

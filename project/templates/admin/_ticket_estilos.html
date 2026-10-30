@@ -58,9 +58,23 @@
     margin: 3px 0;
   }
   .fila .etiqueta { color: #000; }
+  /* Antes era una fila flex en una sola línea (etiqueta a la izquierda, importe a la derecha):
+     con TICKET_ANCHO_MM angosto (58mm/48mm) una etiqueta larga ("Total transferencia") no
+     entraba junto al importe en el mismo renglón y terminaban pisándose -se apila en dos
+     líneas (etiqueta arriba, importe debajo alineado a la derecha) para que nunca se solapen,
+     sea cual sea el ancho del ticket o el largo de la etiqueta. */
   .fila.destacada {
+    display: block;
     font-weight: 700;
+    font-size: 9.5px;
     margin-top: 6px;
+  }
+  .fila.destacada > span:first-child {
+    display: block;
+  }
+  .fila.destacada > span:last-child {
+    display: block;
+    text-align: right;
   }
   .divisor {
     display: flex;
@@ -96,14 +110,15 @@
     font-size: 9px;
     margin-top: 1px;
   }
+  /* Mismo motivo que .fila.destacada arriba: con una etiqueta más larga que una sola palabra
+     ("Saldo de caja") al lado de un importe grande, en un ticket angosto no entran los dos en
+     el mismo renglón y se pisan -se apila también acá (etiqueta arriba, importe debajo a la
+     derecha), sin depender de que la etiqueta sea corta. */
   .total {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
     margin-top: 10px;
   }
-  .total .etiqueta { font-size: 10px; color: #000; font-weight: 700; letter-spacing: .03em; }
-  .total .importe { font-size: 18px; font-weight: 800; }
+  .total .etiqueta { display: block; font-size: 10px; color: #000; font-weight: 700; letter-spacing: .03em; }
+  .total .importe { display: block; text-align: right; font-size: 15px; font-weight: 800; }
   .pie {
     /* margin-bottom grande a propósito: la impresora térmica corta el rollo apenas detecta que
        el contenido terminó (la página sigue en blanco hasta los 1000mm de `@page`, ver arriba),

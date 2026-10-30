@@ -29,8 +29,8 @@ def crear_movimiento_cuenta_corriente(
     (ver `caja.services.cobrar_venta`): si fue en `efectivo`, un `Ingreso` (plata física, cuenta
     para el arqueo); si fue por `transferencia`/`qr`, un `PagoTransferencia`/`PagoQr` -esos NO
     tocan el efectivo de caja (no heredan de `MovimientoCaja`), así que no se mezclan con los
-    billetes reales ni hacen falta en el arqueo, y en el cierre quedan en TOTAL TRANSFERENCIA/
-    TOTAL QR, no en "Ingresos" (antes todo crédito -sin importar el medio- caía como Ingreso
+    billetes reales ni hacen falta en el arqueo, y en el cierre quedan en "Total transferencia"/
+    "Total QR", no en "Ingresos" (antes todo crédito -sin importar el medio- caía como Ingreso
     genérico, inflando el efectivo esperado con plata que en realidad nunca pisó el cajón).
     Por eso cargar un crédito exige que haya una caja abierta en cualquier caso, igual que
     cualquier otro cobro (`CajaCerradaError`/`SinSucursalError` se propagan tal cual desde ahí).

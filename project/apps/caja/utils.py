@@ -110,7 +110,7 @@ def calcular_ingresos_caja(caja):
     # Ingreso acá (si fue en efectivo -ver cuentacorriente.services._registrar_cobro_en_caja-) o
     # un PagoTransferencia/PagoQr (si no), igual que un pago de venta. Mostrarlo aparte
     # duplicaba el mismo cobro: una vez acá (leyendo caja.Ingreso) y otra vez leyendo
-    # MovimientoCuentaCorriente directamente, inflando "TOTAL INGRESOS" con el doble de lo cobrado.
+    # MovimientoCuentaCorriente directamente, inflando "Total ingresos" con el doble de lo cobrado.
     results = []
     total_ingreso_ventas = CobroVenta.objects.filter(caja=caja, tipo=INGRESO).aggregate(Sum('importe'))[
                                'importe__sum'] or 0.00
@@ -140,7 +140,7 @@ def calcular_total_ingresos(caja):
     total_movimientos_ingreso = MovimientoCaja.objects.filter(caja=caja, tipo=INGRESO).aggregate(Sum('importe'))[
                                'importe__sum'] or Decimal(0.0)
     json_valores = {
-        "concepto": "TOTAL INGRESOS",
+        "concepto": "Total ingresos",
         "importe": str(total_movimientos_ingreso)
     }
     total_ingreso = json.dumps(json_valores)
@@ -192,7 +192,7 @@ def calcular_total_egresos(caja):
     #for egreso in movimientos_egreso:
     #    egreso_caja = egreso_caja + egreso.importe
     json_valores = {
-        "concepto": "TOTAL EGRESOS",
+        "concepto": "Total egresos",
         "importe": str(total_movimientos_egreso)
     }
     total_egreso = json.dumps(json_valores)
@@ -207,7 +207,7 @@ def calcular_total_compras_cc(caja):
         Sum('importe'))['importe__sum'] or 0.00
 
     json_valores = {
-        "concepto": "TOTAL C.CORRIENTE",
+        "concepto": "Total cta. corriente",
         "importe": str(total_compras_cc)
     }
     total = json.dumps(json_valores)
@@ -221,7 +221,7 @@ def calcular_total_compras_transf(caja):
         fecha__lte=caja.fecha_fin).aggregate(
         Sum('importe'))['importe__sum'] or 0.00
     json_valores = {
-        "concepto": "TOTAL TRANSFERENCIA",
+        "concepto": "Total transferencia",
         "importe": str(total_compras_transf)
     }
     total = json.dumps(json_valores)
@@ -236,7 +236,7 @@ def calcular_total_compras_tarjeta(caja):
         fecha__lte=caja.fecha_fin).aggregate(
         Sum('importe_con_recargo'))['importe_con_recargo__sum'] or 0.00
     json_valores = {
-        "concepto": "TOTAL TARJETA",
+        "concepto": "Total tarjeta",
         "importe": str(total_compras_tarjeta)
     }
     total = json.dumps(json_valores)
@@ -250,7 +250,7 @@ def calcular_total_compras_qr(caja):
         fecha__lte=caja.fecha_fin).aggregate(
         Sum('importe'))['importe__sum'] or 0.00
     json_valores = {
-        "concepto": "TOTAL QR",
+        "concepto": "Total QR",
         "importe": str(total_compras_qr)
     }
     total = json.dumps(json_valores)
