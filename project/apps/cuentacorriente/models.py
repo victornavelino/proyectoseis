@@ -61,6 +61,11 @@ class MovimientoCuentaCorriente(models.Model):
     plan_tarjeta = models.ForeignKey(
         'caja.PlanTarjetaDeCredito', on_delete=models.PROTECT, null=True, blank=True, verbose_name='Plan de tarjeta',
     )
+    # Sólo aplica con medio_pago tarjeta: costo financiero que paga el cliente aparte, no reduce
+    # `importe` (lo que efectivamente cancela deuda) -se guarda para poder mostrarlo en la UI,
+    # mismo monto que termina en CuponPagoTarjeta.recargo (ver
+    # cuentacorriente.services.crear_movimiento_cuenta_corriente, que calcula los dos juntos).
+    recargo = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='Recargo')
     usuario = models.ForeignKey('usuario.Usuario', on_delete=models.PROTECT, verbose_name='Usuario')
     venta = models.ForeignKey('venta.Venta', on_delete=models.PROTECT, null=True, verbose_name='Venta relacionada')
     observaciones = models.CharField(max_length=40, verbose_name='Observaciones', null=True)

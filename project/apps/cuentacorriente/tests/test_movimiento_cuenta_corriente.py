@@ -183,6 +183,9 @@ def test_credito_por_tarjeta_no_genera_ingreso_sino_cupon_con_recargo(client, cu
     movimiento = MovimientoCuentaCorriente.objects.get(cuenta=cuenta, tipo=CREDITO)
     assert movimiento.importe == Decimal('5000.00')
     assert movimiento.plan_tarjeta == plan_tarjeta
+    # Se guarda también acá (no sólo en el cupón) para que la UI lo muestre sin tener que ir a
+    # buscar el CuponPagoTarjeta aparte -ver CuentaCorrienteDetalleModal.tsx.
+    assert movimiento.recargo == Decimal('500.00')
     cupon = CuponPagoTarjeta.objects.get(cliente=cuenta.cliente)
     assert cupon.plan_tarjeta == plan_tarjeta
     assert cupon.importe == Decimal('5000.00')

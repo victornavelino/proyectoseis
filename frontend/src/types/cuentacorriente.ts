@@ -35,6 +35,9 @@ export interface MovimientoCuentaCorriente {
   banco_nombre: string | null
   plan_tarjeta: number | null
   plan_tarjeta_detalle: string | null
+  // Sólo con medio_pago tarjeta: costo financiero a cargo del cliente, no reduce `importe` (lo
+  // que efectivamente cancela deuda) -siempre lo calcula el server, nunca se manda al crear.
+  recargo: string | null
   usuario: number
   usuario_username: string
   venta: number | null

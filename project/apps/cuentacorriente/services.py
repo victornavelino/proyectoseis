@@ -56,23 +56,32 @@ def crear_movimiento_cuenta_corriente(
                 f'(${disponible}, sobre un tope de ${cuenta.tope}).'
             )
 
+    # Se calcula una sola vez acá (no duplicado en _registrar_cobro_en_caja) para poder guardarlo
+    # también en el movimiento -así la UI (CuentaCorrienteDetalleModal) puede mostrar el recargo
+    # sin tener que ir a buscar el CuponPagoTarjeta aparte.
+    recargo = None
+    if tipo == CREDITO and medio_pago == TARJETA:
+        recargo = (importe * plan_tarjeta.interes / 100).quantize(CENTAVO, rounding=ROUND_HALF_UP)
+
     movimiento = MovimientoCuentaCorriente.objects.create(
         cuenta=cuenta, tipo=tipo, importe=importe, usuario=usuario, venta=venta, observaciones=observaciones,
         medio_pago=medio_pago if tipo == CREDITO else None,
         banco=banco if tipo == CREDITO else None,
         plan_tarjeta=plan_tarjeta if tipo == CREDITO else None,
+        recargo=recargo,
     )
 
     if tipo == CREDITO:
         _registrar_cobro_en_caja(
             cuenta=cuenta, importe=importe, usuario=usuario, medio_pago=medio_pago, banco=banco,
-            plan_tarjeta=plan_tarjeta, numero_cupon=numero_cupon, lote=lote, observaciones=observaciones,
+            plan_tarjeta=plan_tarjeta, recargo=recargo, numero_cupon=numero_cupon, lote=lote,
+            observaciones=observaciones,
         )
 
     return movimiento
 
 
-def _registrar_cobro_en_caja(*, cuenta, importe, usuario, medio_pago, banco, plan_tarjeta, numero_cupon, lote, observaciones):
+def _registrar_cobro_en_caja(*, cuenta, importe, usuario, medio_pago, banco, plan_tarjeta, recargo, numero_cupon, lote, observaciones):
     # import diferido: evita ciclo caja <-> cuentacorriente (caja.services importa
     # cuentacorriente.services para el lado Débito de cobrar_venta).
     from caja.models import CuponPagoTarjeta, PagoQr, PagoTransferencia, TipoIngreso
@@ -100,9 +109,8 @@ def _registrar_cobro_en_caja(*, cuenta, importe, usuario, medio_pago, banco, pla
             documento_identidad=persona.documento_identidad, banco=banco, observaciones=observaciones,
         )
     elif medio_pago == TARJETA:
-        # Mismo cálculo que caja.services.cobrar_venta: el recargo es a cargo del cliente, no se
-        # acredita a la cuenta corriente -lo que cancela deuda es siempre `importe`.
-        recargo = (importe * plan_tarjeta.interes / 100).quantize(CENTAVO, rounding=ROUND_HALF_UP)
+        # El recargo ya viene calculado (ver crear_movimiento_cuenta_corriente): es a cargo del
+        # cliente, no se acredita a la cuenta corriente -lo que cancela deuda es siempre `importe`.
         CuponPagoTarjeta.objects.create(
             cliente=cuenta.cliente, plan_tarjeta=plan_tarjeta, importe=importe, recargo=recargo,
             importe_con_recargo=importe + recargo, numero_cupon=numero_cupon, lote=lote,

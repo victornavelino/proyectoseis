@@ -45,6 +45,11 @@ class MovimientoCuentaCorrienteSerializer(serializers.ModelSerializer):
     medio_pago_display = serializers.CharField(source='get_medio_pago_display', read_only=True, default=None)
     banco_nombre = serializers.CharField(source='banco.nombre', read_only=True, default=None)
     plan_tarjeta_detalle = serializers.SerializerMethodField(read_only=True)
+    # read_only: siempre lo calcula el server (ver crear_movimiento_cuenta_corriente) a partir
+    # de `importe` y `plan_tarjeta.interes` -si no fuera read_only, un valor que mandara el
+    # cliente acá terminaría pasado como kwarg inesperado a ese service (no lo acepta como
+    # parámetro de entrada) y la request rompería con un TypeError en vez de un 400 prolijo.
+    recargo = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     usuario_username = serializers.CharField(source='usuario.username', read_only=True)
     # No son campos del modelo (ver MovimientoCuentaCorriente): viajan directo hasta
     # cuentacorriente.services._registrar_cobro_en_caja, que los usa sólo para armar el
@@ -69,6 +74,7 @@ class MovimientoCuentaCorrienteSerializer(serializers.ModelSerializer):
             'banco_nombre',
             'plan_tarjeta',
             'plan_tarjeta_detalle',
+            'recargo',
             'numero_cupon',
             'lote',
             'usuario',

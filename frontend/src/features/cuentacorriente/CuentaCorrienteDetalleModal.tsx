@@ -258,7 +258,17 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
                   {m.tipo_display}
                 </Badge>
               </Table.Td>
-              <Table.Td>{formatearMonto(m.importe)}</Table.Td>
+              <Table.Td>
+                {formatearMonto(m.importe)}
+                {m.recargo && Number(m.recargo) > 0 && (
+                  <>
+                    <br />
+                    <Text component="span" size="xs" c="dimmed">
+                      + {formatearMonto(m.recargo)} recargo (cobrado {formatearMonto(String(Number(m.importe) + Number(m.recargo)))})
+                    </Text>
+                  </>
+                )}
+              </Table.Td>
               <Table.Td>
                 {m.medio_pago ? (
                   <Group gap={4} wrap="nowrap">
