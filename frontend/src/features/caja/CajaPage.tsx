@@ -324,6 +324,10 @@ export default function CajaPage() {
               <Text size="sm">{formatearMonto(resumen.total_cuenta_corriente.importe)}</Text>
             </Group>
             <Group justify="space-between" fw={600}>
+              <Text size="sm">{resumen.total_transferencia.concepto}</Text>
+              <Text size="sm">{formatearMonto(resumen.total_transferencia.importe)}</Text>
+            </Group>
+            <Group justify="space-between" fw={600}>
               <Text size="sm">{resumen.total_tarjeta.concepto}</Text>
               <Text size="sm">{formatearMonto(resumen.total_tarjeta.importe)}</Text>
             </Group>

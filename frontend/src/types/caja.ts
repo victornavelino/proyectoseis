@@ -147,6 +147,7 @@ export interface ResumenCierreCaja extends Caja {
   egresos: ConceptoImporte[]
   total_egresos: ConceptoImporte
   total_cuenta_corriente: ConceptoImporte
+  total_transferencia: ConceptoImporte
   total_tarjeta: ConceptoImporte
   total_qr: ConceptoImporte
   /** Mismo total de arriba, desglosado por banco (ej. "QR - Mercado Pago"). */
