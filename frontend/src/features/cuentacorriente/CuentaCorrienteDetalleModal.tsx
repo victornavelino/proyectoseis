@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Badge, Button, Group, Modal, NumberInput, Select, SegmentedControl, Stack, Table, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { listarTodosLosBancos } from '../../api/caja'
+import { listarPlanesTarjeta, listarTodosLosBancos } from '../../api/caja'
 import { crearMovimientoCuentaCorriente, listarMovimientosCuentaCorriente, obtenerCuentaCorriente } from '../../api/cuentacorriente'
 import { mensajeDeError } from '../../api/client'
-import type { Banco } from '../../types/caja'
+import type { Banco, PlanTarjetaDeCredito } from '../../types/caja'
 import type { CuentaCorriente, MedioPagoCC, MovimientoCuentaCorriente, TipoMovimientoCC } from '../../types/cuentacorriente'
 import { MEDIOS_PAGO_INFO } from '../ventas/mediosPago'
 import { formatearMonto } from '../ventas/dinero'
@@ -14,6 +14,7 @@ const OPCIONES_MEDIO_PAGO: { value: MedioPagoCC; label: string }[] = [
   { value: 'efectivo', label: MEDIOS_PAGO_INFO.efectivo.etiqueta },
   { value: 'transferencia', label: MEDIOS_PAGO_INFO.transferencia.etiqueta },
   { value: 'qr', label: MEDIOS_PAGO_INFO.qr.etiqueta },
+  { value: 'tarjeta', label: MEDIOS_PAGO_INFO.tarjeta.etiqueta },
 ]
 
 interface Props {
@@ -31,6 +32,10 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
   const [medioPago, setMedioPago] = useState<MedioPagoCC | null>(null)
   const [banco, setBanco] = useState<number | null>(null)
   const [bancos, setBancos] = useState<Banco[]>([])
+  const [planTarjeta, setPlanTarjeta] = useState<number | null>(null)
+  const [numeroCupon, setNumeroCupon] = useState('')
+  const [lote, setLote] = useState('')
+  const [planes, setPlanes] = useState<PlanTarjetaDeCredito[]>([])
   const [observaciones, setObservaciones] = useState('')
   const [guardando, setGuardando] = useState(false)
   // Saldo/disponible propios del modal, no el `cuenta` del padre: ese prop queda desactualizado
@@ -66,11 +71,19 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
       setImporte('')
       setMedioPago(null)
       setBanco(null)
+      setPlanTarjeta(null)
+      setNumeroCupon('')
+      setLote('')
       setObservaciones('')
       if (bancos.length === 0) {
         listarTodosLosBancos()
           .then((r) => setBancos(r.results))
           .catch(() => notifications.show({ message: 'No se pudieron cargar los bancos.', color: 'red' }))
+      }
+      if (planes.length === 0) {
+        listarPlanesTarjeta()
+          .then((r) => setPlanes(r.results))
+          .catch(() => notifications.show({ message: 'No se pudieron cargar los planes de tarjeta.', color: 'red' }))
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,21 +97,32 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
     if (v === 'D') {
       setMedioPago(null)
       setBanco(null)
+      setPlanTarjeta(null)
+      setNumeroCupon('')
+      setLote('')
     }
   }
 
   const cambiarMedioPago = (v: string | null) => {
     setMedioPago(v as MedioPagoCC | null)
     if (v !== 'qr' && v !== 'transferencia') setBanco(null)
+    if (v !== 'tarjeta') {
+      setPlanTarjeta(null)
+      setNumeroCupon('')
+      setLote('')
+    }
   }
 
   // En QR el banco es obligatorio (mismo criterio que al cobrar una venta: hace falta poder
   // identificar el pago); en transferencia queda opcional.
   const faltaBanco = medioPago === 'qr' && !banco
+  // En tarjeta el plan es obligatorio: de ahí sale el % de recargo (ver
+  // cuentacorriente.services._registrar_cobro_en_caja).
+  const faltaPlan = medioPago === 'tarjeta' && !planTarjeta
 
   const agregarMovimiento = async () => {
     if (!cuenta || !importe) return
-    if (tipo === 'C' && (!medioPago || faltaBanco)) return
+    if (tipo === 'C' && (!medioPago || faltaBanco || faltaPlan)) return
     setGuardando(true)
     try {
       await crearMovimientoCuentaCorriente({
@@ -107,12 +131,18 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
         importe,
         medio_pago: tipo === 'C' ? medioPago : null,
         banco: tipo === 'C' ? banco : null,
+        plan_tarjeta: tipo === 'C' ? planTarjeta : null,
+        numero_cupon: tipo === 'C' && medioPago === 'tarjeta' ? numeroCupon || null : null,
+        lote: tipo === 'C' && medioPago === 'tarjeta' ? lote || null : null,
         observaciones: observaciones || null,
       })
       notifications.show({ message: 'Movimiento registrado.', color: 'green' })
       setImporte('')
       setMedioPago(null)
       setBanco(null)
+      setPlanTarjeta(null)
+      setNumeroCupon('')
+      setLote('')
       setObservaciones('')
       cargar()
       void obtenerCuentaCorriente(cuenta.id).then(setCuentaActual)
@@ -181,10 +211,26 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
               w={180}
             />
           )}
+          {tipo === 'C' && medioPago === 'tarjeta' && (
+            <Select
+              placeholder="Plan (obligatorio)"
+              data={planes.map((p) => ({ value: String(p.id), label: `${p.tarjeta_nombre} — ${p.nombre_plan} (${p.interes}%)` }))}
+              value={planTarjeta ? String(planTarjeta) : null}
+              onChange={(v) => setPlanTarjeta(v ? Number(v) : null)}
+              clearable
+              w={220}
+            />
+          )}
+          {tipo === 'C' && medioPago === 'tarjeta' && (
+            <TextInput placeholder="Nº cupón" value={numeroCupon} onChange={(e) => setNumeroCupon(e.currentTarget.value)} w={110} />
+          )}
+          {tipo === 'C' && medioPago === 'tarjeta' && (
+            <TextInput placeholder="Lote" value={lote} onChange={(e) => setLote(e.currentTarget.value)} w={100} />
+          )}
           <TextInput placeholder="Observaciones" value={observaciones} onChange={(e) => setObservaciones(e.currentTarget.value)} style={{ flex: 1, minWidth: 180 }} />
           <Button
             loading={guardando}
-            disabled={!importe || (tipo === 'C' && (!medioPago || faltaBanco))}
+            disabled={!importe || (tipo === 'C' && (!medioPago || faltaBanco || faltaPlan))}
             onClick={() => void agregarMovimiento()}
           >
             Registrar
@@ -219,9 +265,9 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
                     <Badge color={MEDIOS_PAGO_INFO[m.medio_pago].color} variant="light">
                       {m.medio_pago_display}
                     </Badge>
-                    {m.banco_nombre && (
+                    {(m.banco_nombre || m.plan_tarjeta_detalle) && (
                       <Text size="xs" c="dimmed">
-                        ({m.banco_nombre})
+                        ({m.banco_nombre ?? m.plan_tarjeta_detalle})
                       </Text>
                     )}
                   </Group>

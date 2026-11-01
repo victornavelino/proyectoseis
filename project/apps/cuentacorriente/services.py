@@ -2,19 +2,23 @@
 `cuentacorriente/api.py` y consumido también por `caja/services.py` al cobrar una venta con este
 medio de pago (import diferido ahí, para evitar un ciclo caja <-> cuentacorriente).
 """
+from decimal import ROUND_HALF_UP, Decimal
+
 from django.db import transaction
 
 from caja.exceptions import TopeCuentaCorrienteError
-from cuentacorriente.constants import CREDITO, DEBITO, EFECTIVO, QR, TRANSFERENCIA
+from cuentacorriente.constants import CREDITO, DEBITO, EFECTIVO, QR, TARJETA, TRANSFERENCIA
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from cuentacorriente.utils import calcular_saldo_cc
 
 DESCRIPCION_TIPO_INGRESO_CC = 'Pago de cuenta corriente'
+CENTAVO = Decimal('0.01')
 
 
 @transaction.atomic
 def crear_movimiento_cuenta_corriente(
     *, cuenta, tipo, importe, usuario, venta=None, observaciones=None, medio_pago=None, banco=None,
+    plan_tarjeta=None, numero_cupon=None, lote=None,
 ):
     """Alta de un movimiento de cuenta corriente.
 
@@ -31,7 +35,11 @@ def crear_movimiento_cuenta_corriente(
     tocan el efectivo de caja (no heredan de `MovimientoCaja`), así que no se mezclan con los
     billetes reales ni hacen falta en el arqueo, y en el cierre quedan en "Total transferencia"/
     "Total QR", no en "Ingresos" (antes todo crédito -sin importar el medio- caía como Ingreso
-    genérico, inflando el efectivo esperado con plata que en realidad nunca pisó el cajón).
+    genérico, inflando el efectivo esperado con plata que en realidad nunca pisó el cajón). Si
+    fue con `tarjeta`, un `CuponPagoTarjeta` con recargo calculado a partir de `plan_tarjeta.interes`
+    -mismo cálculo que `cobrar_venta`-: el recargo es un costo financiero aparte que paga el
+    cliente, no reduce la deuda; lo que se acredita a la cuenta corriente es siempre `importe`
+    (el monto base), nunca `importe_con_recargo`.
     Por eso cargar un crédito exige que haya una caja abierta en cualquier caso, igual que
     cualquier otro cobro (`CajaCerradaError`/`SinSucursalError` se propagan tal cual desde ahí).
     `medio_pago` se exige en el serializer sólo para un Crédito; para un Débito se descarta, no
@@ -52,27 +60,28 @@ def crear_movimiento_cuenta_corriente(
         cuenta=cuenta, tipo=tipo, importe=importe, usuario=usuario, venta=venta, observaciones=observaciones,
         medio_pago=medio_pago if tipo == CREDITO else None,
         banco=banco if tipo == CREDITO else None,
+        plan_tarjeta=plan_tarjeta if tipo == CREDITO else None,
     )
 
     if tipo == CREDITO:
         _registrar_cobro_en_caja(
             cuenta=cuenta, importe=importe, usuario=usuario, medio_pago=medio_pago, banco=banco,
-            observaciones=observaciones,
+            plan_tarjeta=plan_tarjeta, numero_cupon=numero_cupon, lote=lote, observaciones=observaciones,
         )
 
     return movimiento
 
 
-def _registrar_cobro_en_caja(*, cuenta, importe, usuario, medio_pago, banco, observaciones):
+def _registrar_cobro_en_caja(*, cuenta, importe, usuario, medio_pago, banco, plan_tarjeta, numero_cupon, lote, observaciones):
     # import diferido: evita ciclo caja <-> cuentacorriente (caja.services importa
     # cuentacorriente.services para el lado Débito de cobrar_venta).
-    from caja.models import PagoQr, PagoTransferencia, TipoIngreso
+    from caja.models import CuponPagoTarjeta, PagoQr, PagoTransferencia, TipoIngreso
     from caja.services import _caja_abierta_de, crear_ingreso
 
     # Hace falta caja abierta para CUALQUIER medio, no sólo efectivo -mismo criterio que un
-    # cobro de venta-: PagoTransferencia/PagoQr no tienen FK a Caja (se ubican por fecha, igual
-    # que al cobrar una venta), pero igual tiene que haber una caja de la sucursal abierta en
-    # este momento para que el movimiento quede dentro de algún cierre.
+    # cobro de venta-: PagoTransferencia/PagoQr/CuponPagoTarjeta no tienen FK a Caja (se ubican
+    # por fecha, igual que al cobrar una venta), pero igual tiene que haber una caja de la
+    # sucursal abierta en este momento para que el movimiento quede dentro de algún cierre.
     _caja_abierta_de(usuario.sucursal)
 
     persona = cuenta.cliente.persona
@@ -89,6 +98,15 @@ def _registrar_cobro_en_caja(*, cuenta, importe, usuario, medio_pago, banco, obs
         PagoQr.objects.create(
             importe=importe, nombre=persona.nombre, apellido=persona.apellido,
             documento_identidad=persona.documento_identidad, banco=banco, observaciones=observaciones,
+        )
+    elif medio_pago == TARJETA:
+        # Mismo cálculo que caja.services.cobrar_venta: el recargo es a cargo del cliente, no se
+        # acredita a la cuenta corriente -lo que cancela deuda es siempre `importe`.
+        recargo = (importe * plan_tarjeta.interes / 100).quantize(CENTAVO, rounding=ROUND_HALF_UP)
+        CuponPagoTarjeta.objects.create(
+            cliente=cuenta.cliente, plan_tarjeta=plan_tarjeta, importe=importe, recargo=recargo,
+            importe_con_recargo=importe + recargo, numero_cupon=numero_cupon, lote=lote,
+            observaciones=observaciones,
         )
     else:
         assert medio_pago in (EFECTIVO, None)

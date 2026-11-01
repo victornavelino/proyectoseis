@@ -19,7 +19,7 @@ export type TipoMovimientoCC = 'D' | 'C'
 
 // Sólo tiene sentido en un Crédito (con qué pagó el cliente) -ver
 // cuentacorriente.models.MovimientoCuentaCorriente.medio_pago.
-export type MedioPagoCC = 'efectivo' | 'transferencia' | 'qr'
+export type MedioPagoCC = 'efectivo' | 'transferencia' | 'qr' | 'tarjeta'
 
 export interface MovimientoCuentaCorriente {
   id: number
@@ -33,6 +33,8 @@ export interface MovimientoCuentaCorriente {
   medio_pago_display: string | null
   banco: number | null
   banco_nombre: string | null
+  plan_tarjeta: number | null
+  plan_tarjeta_detalle: string | null
   usuario: number
   usuario_username: string
   venta: number | null
@@ -44,5 +46,10 @@ export interface MovimientoCuentaCorrienteInput {
   tipo: TipoMovimientoCC
   medio_pago: MedioPagoCC | null
   banco: number | null
+  plan_tarjeta: number | null
+  // Sólo se usan con medio_pago tarjeta: viajan hasta el CuponPagoTarjeta, no son campos
+  // persistidos en MovimientoCuentaCorriente (ver cuentacorriente.serializers).
+  numero_cupon?: string | null
+  lote?: string | null
   observaciones: string | null
 }

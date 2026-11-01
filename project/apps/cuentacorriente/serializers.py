@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from cuentacorriente.constants import CREDITO, QR
+from cuentacorriente.constants import CREDITO, QR, TARJETA
 from cuentacorriente.models import CuentaCorriente, MovimientoCuentaCorriente
 from cuentacorriente.utils import calcular_saldo_cc
 
@@ -44,7 +44,14 @@ class MovimientoCuentaCorrienteSerializer(serializers.ModelSerializer):
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     medio_pago_display = serializers.CharField(source='get_medio_pago_display', read_only=True, default=None)
     banco_nombre = serializers.CharField(source='banco.nombre', read_only=True, default=None)
+    plan_tarjeta_detalle = serializers.SerializerMethodField(read_only=True)
     usuario_username = serializers.CharField(source='usuario.username', read_only=True)
+    # No son campos del modelo (ver MovimientoCuentaCorriente): viajan directo hasta
+    # cuentacorriente.services._registrar_cobro_en_caja, que los usa sólo para armar el
+    # CuponPagoTarjeta -mismo criterio que venta.CobroVentaPage, es dato de reconciliación con el
+    # banco, no hace falta guardarlo también acá.
+    numero_cupon = serializers.CharField(required=False, allow_blank=True, allow_null=True, write_only=True)
+    lote = serializers.CharField(required=False, allow_blank=True, allow_null=True, write_only=True)
 
     class Meta:
         model = MovimientoCuentaCorriente
@@ -60,6 +67,10 @@ class MovimientoCuentaCorrienteSerializer(serializers.ModelSerializer):
             'medio_pago_display',
             'banco',
             'banco_nombre',
+            'plan_tarjeta',
+            'plan_tarjeta_detalle',
+            'numero_cupon',
+            'lote',
             'usuario',
             'usuario_username',
             'venta',
@@ -69,6 +80,11 @@ class MovimientoCuentaCorrienteSerializer(serializers.ModelSerializer):
         # CuentaCorrienteApi.MovimientoCuentaCorrienteViewSet.perform_create), nunca se confía en
         # quién dice el frontend que hizo el movimiento.
         read_only_fields = ('fecha', 'usuario')
+
+    def get_plan_tarjeta_detalle(self, obj):
+        if not obj.plan_tarjeta:
+            return None
+        return f'{obj.plan_tarjeta.tarjeta.nombre} — {obj.plan_tarjeta.nombre_plan}'
 
     def validate_importe(self, value):
         if value <= 0:
@@ -85,6 +101,10 @@ class MovimientoCuentaCorrienteSerializer(serializers.ModelSerializer):
         # tenerse a mano en el momento).
         if data.get('medio_pago') == QR and not data.get('banco'):
             raise serializers.ValidationError({'banco': 'Elegí con qué banco se recibió el pago por QR.'})
+        # En tarjeta el plan es obligatorio: de ahí sale el % de recargo (ver
+        # cuentacorriente.services._registrar_cobro_en_caja), sin plan no hay cómo calcularlo.
+        if data.get('medio_pago') == TARJETA and not data.get('plan_tarjeta'):
+            raise serializers.ValidationError({'plan_tarjeta': 'Elegí con qué plan de tarjeta se cargó el crédito.'})
         return data
     # El tope de la cuenta (para un Débito) se valida en cuentacorriente.services
     # .crear_movimiento_cuenta_corriente -no acá-, porque ese mismo chequeo también lo necesita

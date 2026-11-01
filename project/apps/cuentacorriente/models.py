@@ -55,6 +55,12 @@ class MovimientoCuentaCorriente(models.Model):
     banco = models.ForeignKey(
         'caja.Banco', on_delete=models.PROTECT, null=True, blank=True, verbose_name='Banco',
     )
+    # Sólo aplica con medio_pago tarjeta (igual que CuponPagoTarjeta.plan_tarjeta de venta): de
+    # acá sale el % de recargo que se calcula al cobrar (ver
+    # cuentacorriente.services._registrar_cobro_en_caja).
+    plan_tarjeta = models.ForeignKey(
+        'caja.PlanTarjetaDeCredito', on_delete=models.PROTECT, null=True, blank=True, verbose_name='Plan de tarjeta',
+    )
     usuario = models.ForeignKey('usuario.Usuario', on_delete=models.PROTECT, verbose_name='Usuario')
     venta = models.ForeignKey('venta.Venta', on_delete=models.PROTECT, null=True, verbose_name='Venta relacionada')
     observaciones = models.CharField(max_length=40, verbose_name='Observaciones', null=True)
