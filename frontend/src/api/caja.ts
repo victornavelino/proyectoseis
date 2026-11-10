@@ -63,6 +63,9 @@ export function crearTarjeta(datos: TarjetaDeCreditoInput) {
 export function actualizarTarjeta(id: number, datos: TarjetaDeCreditoInput) {
   return apiFetch<TarjetaDeCredito>(`api/v1/tarjetadecredito/${id}/`, { method: 'PUT', body: datos })
 }
+export function eliminarTarjeta(id: number) {
+  return apiFetch<void>(`api/v1/tarjetadecredito/${id}/`, { method: 'DELETE' })
+}
 
 export function listarPlanesTarjetaPag(opciones: { search?: string; pagina?: number } = {}) {
   return apiFetch<PaginatedResponse<PlanTarjetaDeCredito>>('api/v1/plantarjetadecredito/', {
@@ -79,6 +82,9 @@ export function crearPlanTarjeta(datos: PlanTarjetaDeCreditoInput) {
 }
 export function actualizarPlanTarjeta(id: number, datos: PlanTarjetaDeCreditoInput) {
   return apiFetch<PlanTarjetaDeCredito>(`api/v1/plantarjetadecredito/${id}/`, { method: 'PUT', body: datos })
+}
+export function eliminarPlanTarjeta(id: number) {
+  return apiFetch<void>(`api/v1/plantarjetadecredito/${id}/`, { method: 'DELETE' })
 }
 
 // --- Caja ---

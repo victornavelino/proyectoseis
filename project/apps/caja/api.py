@@ -1,5 +1,6 @@
 import copy
 
+from django.db.models import ProtectedError
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
@@ -68,6 +69,16 @@ class BancoViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('nombre',)
 
+    def destroy(self, request, *args, **kwargs):
+        # Banco es on_delete=PROTECT en PagoTransferencia/PagoQr/MovimientoCuentaCorriente -sin
+        # este try/except, borrar un banco ya usado en algún pago tira un ProtectedError sin
+        # atrapar y responde 500 en vez de un 400 explicable (mismo criterio que
+        # cuentacorriente.api.CuentaCorrienteViewSet.destroy).
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            raise DRFValidationError('No se puede eliminar: el banco tiene pagos registrados.')
+
 
 class TarjetaDeCreditoViewSet(viewsets.ModelViewSet):
     queryset = TarjetaDeCredito.objects.all()
@@ -76,6 +87,14 @@ class TarjetaDeCreditoViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('nombre', 'banco')
 
+    def destroy(self, request, *args, **kwargs):
+        # PlanTarjetaDeCredito.tarjeta es on_delete=PROTECT -no se quiere perder a qué tarjeta
+        # pertenecía un plan ya usado en cobros.
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            raise DRFValidationError('No se puede eliminar: la tarjeta tiene planes registrados.')
+
 
 class PlanTarjetaDeCreditoViewSet(viewsets.ModelViewSet):
     queryset = PlanTarjetaDeCredito.objects.select_related('tarjeta')
@@ -83,6 +102,15 @@ class PlanTarjetaDeCreditoViewSet(viewsets.ModelViewSet):
     permission_classes = (TienePermisoDeModelo,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('tarjeta',)
+
+    def destroy(self, request, *args, **kwargs):
+        # CuponPagoTarjeta.plan_tarjeta y MovimientoCuentaCorriente.plan_tarjeta son
+        # on_delete=PROTECT -no se quiere perder con qué plan (y qué recargo) se cobró algo ya
+        # registrado, ni en una venta ni en un pago de cuenta corriente.
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            raise DRFValidationError('No se puede eliminar: el plan tiene cobros registrados.')
 
 
 class TipoIngresoViewSet(viewsets.ModelViewSet):
