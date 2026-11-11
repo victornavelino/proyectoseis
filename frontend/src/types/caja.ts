@@ -149,6 +149,8 @@ export interface ResumenCierreCaja extends Caja {
   total_cuenta_corriente: ConceptoImporte
   total_transferencia: ConceptoImporte
   total_tarjeta: ConceptoImporte
+  /** Mismo total de arriba, desglosado por plan (ej. "Tarjeta - Visa — 3 cuotas"). */
+  tarjeta_por_plan: ConceptoImporte[]
   total_qr: ConceptoImporte
   /** Mismo total de arriba, desglosado por banco (ej. "QR - Mercado Pago"). */
   qr_por_banco: ConceptoImporte[]

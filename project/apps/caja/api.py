@@ -54,6 +54,7 @@ from caja.utils import (
     calcular_total_compras_qr,
     calcular_total_compras_qr_por_banco,
     calcular_total_compras_tarjeta,
+    calcular_total_compras_tarjeta_por_plan,
     calcular_total_compras_transf,
     calcular_total_egresos,
     calcular_total_ingresos,
@@ -292,6 +293,7 @@ class CajaViewSet(viewsets.ReadOnlyModelViewSet):
         data['total_cuenta_corriente'] = calcular_total_compras_cc(caja)
         data['total_transferencia'] = calcular_total_compras_transf(caja)
         data['total_tarjeta'] = calcular_total_compras_tarjeta(caja)
+        data['tarjeta_por_plan'] = calcular_total_compras_tarjeta_por_plan(caja)
         data['total_qr'] = calcular_total_compras_qr(caja)
         data['qr_por_banco'] = calcular_total_compras_qr_por_banco(caja)
         # `caja_final` (fijado por cerrar_caja) es el arqueo real contado, no el teórico — para
@@ -328,6 +330,7 @@ class CajaViewSet(viewsets.ReadOnlyModelViewSet):
         data['total_cuenta_corriente'] = calcular_total_compras_cc(caja_al_corte)
         data['total_transferencia'] = calcular_total_compras_transf(caja_al_corte)
         data['total_tarjeta'] = calcular_total_compras_tarjeta(caja_al_corte)
+        data['tarjeta_por_plan'] = calcular_total_compras_tarjeta_por_plan(caja_al_corte)
         data['total_qr'] = calcular_total_compras_qr(caja_al_corte)
         data['qr_por_banco'] = calcular_total_compras_qr_por_banco(caja_al_corte)
         # A diferencia de `_serializar_resumen_cierre`, acá `caja_final` todavía no existe (la
@@ -389,6 +392,7 @@ class CajaViewSet(viewsets.ReadOnlyModelViewSet):
                 'total_ccorrientes': calcular_total_compras_cc(caja),
                 'total_transferencias': calcular_total_compras_transf(caja),
                 'total_tarjetas': calcular_total_compras_tarjeta(caja),
+                'tarjeta_por_plan': calcular_total_compras_tarjeta_por_plan(caja),
                 'total_qr': calcular_total_compras_qr(caja),
                 'qr_por_banco': calcular_total_compras_qr_por_banco(caja),
             },

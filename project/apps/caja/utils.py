@@ -243,6 +243,28 @@ def calcular_total_compras_tarjeta(caja):
     total = json.loads(total)
     return total
 
+def calcular_total_compras_tarjeta_por_plan(caja):
+    # Mismo criterio que calcular_total_compras_qr_por_banco: desglose antes de "Total tarjeta",
+    # tanto en el Resumen de cierre como en el ticket impreso. plan_tarjeta nunca es null acá
+    # (CuponPagoTarjeta.plan_tarjeta es obligatorio) -a diferencia de QR/banco, no hace falta un
+    # grupo "Sin plan".
+    filas = (
+        CuponPagoTarjeta.objects.filter(fecha__gte=caja.fecha_inicio, fecha__lte=caja.fecha_fin)
+        .values('plan_tarjeta__tarjeta__nombre', 'plan_tarjeta__nombre_plan')
+        .annotate(total=Sum('importe_con_recargo'))
+        .order_by('plan_tarjeta__tarjeta__nombre', 'plan_tarjeta__nombre_plan')
+    )
+    resultado = [
+        {
+            "concepto": f"Tarjeta - {fila['plan_tarjeta__tarjeta__nombre']} — {fila['plan_tarjeta__nombre_plan']}",
+            "importe": str(fila['total'] or 0.00),
+        }
+        for fila in filas
+    ]
+    resultado = json.dumps(resultado)
+    resultado = json.loads(resultado)
+    return resultado
+
 def calcular_total_compras_qr(caja):
 
     total_compras_qr = PagoQr.objects.filter(

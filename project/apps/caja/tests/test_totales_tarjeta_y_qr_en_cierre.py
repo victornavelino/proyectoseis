@@ -74,6 +74,34 @@ def test_previsualizar_cierre_desglosa_qr_por_banco(contexto):
 
 
 @pytest.mark.django_db
+def test_previsualizar_cierre_desglosa_tarjeta_por_plan(contexto):
+    visa = TarjetaDeCredito.objects.create(nombre='Visa')
+    plan_1_pago = PlanTarjetaDeCredito.objects.create(tarjeta=visa, nombre_plan='1 pago', interes=Decimal('0'))
+    plan_3_cuotas = PlanTarjetaDeCredito.objects.create(tarjeta=visa, nombre_plan='3 cuotas', interes=Decimal('10'))
+    CuponPagoTarjeta.objects.create(
+        cliente=contexto['cliente'], plan_tarjeta=plan_1_pago, importe=Decimal('1000.00'),
+        recargo=Decimal('0'), importe_con_recargo=Decimal('1000.00'),
+    )
+    CuponPagoTarjeta.objects.create(
+        cliente=contexto['cliente'], plan_tarjeta=plan_1_pago, importe=Decimal('500.00'),
+        recargo=Decimal('0'), importe_con_recargo=Decimal('500.00'),
+    )
+    CuponPagoTarjeta.objects.create(
+        cliente=contexto['cliente'], plan_tarjeta=plan_3_cuotas, importe=Decimal('1000.00'),
+        recargo=Decimal('100.00'), importe_con_recargo=Decimal('1100.00'),
+    )
+
+    response = contexto['client'].get(f"/api/v1/caja/{contexto['caja'].id}/previsualizar-cierre/")
+
+    assert response.status_code == 200, response.data
+    data = response.json()
+    assert Decimal(data['total_tarjeta']['importe']) == Decimal('2600.00')
+    por_plan = {fila['concepto']: Decimal(fila['importe']) for fila in data['tarjeta_por_plan']}
+    assert por_plan['Tarjeta - Visa — 1 pago'] == Decimal('1500.00')
+    assert por_plan['Tarjeta - Visa — 3 cuotas'] == Decimal('1100.00')
+
+
+@pytest.mark.django_db
 def test_imprimir_ticket_de_cierre_no_rompe_con_tarjeta_y_qr_cargados(contexto):
     # El contenido del PDF no se puede inspeccionar de forma confiable (WeasyPrint puede
     # comprimir los streams de texto) -> mismo criterio que test_imprimir_caja.py: sólo se

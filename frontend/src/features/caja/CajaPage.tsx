@@ -327,6 +327,16 @@ export default function CajaPage() {
               <Text size="sm">{resumen.total_transferencia.concepto}</Text>
               <Text size="sm">{formatearMonto(resumen.total_transferencia.importe)}</Text>
             </Group>
+            {resumen.tarjeta_por_plan.map((fila) => (
+              <Group justify="space-between" key={fila.concepto}>
+                <Text size="sm" c="dimmed">
+                  {fila.concepto}
+                </Text>
+                <Text size="sm" c="dimmed">
+                  {formatearMonto(fila.importe)}
+                </Text>
+              </Group>
+            ))}
             <Group justify="space-between" fw={600}>
               <Text size="sm">{resumen.total_tarjeta.concepto}</Text>
               <Text size="sm">{formatearMonto(resumen.total_tarjeta.importe)}</Text>
