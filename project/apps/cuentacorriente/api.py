@@ -26,7 +26,12 @@ def _plan_tarjeta_detalle(movimiento):
 class CuentaCorrienteViewSet(viewsets.ModelViewSet):
     # Abrir/configurar una cuenta corriente (tope, activa) es una decisión de crédito, no una
     # operación de mostrador del día a día -> igual criterio que articulo: sólo staff escribe.
-    queryset = CuentaCorriente.objects.select_related('cliente__persona')
+    # Orden alfabético por cliente (A-Z) en vez del `ordering = ['-id']` del modelo (más
+    # reciente primero) -mismo criterio que cliente.api.ClienteViewSet, para que el listado
+    # (CuentasCorrientesPage.tsx) sea fácil de recorrer a mano en vez de random/por alta.
+    queryset = CuentaCorriente.objects.select_related('cliente__persona').order_by(
+        'cliente__persona__apellido', 'cliente__persona__nombre',
+    )
     serializer_class = CuentaCorrienteSerializer
     permission_classes = (TienePermisoDeModelo,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
