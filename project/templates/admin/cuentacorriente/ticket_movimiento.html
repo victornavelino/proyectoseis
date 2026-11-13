@@ -1,0 +1,47 @@
+{% load moneda %}
+<!-- Mismo lenguaje visual que venta/ticket_venta.html y caja/ticket_cierre_caja.html (ver
+     admin/_ticket_estilos.html). Comprobante de UN solo movimiento de cuenta corriente, para
+     entregarle al cliente en el momento en que se registra (CuentaCorrienteDetalleModal.tsx). -->
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+{% include "admin/_ticket_estilos.html" %}
+</head>
+<body>
+  <div class="ticket">
+    <p class="titulo">{{ PROJECT_NAME_TITLE }}</p>
+    <p class="subtitulo">{{ cuenta.cliente }} · {{ movimiento.fecha|date:"d/m/Y H:i" }}</p>
+
+    <div class="fila"><span class="etiqueta">Tipo</span><span>{{ movimiento.get_tipo_display }}</span></div>
+    {% if movimiento.medio_pago %}
+    <div class="fila"><span class="etiqueta">Medio de pago</span><span>{{ movimiento.get_medio_pago_display }}</span></div>
+    {% endif %}
+    {% if movimiento.banco %}
+    <div class="fila"><span class="etiqueta">Banco</span><span>{{ movimiento.banco.nombre }}</span></div>
+    {% endif %}
+    {% if plan_tarjeta_detalle %}
+    <div class="fila"><span class="etiqueta">Plan</span><span>{{ plan_tarjeta_detalle }}</span></div>
+    {% endif %}
+    {% if movimiento.observaciones %}
+    <div class="fila"><span class="etiqueta">Observaciones</span><span>{{ movimiento.observaciones }}</span></div>
+    {% endif %}
+    <div class="fila"><span class="etiqueta">Atendió</span><span>{{ movimiento.usuario.username }}</span></div>
+
+    <div class="divisor"></div>
+    <div class="total">
+      <span class="etiqueta">{{ movimiento.get_tipo_display }}</span>
+      <span class="importe">{{ movimiento.importe|moneda }}</span>
+    </div>
+
+    <div class="fila" style="margin-top: 10px;">
+      <span class="etiqueta">Saldo de cuenta</span><span>{{ saldo|moneda }}</span>
+    </div>
+    {% if etiqueta_saldo %}
+    <p class="subtitulo">{{ etiqueta_saldo }}</p>
+    {% endif %}
+
+    <p class="pie">{{ PROJECT_NAME_TITLE }}</p>
+  </div>
+</body>
+</html>

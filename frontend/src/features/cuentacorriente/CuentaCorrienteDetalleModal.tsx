@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Badge, Button, Group, Modal, NumberInput, Select, SegmentedControl, Stack, Table, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Badge, Button, Group, Modal, NumberInput, Select, SegmentedControl, Stack, Table, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { IconPrinter } from '@tabler/icons-react'
 import { listarPlanesTarjeta, listarTodosLosBancos } from '../../api/caja'
 import { crearMovimientoCuentaCorriente, listarMovimientosCuentaCorriente, obtenerCuentaCorriente } from '../../api/cuentacorriente'
 import { mensajeDeError } from '../../api/client'
@@ -8,6 +9,7 @@ import type { Banco, PlanTarjetaDeCredito } from '../../types/caja'
 import type { CuentaCorriente, MedioPagoCC, MovimientoCuentaCorriente, TipoMovimientoCC } from '../../types/cuentacorriente'
 import { MEDIOS_PAGO_INFO } from '../ventas/mediosPago'
 import { formatearMonto } from '../ventas/dinero'
+import { abrirComprobanteDeMovimiento, abrirEstadoDeCuentaParaImprimir } from './imprimirTicketCuentaCorriente'
 import { etiquetaSaldo } from './saldo'
 
 const OPCIONES_MEDIO_PAGO: { value: MedioPagoCC; label: string }[] = [
@@ -170,15 +172,25 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
             </Text>
           )}
         </Text>
-        <Text c="dimmed" size="sm">
-          Tope: {formatearMonto(datos.tope)}
-        </Text>
-        {/* La cuenta corriente es una línea de crédito hasta `tope` (ver
-           cuentacorriente.services.crear_movimiento_cuenta_corriente): esto es cuánto más se le
-           puede fiar al cliente antes de que un débito se rechace. */}
-        <Text c="dimmed" size="sm">
-          Disponible: {formatearMonto(String(Number(datos.tope) - Number(datos.saldo)))}
-        </Text>
+        <Group gap="lg">
+          <Text c="dimmed" size="sm">
+            Tope: {formatearMonto(datos.tope)}
+          </Text>
+          {/* La cuenta corriente es una línea de crédito hasta `tope` (ver
+             cuentacorriente.services.crear_movimiento_cuenta_corriente): esto es cuánto más se
+             le puede fiar al cliente antes de que un débito se rechace. */}
+          <Text c="dimmed" size="sm">
+            Disponible: {formatearMonto(String(Number(datos.tope) - Number(datos.saldo)))}
+          </Text>
+          <Button
+            variant="default"
+            size="xs"
+            leftSection={<IconPrinter size={14} />}
+            onClick={() => void abrirEstadoDeCuentaParaImprimir(cuenta.id)}
+          >
+            Imprimir estado de cuenta
+          </Button>
+        </Group>
       </Group>
 
       <Stack gap="sm" mb="md">
@@ -247,6 +259,7 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
             <Table.Th>Medio de pago</Table.Th>
             <Table.Th>Usuario</Table.Th>
             <Table.Th>Observaciones</Table.Th>
+            <Table.Th></Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
@@ -287,11 +300,20 @@ export default function CuentaCorrienteDetalleModal({ opened, onClose, cuenta, o
               </Table.Td>
               <Table.Td>{m.usuario_username}</Table.Td>
               <Table.Td>{m.observaciones ?? '—'}</Table.Td>
+              <Table.Td>
+                <ActionIcon
+                  variant="subtle"
+                  aria-label="Imprimir comprobante"
+                  onClick={() => void abrirComprobanteDeMovimiento(m.id)}
+                >
+                  <IconPrinter size={16} />
+                </ActionIcon>
+              </Table.Td>
             </Table.Tr>
           ))}
           {!cargando && movimientos.length === 0 && (
             <Table.Tr>
-              <Table.Td colSpan={6}>Sin movimientos todavía.</Table.Td>
+              <Table.Td colSpan={7}>Sin movimientos todavía.</Table.Td>
             </Table.Tr>
           )}
         </Table.Tbody>

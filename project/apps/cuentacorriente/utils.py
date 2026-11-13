@@ -40,3 +40,14 @@ def calcular_saldo_cc(cuenta_corriente):
         return debito - credito
     except:
         return 0
+
+
+def etiqueta_saldo(saldo):
+    # Mismo criterio que frontend/src/features/cuentacorriente/saldo.ts etiquetaSaldo -se
+    # duplica acá (no hay forma de compartir TS/Python) para los comprobantes en PDF
+    # (cuentacorriente.api), que no pueden reusar ese módulo del frontend.
+    if saldo > 0:
+        return '(Deudor)'
+    if saldo < 0:
+        return '(A favor del cliente)'
+    return ''

@@ -1,4 +1,4 @@
-import { apiFetch } from './client'
+import { apiFetch, apiFetchBlob } from './client'
 import type { PaginatedResponse } from '../types/api'
 import type {
   CuentaCorriente,
@@ -31,6 +31,11 @@ export function actualizarCuentaCorriente(id: number, datos: CuentaCorrienteInpu
 export function eliminarCuentaCorriente(id: number) {
   return apiFetch<void>(`api/v1/cuentacorriente/${id}/`, { method: 'DELETE' })
 }
+/** Estado de cuenta en PDF con todos los movimientos (WeasyPrint, ver
+ * cuentacorriente.api.CuentaCorrienteViewSet.imprimir en el backend). */
+export function imprimirCuentaCorriente(id: number) {
+  return apiFetchBlob(`api/v1/cuentacorriente/${id}/imprimir/`)
+}
 
 export function listarMovimientosCuentaCorriente(cuenta: number, pagina = 1) {
   return apiFetch<PaginatedResponse<MovimientoCuentaCorriente>>('api/v1/movimientocuentacorriente/', {
@@ -39,4 +44,9 @@ export function listarMovimientosCuentaCorriente(cuenta: number, pagina = 1) {
 }
 export function crearMovimientoCuentaCorriente(datos: MovimientoCuentaCorrienteInput) {
   return apiFetch<MovimientoCuentaCorriente>('api/v1/movimientocuentacorriente/', { method: 'POST', body: datos })
+}
+/** Comprobante en PDF de un único movimiento (WeasyPrint, ver
+ * cuentacorriente.api.MovimientoCuentaCorrienteViewSet.imprimir en el backend). */
+export function imprimirMovimientoCuentaCorriente(id: number) {
+  return apiFetchBlob(`api/v1/movimientocuentacorriente/${id}/imprimir/`)
 }
