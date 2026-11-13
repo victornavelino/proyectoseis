@@ -89,9 +89,7 @@ secret.key
 *.sublime-project
 *.sublime-workspace
 
-# ?
 .cache
-src
 
 # Configuration
 .env
@@ -128,3 +126,5 @@ database_backups
 project/test_media/
 /static/
 .idea
+
+especificaciones.md

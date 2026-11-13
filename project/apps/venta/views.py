@@ -8,8 +8,7 @@ from django.core import serializers
 from django.urls import reverse_lazy
 from django.views.generic import ListView, FormView
 from datetime import date
-from wkhtmltopdf.views import PDFTemplateView
-from wkhtmltopdf.views import PDFTemplateResponse
+from util.pdf import render_pdf_response
 
 from articulo.models import Precio, ListaPrecio, Articulo
 
@@ -344,7 +343,7 @@ def imprimir_ticket(request, numero_ticket):
             descuento_individual = articulo.precio_unitario - articulo.precio_promocion
             monto_descuento = monto_descuento + descuento_individual
         print("Entro a vista imprimir ticket: ", venta.numero_ticket)
-        response = PDFTemplateResponse(request=request,
+        response = render_pdf_response(request=request,
                                        template='admin/venta/ticket_venta.html',
                                        filename=nombre_archivo,
                                        context={'venta': venta,
@@ -353,8 +352,6 @@ def imprimir_ticket(request, numero_ticket):
                                                 'monto_descuento': monto_descuento,
                                                 'saldo_cc': saldo_cc},
                                        show_content_in_browser=True,
-                                       cmd_options={'margin-top': 3,
-                                                    'margin-left': 0},
                                        )
         return response
 

@@ -1,6 +1,5 @@
 from datetime import datetime
 
-from IPython.utils.path import target_update
 from django.contrib import messages
 from django.core import serializers
 from django.core.exceptions import ValidationError
@@ -20,7 +19,7 @@ from cuentacorriente.constants import CREDITO
 from cuentacorriente.models import MovimientoCuentaCorriente
 from cuentacorriente.utils import guardar_pago_ccorriente
 from venta.models import Venta
-from wkhtmltopdf.views import PDFTemplateResponse
+from util.pdf import render_pdf_response
 
 
 def planes_tarjeta(request, pk_tarjeta):
@@ -191,7 +190,7 @@ def imprimir_cierre_caja_pdf(request, id_caja):
         print('entro imprimir cierre pdf')
         caja = Caja.objects.get(pk=id_caja)
         nombre_archivo = "caja-" + str(caja.fecha_fin) + ".pdf"
-        response = PDFTemplateResponse(request=request,
+        response = render_pdf_response(request=request,
                                        template='admin/caja/ticket_cierre_caja.html',
                                        filename=nombre_archivo,
                                        context={'caja': caja,
@@ -201,7 +200,6 @@ def imprimir_cierre_caja_pdf(request, id_caja):
                                                 'total_egresos': calcular_total_egresos(caja),
                                                 'total_ccorrientes': calcular_total_compras_cc(caja)},
                                        show_content_in_browser=False,
-                                       cmd_options={'margin-top': 50, },
                                        )
         return response
 

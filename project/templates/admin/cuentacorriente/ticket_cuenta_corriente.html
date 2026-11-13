@@ -1,0 +1,52 @@
+{% load moneda %}
+<!-- Mismo lenguaje visual que caja/ticket_cierre_caja.html (ver admin/_ticket_estilos.html).
+     Estado de cuenta corriente completo (todos los movimientos), para entregarle al cliente
+     (CuentaCorrienteDetalleModal.tsx). Reutiliza las clases .articulo/.articulo-fila/
+     .articulo-detalle (venta/ticket_venta.html): cada movimiento en dos líneas, no una fila
+     .fila de una sola línea -con un detalle largo (medio de pago + banco/plan + observaciones)
+     se pisaría con el importe en un ticket angosto (58mm/48mm), mismo motivo que ya se corrigió
+     en los totales del cierre de caja. -->
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+{% include "admin/_ticket_estilos.html" %}
+</head>
+<body>
+  <div class="ticket">
+    <p class="titulo">{{ PROJECT_NAME_TITLE }}</p>
+    <p class="subtitulo">Estado de cuenta corriente · {{ hoy|date:"d/m/Y H:i" }}</p>
+
+    <div class="fila"><span class="etiqueta">Cliente</span><span>{{ cuenta.cliente }}</span></div>
+    <div class="fila"><span class="etiqueta">Tope</span><span>{{ cuenta.tope|moneda }}</span></div>
+
+    <div class="divisor">Movimientos</div>
+    {% for m in movimientos %}
+    <div class="articulo">
+      <div class="articulo-fila">
+        <span class="nombre-articulo">{{ m.fecha|date:"d/m/Y" }} · {{ m.get_tipo_display }}</span>
+        <span class="articulo-importe">{{ m.importe|moneda }}</span>
+      </div>
+      {% if m.medio_pago or m.observaciones %}
+      <div class="articulo-detalle">
+        {% if m.medio_pago %}{{ m.get_medio_pago_display }}{% if m.banco %} ({{ m.banco.nombre }}){% endif %}{% if m.plan_tarjeta_detalle %} ({{ m.plan_tarjeta_detalle }}){% endif %}{% if m.observaciones %} · {% endif %}{% endif %}{% if m.observaciones %}{{ m.observaciones }}{% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% empty %}
+    <div class="fila"><span class="etiqueta">Sin movimientos todavía.</span></div>
+    {% endfor %}
+
+    <div class="divisor"></div>
+    <div class="total">
+      <span class="etiqueta">Saldo</span>
+      <span class="importe">{{ saldo|moneda }}</span>
+    </div>
+    {% if etiqueta_saldo %}
+    <p class="subtitulo">{{ etiqueta_saldo }}</p>
+    {% endif %}
+
+    <p class="pie">{{ PROJECT_NAME_TITLE }}</p>
+  </div>
+</body>
+</html>
